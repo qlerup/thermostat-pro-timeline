@@ -91,14 +91,17 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 
 1. 🏠 Go to HACS in Home Assistant.
 2. ⚙️ Click on "Integrations" and select "Custom repositories" (gear icon in the top right corner).
-3. ➕ Add the following repository URL: `https://github.com/qlerup/thermostat-pro-timeline-sync` and select "Integration" as type.
-4. 🔍 Find and install the "Thermostat Pro Timeline Sync" integration from the HACS list.
+3. ➕ Add the following repository URL and select "Integration" as type.
+   ```yaml
+   https://github.com/qlerup/lovelace-thermostat-pro-timeline
+      ```
+4. 🔍 Find and install the "Thermostat Pro Timeline" integration from the HACS list.
 5. 🔄 Restart Home Assistant.
 6. 📦 The integration will automatically copy the card (JS file) to `/local` and register it as a Lovelace resource.
 
 ### 📦 Option B — Manual installation
 
-1. ⬇️ Download the integration from GitHub: [qlerup/thermostat-pro-timeline-sync](https://github.com/qlerup/thermostat-pro-timeline-sync).
+1. ⬇️ Download the integration from GitHub: [qlerup/thermostat-pro-timeline](https://github.com/qlerup/thermostat-pro-timeline).
 2. 📁 Copy the `thermostat_timeline` folder to `custom_components/` in your Home Assistant config directory:
    - Location: `custom_components/thermostat_timeline/`
 3. 🗂️ Copy the file `thermostat-pro-timeline.js` to the `www/` folder in your Home Assistant config:
