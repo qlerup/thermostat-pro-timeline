@@ -437,5 +437,5 @@ All endpoints require Home Assistant auth and are provided by the integration:
 ## 🏅 License & credits
 
 - Code owner: @qlerup
-- Issues & docs: https://github.com/qlerup/thermostat-pro-timeline-sync
+- Issues & docs: https://github.com/qlerup/thermostat-pro-timeline
 
