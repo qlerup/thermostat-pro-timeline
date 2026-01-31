@@ -84,6 +84,8 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 
 **Prerequisites:** Home Assistant Core, Lovelace dashboards.
 
+[![Open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=qlerup&repository=thermostat-pro-timeline)
+
 ### 🛒 Option A — HACS (Recommended)
 
 1. 🏠 Go to HACS in Home Assistant.
