@@ -1,8 +1,5 @@
-
-
-
 # ❄️ Thermostat Pro Timeline — Integration + Card
-
+[![hacs\_badge](https://img.shields.io/badge/HACS-Default-blue.svg)](https://hacs.xyz) [![Downloads](https://img.shields.io/github/downloads/qlerup/thermostat-pro-timeline/total)](https://github.com/qlerup/thermostat-pro-timeline/releases)
 
 ## Support this project
 
