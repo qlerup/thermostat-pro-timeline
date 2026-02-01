@@ -236,6 +236,19 @@ const TT_I18N = {
   'backup.import.title': 'Import thermostat_timeline.json',
   'backup.import.desc': 'Upload a thermostat_timeline.json file and import it. A new backup is created first.',
   'backup.import.btn': 'Import file',
+  'backup.export.title': 'Export backup file',
+  'backup.export.desc': 'Download a full thermostat_timeline_backup.json with all slots and data.',
+  'backup.export.btn': 'Download file',
+  'backup.imported_suffix': ' - imported',
+  'backup.importbk.title': 'Import backup file',
+  'backup.importbk.desc': 'Upload a thermostat_timeline_backup.json file to append its backups to the list.',
+  'backup.importbk.btn': 'Import backup',
+  'backup.importbk.err_invalid': 'Invalid backup file',
+  'backup.file.choose': 'Choose imported backup',
+  'backup.file.add_selected': 'Import backup',
+  'backup.file.add_all': 'Import all backups',
+  'backup.file.loaded_n': 'File loaded ({n} backups)',
+  'backup.file.imported_ok': 'Imported ({n})',
   'backup.import.err_no_hass': 'Home Assistant not ready',
   'backup.import.err_storage_off': 'Shared storage is OFF. Turn it on first.',
   'backup.import.err_no_integration': 'Integration thermostat_timeline not available',
@@ -593,6 +606,19 @@ const TT_I18N = {
     'backup.import.title': 'Importér thermostat_timeline.json',
     'backup.import.desc': 'Upload en thermostat_timeline.json fil og importér den. Der laves først en ny backup.',
     'backup.import.btn': 'Importér fil',
+    'backup.export.title': 'Eksportér backupfil',
+    'backup.export.desc': 'Download en komplet thermostat_timeline_backup.json med alle slots og data.',
+    'backup.export.btn': 'Download fil',
+    'backup.imported_suffix': ' - importeret',
+    'backup.importbk.title': 'Importér backupfil',
+    'backup.importbk.desc': 'Upload en thermostat_timeline_backup.json og tilføj dens backups til listen.',
+    'backup.importbk.btn': 'Importér backup',
+    'backup.importbk.err_invalid': 'Ugyldig backupfil',
+    'backup.file.choose': 'Vælg importeret backup',
+    'backup.file.add_selected': 'Importér backup',
+    'backup.file.add_all': 'Importér alle backups',
+    'backup.file.loaded_n': 'Fil indlæst ({n} backups)',
+    'backup.file.imported_ok': 'Importeret ({n})',
     'backup.import.err_no_hass': 'Home Assistant er ikke klar',
     'backup.import.err_storage_off': 'Delt lager er slået fra. Slå det til først.',
     'backup.import.err_no_integration': 'Integrationen thermostat_timeline er ikke tilgængelig',
@@ -897,6 +923,16 @@ const TT_I18N = {
   'backup.interval.desc': 'Hur många dagar mellan automatiska säkerhetskopior (min. 1).',
   'backup.sensor': 'Backup‑sensor',
   'backup.last': 'Senaste backup',
+    'backup.export.title': 'Export backup file',
+    'backup.export.desc': 'Download a full thermostat_timeline_backup.json with all slots and data.',
+    'backup.export.btn': 'Download file',
+  'backup.export.title': 'Exportera backupfil',
+  'backup.export.desc': 'Ladda ner en fullständig thermostat_timeline_backup.json med alla platser och data.',
+  'backup.export.btn': 'Ladda ner fil',
+  'backup.file.add_selected': 'Importera backup',
+  'backup.file.add_all': 'Importera alla backuper',
+  'backup.file.loaded_n': 'Fil laddad ({n} backuper)',
+  'backup.file.imported_ok': 'Importerad ({n})',
   'backup.slot.title': 'Välj backup',
   'backup.slot.desc': 'Välj vilken backupplats som ska återställas.',
   'backup.slot.empty': 'Inga backups ännu',
@@ -1236,6 +1272,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Antall dager mellom automatiske sikkerhetskopier (min. 1).',
   'backup.sensor': 'Backup‑sensor',
   'backup.last': 'Siste backup',
+  'backup.export.title': 'Eksporter sikkerhetskopi',
+  'backup.export.desc': 'Last ned en komplett thermostat_timeline_backup.json med alle slotter og data.',
+  'backup.export.btn': 'Last ned fil',
+  'backup.file.add_selected': 'Importer backup',
+  'backup.file.add_all': 'Importer alle backuper',
+  'backup.file.loaded_n': 'Fil lastet ({n} backuper)',
+  'backup.file.imported_ok': 'Importert ({n})',
   'backup.slot.title': 'Velg sikkerhetskopi',
   'backup.slot.desc': 'Velg hvilken backup-slot som skal gjenopprettes.',
   'backup.slot.empty': 'Ingen sikkerhetskopier ennå',
@@ -1552,6 +1595,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Anzahl der Tage zwischen automatischen Sicherungen (min. 1).',
   'backup.sensor': 'Backup‑Sensor',
   'backup.last': 'Letztes Backup',
+  'backup.export.title': 'Backup-Datei exportieren',
+  'backup.export.desc': 'Eine vollständige thermostat_timeline_backup.json mit allen Slots und Daten herunterladen.',
+  'backup.export.btn': 'Datei herunterladen',
+  'backup.file.add_selected': 'Backup importieren',
+  'backup.file.add_all': 'Alle Backups importieren',
+  'backup.file.loaded_n': 'Datei geladen ({n} Backups)',
+  'backup.file.imported_ok': 'Importiert ({n})',
   'backup.slot.title': 'Backup auswählen',
   'backup.slot.desc': 'Wählen Sie, welcher Backup-Slot wiederhergestellt werden soll.',
   'backup.slot.empty': 'Noch keine Backups',
@@ -1879,6 +1929,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Cuántos días entre copias de seguridad automáticas (mín. 1).',
   'backup.sensor': 'Sensor de copia de seguridad',
   'backup.last': 'Última copia de seguridad',
+  'backup.export.title': 'Exportar archivo de copia',
+  'backup.export.desc': 'Descarga un thermostat_timeline_backup.json completo con todos los slots y datos.',
+  'backup.export.btn': 'Descargar archivo',
+  'backup.file.add_selected': 'Importar copia de seguridad',
+  'backup.file.add_all': 'Importar todas las copias de seguridad',
+  'backup.file.loaded_n': 'Archivo cargado ({n} copias)',
+  'backup.file.imported_ok': 'Importado ({n})',
   'backup.slot.title': 'Seleccionar copia de seguridad',
   'backup.slot.desc': 'Selecciona qué ranura de copia de seguridad restaurar.',
   'backup.slot.empty': 'Aún no hay copias de seguridad',
@@ -2198,6 +2255,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Nombre de jours entre les sauvegardes automatiques (min. 1).',
   'backup.sensor': 'Capteur de sauvegarde',
   'backup.last': 'Dernière sauvegarde',
+  'backup.export.title': 'Exporter le fichier de sauvegarde',
+  'backup.export.desc': 'Télécharger un thermostat_timeline_backup.json complet avec tous les emplacements et données.',
+  'backup.export.btn': 'Télécharger le fichier',
+  'backup.file.add_selected': 'Importer la sauvegarde',
+  'backup.file.add_all': 'Importer toutes les sauvegardes',
+  'backup.file.loaded_n': 'Fichier chargé ({n} sauvegardes)',
+  'backup.file.imported_ok': 'Importé ({n})',
   'backup.slot.title': 'Sélectionner une sauvegarde',
   'backup.slot.desc': 'Sélectionnez l’emplacement de sauvegarde à restaurer.',
   'backup.slot.empty': 'Aucune sauvegarde pour l’instant',
@@ -2614,6 +2678,13 @@ const TT_I18N = {
   , 'backup.interval.desc': 'Numero di giorni tra i backup automatici (min. 1).'
   , 'backup.sensor': 'Sensore di backup'
   , 'backup.last': 'Ultimo backup'
+  , 'backup.export.title': 'Esporta file di backup'
+  , 'backup.export.desc': 'Scarica un file thermostat_timeline_backup.json completo con tutti gli slot e i dati.'
+  , 'backup.export.btn': 'Scarica file'
+  , 'backup.file.add_selected': 'Importa backup'
+  , 'backup.file.add_all': 'Importa tutti i backup'
+  , 'backup.file.loaded_n': 'File caricato ({n} backup)'
+  , 'backup.file.imported_ok': 'Importato ({n})'
   , 'backup.slot.title': 'Seleziona backup'
   , 'backup.slot.desc': 'Seleziona quale slot di backup ripristinare.'
   , 'backup.slot.empty': 'Nessun backup ancora'
@@ -2851,6 +2922,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Kuinka monta päivää automaattisten varmuuskopioiden välillä (min. 1).',
   'backup.sensor': 'Varmuuskopioanturi',
   'backup.last': 'Viimeisin varmuuskopio',
+  'backup.export.title': 'Vie varmuuskopiotiedosto',
+  'backup.export.desc': 'Lataa täydellinen thermostat_timeline_backup.json, jossa on kaikki slotit ja tiedot.',
+  'backup.export.btn': 'Lataa tiedosto',
+  'backup.file.add_selected': 'Tuo varmuuskopio',
+  'backup.file.add_all': 'Tuo kaikki varmuuskopiot',
+  'backup.file.loaded_n': 'Tiedosto ladattu ({n} varmuuskopiota)',
+  'backup.file.imported_ok': 'Tuotu ({n})',
   'backup.slot.title': 'Valitse varmuuskopio',
   'backup.slot.desc': 'Valitse mikä varmuuskopiointipaikka palautetaan.',
   'backup.slot.empty': 'Ei varmuuskopioita vielä',
@@ -3198,6 +3276,13 @@ const TT_I18N = {
   'backup.interval.desc': 'Počet dnů mezi automatickými zálohami (min. 1).',
   'backup.sensor': 'Záložní senzor',
   'backup.last': 'Poslední záloha',
+  'backup.export.title': 'Exportovat soubor zálohy',
+  'backup.export.desc': 'Stáhnout kompletní thermostat_timeline_backup.json se všemi sloty a daty.',
+  'backup.export.btn': 'Stáhnout soubor',
+  'backup.file.add_selected': 'Importovat zálohu',
+  'backup.file.add_all': 'Importovat všechny zálohy',
+  'backup.file.loaded_n': 'Soubor načten ({n} záloh)',
+  'backup.file.imported_ok': 'Importováno ({n})',
   'backup.slot.title': 'Vybrat zálohu',
   'backup.slot.desc': 'Vyberte, kterou zálohu obnovit.',
   'backup.slot.empty': 'Zatím žádné zálohy',
@@ -3616,6 +3701,13 @@ const TT_I18N = {
   , 'backup.interval.desc': 'Število dni med samodejnimi kopijami (min. 1).'
   , 'backup.sensor': 'Senzor varnostne kopije'
   , 'backup.last': 'Zadnja kopija'
+  , 'backup.export.title': 'Izvozi datoteko varnostne kopije'
+  , 'backup.export.desc': 'Prenesi popoln thermostat_timeline_backup.json z vsemi mesti (slot) in podatki.'
+  , 'backup.export.btn': 'Prenesi datoteko'
+  , 'backup.file.add_selected': 'Uvozi varnostno kopijo'
+  , 'backup.file.add_all': 'Uvozi vse varnostne kopije'
+  , 'backup.file.loaded_n': 'Datoteka naložena ({n} varnostnih kopij)'
+  , 'backup.file.imported_ok': 'Uvoženo ({n})'
   , 'backup.slot.title': 'Izberi varnostno kopijo'
   , 'backup.slot.desc': 'Izberite, kateri slot varnostne kopije želite obnoviti.'
   , 'backup.slot.empty': 'Še ni varnostnih kopij'
@@ -7026,10 +7118,10 @@ class ThermostatTimelineCard extends HTMLElement {
   /* Right header area aligns content to far right */
   .header .spacer{ grid-column:3; justify-self:end; display:flex; justify-content:flex-end; min-width:0; overflow:hidden;}
   /* Right-side header toolbar (lives inside .spacer) */
-  .header .pause-wrap{ display:flex; align-items:center; gap:8px; }
+  .header .pause-wrap{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
   .header .pause-wrap .pause-eta{ font-size:.82rem; color: var(--primary-text-color); min-width:58px; text-align:center; padding:2px 8px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, rgba(0,0,0,.05)); }
   /* Presence live chips (away persons status) */
-  .header .pause-wrap .presence-live{ display:flex; align-items:center; gap:6px; flex-wrap:nowrap; max-width:50vw; overflow:hidden; }
+  .header .pause-wrap .presence-live{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; max-width:50vw; overflow:hidden; }
   .header .pause-wrap .presence-live .presence-chip{ display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, rgba(0,0,0,.05)); font-size:.82rem; max-width:160px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
   .header .pause-wrap .presence-live .presence-chip .presence-dot{ width:8px; height:8px; border-radius:50%; background: var(--divider-color); flex:0 0 8px; }
   .header .pause-wrap .presence-live .presence-chip.home .presence-dot{ background: var(--success-color, #2e7d32); }
@@ -11077,6 +11169,7 @@ class ThermostatTimelineCard extends HTMLElement {
           titleSpan.textContent = eid ? pretty(eid) : (this._t('editor.entity_placeholder') || 'Select entity');
         } catch { titleSpan.textContent = this._t('editor.entity_placeholder') || 'Select entity'; }
         refreshSubtitle();
+        refreshChips();
 
         // Remove room
         del.addEventListener('click', (ev)=>{
@@ -17478,6 +17571,37 @@ class ThermostatTimelineCardEditor extends HTMLElement {
         </div>
         <div class="backup-import-error" style="display:none; color: var(--error-color); font-size:.85rem;"></div>
       </div>
+      <!-- Export full backup file -->
+      <div class="setting" style="display:flex; flex-direction:column; gap:10px; align-items:stretch;">
+        <div class="text">
+          <div class="title backup-export-title">Export backup file</div>
+          <div class="desc backup-export-desc">Download a full thermostat_timeline_backup.json with all slots and data.</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%;">
+          <button type="button" class="add-entity-btn btn-export-backup"><ha-icon icon="mdi:file-download-outline"></ha-icon><span class="backup-export-btn-label">Download file</span></button>
+        </div>
+      </div>
+      <!-- Import backup file (thermostat_timeline_backup.json) -->
+      <div class="setting" style="display:flex; flex-direction:column; gap:10px; align-items:stretch;">
+        <div class="text">
+          <div class="title backup-importbk-title">Import backup file</div>
+          <div class="desc backup-importbk-desc">Upload a thermostat_timeline_backup.json file to append its backups to the list.</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%;">
+          <input class="backup-importbk-file" type="file" accept=".json,application/json" />
+          <button type="button" class="add-entity-btn btn-import-backup" style="display:none;"><ha-icon icon="mdi:file-upload-outline"></ha-icon><span class="backup-importbk-btn-label">Import backup</span></button>
+        </div>
+        <div class="backup-file-select-row" style="display:none; gap:8px; align-items:center; flex-wrap:wrap; width:100%;">
+          <div class="text" style="min-width:200px;">
+            <div class="title backup-file-choose">Choose imported backup</div>
+          </div>
+          <select class="backup-file-slot-select" style="min-width:200px; max-width:320px; width:100%;"></select>
+          <button type="button" class="add-entity-btn btn-import-slot"><ha-icon icon="mdi:playlist-plus"></ha-icon><span class="backup-file-add-selected">Add selected</span></button>
+          <button type="button" class="add-entity-btn btn-import-all"><ha-icon icon="mdi:playlist-check"></ha-icon><span class="backup-file-add-all">Add all</span></button>
+        </div>
+        <div class="backup-importbk-status" style="display:none; font-size:.85rem; opacity:.85;"></div>
+        <div class="backup-importbk-error" style="display:none; color: var(--error-color); font-size:.85rem;"></div>
+      </div>
       <div class="setting">
         <div class="text">
           <div class="title backup-auto-title">Auto backup</div>
@@ -18126,7 +18250,8 @@ class ThermostatTimelineCardEditor extends HTMLElement {
           if(!entry) return;
           const ts = entry.ts || entry.created_at || entry.created || null;
           const labelTs = ts ? fmt(ts) : '';
-          const label = labelTs || 'Backup';
+          let label = labelTs || 'Backup';
+          try { if (entry.imported) { const suf = (this._t && this._t('backup.imported_suffix')) || ' - imported'; label += suf; } } catch {}
           opts.push({value:String(i+1), label});
         });
         slotSel.innerHTML='';
@@ -18205,6 +18330,127 @@ class ThermostatTimelineCardEditor extends HTMLElement {
   };
   if (impBtn) impBtn.onclick = runImport;
   if (impInput) impInput.onchange = runImport;
+  // Import full backup from file (thermostat_timeline_backup.json)
+  const impBkBtn = this.shadowRoot.querySelector('.btn-import-backup');
+  const impBkInput = this.shadowRoot.querySelector('.backup-importbk-file');
+  const impBkErr = this.shadowRoot.querySelector('.backup-importbk-error');
+  const impBkRow = this.shadowRoot.querySelector('.backup-file-select-row');
+  const impBkSel = this.shadowRoot.querySelector('.backup-file-slot-select');
+  const impBkAddSel = this.shadowRoot.querySelector('.btn-import-slot');
+  const impBkAddAll = this.shadowRoot.querySelector('.btn-import-all');
+  const impBkStatus = this.shadowRoot.querySelector('.backup-importbk-status');
+  const runImportBackup = async ()=>{
+    try {
+      if (impBkErr) { impBkErr.style.display='none'; impBkErr.textContent=''; }
+      const file = impBkInput?.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      let obj = null; try { obj = JSON.parse(text); } catch { obj = null; }
+      if (!obj) throw new Error('json');
+      let data = obj?.data || obj;
+      let slots = Array.isArray(data?.slots) ? data.slots : null;
+      if (!slots) {
+        const hasSections = (data && (data.schedules || data.settings || data.weekdays || data.profiles));
+        if (hasSections) {
+          slots = [{ ts: new Date().toISOString(), sections: { schedules: data.schedules||{}, settings: data.settings||{}, weekdays: data.weekdays||{}, profiles: data.profiles||{}, colors: data.colors||{} }, partial_flags: data.partial_flags||null, imported: true }];
+        }
+      }
+      if (!Array.isArray(slots) || !slots.length) throw new Error('invalid');
+      // Keep in memory for user selection
+      this._pendingImportSlots = slots.map((s)=>{ try { return { ...s, imported: true }; } catch { return s; } });
+      if (impBkSel){
+        impBkSel.innerHTML = '';
+        const labels = [];
+        for (let i=0;i<this._pendingImportSlots.length;i++){
+          const e = this._pendingImportSlots[i] || {};
+          const ts = e.ts || e.created_at || e.created || '';
+          const labelTs = ts ? (typeof fmt==='function'?fmt(ts):String(ts)) : `#${i+1}`;
+          labels.push(labelTs);
+          const opt = document.createElement('option');
+          opt.value = String(i+1);
+          opt.textContent = labels[i];
+          impBkSel.append(opt);
+        }
+      }
+      if (impBkRow) impBkRow.style.display = '';
+      if (impBkStatus){
+        try {
+          const n = Array.isArray(this._pendingImportSlots) ? this._pendingImportSlots.length : 0;
+          const t = (this._t && this._t('backup.file.loaded_n')) || 'File loaded ({n} backups)';
+          impBkStatus.textContent = t.replace('{n}', String(n));
+          impBkStatus.style.display = '';
+        } catch {}
+      }
+    } catch (e) {
+      try { if (impBkErr) { impBkErr.style.display=''; impBkErr.textContent = (this._t && this._t('backup.importbk.err_invalid')) || 'Invalid backup file'; } } catch {}
+    } finally { try { if (impBkInput) impBkInput.value=''; } catch {} }
+  };
+  if (impBkBtn) impBkBtn.onclick = runImportBackup;
+  if (impBkInput) impBkInput.onchange = runImportBackup;
+  if (impBkAddSel) impBkAddSel.onclick = async ()=>{
+    try {
+      const idx = Number(impBkSel?.value||'0')-1;
+      if (!this._pendingImportSlots || idx<0 || idx>=this._pendingImportSlots.length) return;
+      await this._hass.callService('thermostat_timeline','import_backup', { slots: [ this._pendingImportSlots[idx] ] });
+      if (impBkStatus){
+        try {
+          const t = (this._t && this._t('backup.file.imported_ok')) || 'Imported ({n})';
+          impBkStatus.textContent = t.replace('{n}', '1');
+          impBkStatus.style.display = '';
+        } catch {}
+      }
+      setTimeout(()=>{ try { this._render(); } catch{} }, 800);
+    } catch {}
+  };
+  if (impBkAddAll) impBkAddAll.onclick = async ()=>{
+    try {
+      if (!Array.isArray(this._pendingImportSlots) || this._pendingImportSlots.length===0) return;
+      await this._hass.callService('thermostat_timeline','import_backup', { slots: this._pendingImportSlots });
+      if (impBkStatus){
+        try {
+          const n = this._pendingImportSlots.length;
+          const t = (this._t && this._t('backup.file.imported_ok')) || 'Imported ({n})';
+          impBkStatus.textContent = t.replace('{n}', String(n));
+          impBkStatus.style.display = '';
+        } catch {}
+      }
+      setTimeout(()=>{ try { this._render(); } catch{} }, 800);
+    } catch {}
+  };
+  // Export full backup (thermostat_timeline_backup.json)
+  const expBtn = this.shadowRoot.querySelector('.btn-export-backup');
+  if (expBtn) expBtn.onclick = async ()=>{
+    try {
+      const resp = await this._apiFetchState();
+      const bk = (resp && resp.backup) ? resp.backup : {};
+      const data = {
+        schedules: bk.schedules || {},
+        settings: bk.settings || {},
+        weekdays: bk.weekdays || {},
+        profiles: bk.profiles || {},
+        version: bk.version || 1,
+        last_backup_ts: bk.last_backup_ts || null,
+        partial_flags: bk.partial_flags || null,
+        slots: Array.isArray(bk.slots) ? bk.slots : [],
+        slot_index: Number(bk.slot_index || 0),
+      };
+      const wrapper = {
+        version: 1,
+        minor_version: 1,
+        key: 'thermostat_timeline_backup.json',
+        data,
+      };
+      const nameTs = (new Date()).toISOString().replace(/[:T]/g,'-').slice(0,19);
+      const fname = `thermostat_timeline_backup_${nameTs}.json`;
+      const blob = new Blob([JSON.stringify(wrapper, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = fname; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ try{ URL.revokeObjectURL(url); a.remove(); }catch{} }, 1500);
+    } catch (e) {
+      // best-effort; no UI error noise
+    }
+  };
   bAuto && bAuto.addEventListener('change', (e)=>{ const on=!!e.target.checked; this._upd('backup_auto_enabled', on); if (bRow) bRow.style.display = on? '' : 'none'; try { this._pushSettingsToStoreDebounced(); } catch {} });
     bMin && bMin.addEventListener('change', (e)=>{ let v=Math.round(Number(e.target.value||1)); if(!Number.isFinite(v)) v=1; v=Math.max(1, Math.min(365, v)); e.target.value=String(v); this._upd('backup_interval_days', v); try { this._pushSettingsToStoreDebounced(); } catch {} });
   } catch {}
@@ -19849,6 +20095,15 @@ class ThermostatTimelineCardEditor extends HTMLElement {
         const bitl = root.querySelector('.backup-import-title'); if (bitl) bitl.textContent = t('backup.import.title') || 'Import thermostat_timeline.json';
         const bidl = root.querySelector('.backup-import-desc'); if (bidl) bidl.textContent = t('backup.import.desc') || '';
         const bibl = root.querySelector('.backup-import-btn-label'); if (bibl) bibl.textContent = t('backup.import.btn') || 'Import file';
+        const betl = root.querySelector('.backup-export-title'); if (betl) betl.textContent = t('backup.export.title') || 'Export backup file';
+        const bedl = root.querySelector('.backup-export-desc'); if (bedl) bedl.textContent = t('backup.export.desc') || 'Download a full thermostat_timeline_backup.json with all slots and data.';
+        const bebl = root.querySelector('.backup-export-btn-label'); if (bebl) bebl.textContent = t('backup.export.btn') || 'Download file';
+        const ibt = root.querySelector('.backup-importbk-title'); if (ibt) ibt.textContent = t('backup.importbk.title') || 'Import backup file';
+        const ibd = root.querySelector('.backup-importbk-desc'); if (ibd) ibd.textContent = t('backup.importbk.desc') || 'Upload a thermostat_timeline_backup.json file to append its backups to the list.';
+        const ibl = root.querySelector('.backup-importbk-btn-label'); if (ibl) ibl.textContent = t('backup.importbk.btn') || 'Import backup';
+        const ifc = root.querySelector('.backup-file-choose'); if (ifc) ifc.textContent = t('backup.file.choose') || 'Choose imported backup';
+        const ifas = root.querySelector('.backup-file-add-selected'); if (ifas) ifas.textContent = t('backup.file.add_selected') || 'Add selected';
+        const ifaa = root.querySelector('.backup-file-add-all'); if (ifaa) ifaa.textContent = t('backup.file.add_all') || 'Add all';
         const bat = root.querySelector('.backup-auto-title'); if (bat) bat.textContent = t('backup.auto');
         const bad = root.querySelector('.backup-auto-desc'); if (bad) bad.textContent = t('backup.auto.desc');
         const bit = root.querySelector('.backup-int-title'); if (bit) bit.textContent = t('backup.interval');
