@@ -4279,6 +4279,8 @@ class ThermostatTimelineCard extends HTMLElement {
   this._storeWatchTimer = null;
   this._storeWatchMs = 10000; // ms
   this._storeWatchBusy = false; // avoid overlapping polls
+  // Track if user explicitly touched boiler toggle this session
+  this._boilerToggleTouched = false;
 
   // Cross-card sync (same dashboard + other tabs). Needed when storage is OFF,
   // because multiple cards otherwise won't notice localStorage changes.
@@ -5027,6 +5029,49 @@ class ThermostatTimelineCard extends HTMLElement {
                     });
                   }
                 }
+
+                // Boiler settings fallbacks: if backend omitted these keys, pick last known values from localStorage
+                try {
+                  const hasBool = (v)=> (typeof v === 'boolean' || typeof v === 'number');
+                  if (!this._yamlProvided?.boiler_enabled && !hasBool(s.boiler_enabled)) {
+                    if (hasBool(ls.boiler_enabled)) this._config.boiler_enabled = !!ls.boiler_enabled;
+                  }
+                  if (!this._yamlProvided?.boiler_switch && typeof s.boiler_switch !== 'string') {
+                    if (typeof ls.boiler_switch === 'string') this._config.boiler_switch = String(ls.boiler_switch || '');
+                  }
+                  if (!this._yamlProvided?.boiler_rooms && !Array.isArray(s.boiler_rooms) && s.boiler_rooms !== null) {
+                    if (Array.isArray(ls.boiler_rooms)) this._config.boiler_rooms = ls.boiler_rooms.filter(Boolean).map(String);
+                    else if (ls.boiler_rooms === null) this._config.boiler_rooms = null;
+                  }
+                  const numOrNull = (v)=> (v === null || Number.isFinite(Number(v)));
+                  if (!this._yamlProvided?.boiler_on_offset && !numOrNull(s.boiler_on_offset)) {
+                    if (numOrNull(ls.boiler_on_offset)) {
+                      const v = (ls.boiler_on_offset === null) ? 0 : Number(ls.boiler_on_offset);
+                      if (Number.isFinite(v)) this._config.boiler_on_offset = Math.max(-10, Math.min(10, v));
+                    }
+                  }
+                  if (!this._yamlProvided?.boiler_off_offset && !numOrNull(s.boiler_off_offset)) {
+                    if (numOrNull(ls.boiler_off_offset)) {
+                      const v = (ls.boiler_off_offset === null) ? 0 : Number(ls.boiler_off_offset);
+                      if (Number.isFinite(v)) this._config.boiler_off_offset = Math.max(-10, Math.min(10, v));
+                    }
+                  }
+                  if (!this._yamlProvided?.boiler_temp_sensor && typeof s.boiler_temp_sensor !== 'string') {
+                    if (typeof ls.boiler_temp_sensor === 'string') this._config.boiler_temp_sensor = String(ls.boiler_temp_sensor || '');
+                  }
+                  if (!this._yamlProvided?.boiler_min_temp && !numOrNull(s.boiler_min_temp)) {
+                    if (numOrNull(ls.boiler_min_temp)) {
+                      const v = (ls.boiler_min_temp === null) ? 20 : Number(ls.boiler_min_temp);
+                      if (Number.isFinite(v)) this._config.boiler_min_temp = v;
+                    }
+                  }
+                  if (!this._yamlProvided?.boiler_max_temp && !numOrNull(s.boiler_max_temp)) {
+                    if (numOrNull(ls.boiler_max_temp)) {
+                      const v = (ls.boiler_max_temp === null) ? 25 : Number(ls.boiler_max_temp);
+                      if (Number.isFinite(v)) this._config.boiler_max_temp = v;
+                    }
+                  }
+                } catch {}
               }
             } catch {}
             if ((typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number') && !this._yamlProvided?.boiler_enabled) this._config.boiler_enabled = !!s.boiler_enabled;
@@ -5063,6 +5108,38 @@ class ThermostatTimelineCard extends HTMLElement {
             if (typeof s.auto_apply_enabled === 'boolean') this._config.auto_apply = !!s.auto_apply_enabled;
             if (typeof s.apply_on_edit === 'boolean') this._config.apply_on_edit = !!s.apply_on_edit;
             if (typeof s.apply_on_default_change === 'boolean') this._config.apply_on_default_change = !!s.apply_on_default_change;
+            // Final fallback: if backend omitted or defaulted boiler settings, prefer last local copy to keep UI consistent after hard refresh
+            try {
+              const rawLocal2 = localStorage.getItem(this._localStoreKey()) || '';
+              if (rawLocal2) {
+                const parsed2 = JSON.parse(rawLocal2);
+                const ls2 = parsed2?.settings || {};
+                const has = (obj, k)=> Object.prototype.hasOwnProperty.call(obj||{}, k);
+                if (!this._yamlProvided?.boiler_enabled && has(ls2, 'boiler_enabled')) this._config.boiler_enabled = !!ls2.boiler_enabled;
+                if (!this._yamlProvided?.boiler_switch && has(ls2, 'boiler_switch')) this._config.boiler_switch = String(ls2.boiler_switch || '');
+                if (!this._yamlProvided?.boiler_rooms && (has(ls2, 'boiler_rooms'))) {
+                  if (Array.isArray(ls2.boiler_rooms)) this._config.boiler_rooms = ls2.boiler_rooms.filter(Boolean).map(String);
+                  else if (ls2.boiler_rooms === null) this._config.boiler_rooms = null;
+                }
+                if (!this._yamlProvided?.boiler_on_offset && has(ls2, 'boiler_on_offset')) {
+                  const v = (ls2.boiler_on_offset === null) ? 0 : Number(ls2.boiler_on_offset);
+                  if (Number.isFinite(v)) this._config.boiler_on_offset = Math.max(-10, Math.min(10, v));
+                }
+                if (!this._yamlProvided?.boiler_off_offset && has(ls2, 'boiler_off_offset')) {
+                  const v = (ls2.boiler_off_offset === null) ? 0 : Number(ls2.boiler_off_offset);
+                  if (Number.isFinite(v)) this._config.boiler_off_offset = Math.max(-10, Math.min(10, v));
+                }
+                if (!this._yamlProvided?.boiler_temp_sensor && has(ls2, 'boiler_temp_sensor')) this._config.boiler_temp_sensor = String(ls2.boiler_temp_sensor || '');
+                if (!this._yamlProvided?.boiler_min_temp && has(ls2, 'boiler_min_temp')) {
+                  const v = (ls2.boiler_min_temp === null) ? 20 : Number(ls2.boiler_min_temp);
+                  if (Number.isFinite(v)) this._config.boiler_min_temp = v;
+                }
+                if (!this._yamlProvided?.boiler_max_temp && has(ls2, 'boiler_max_temp')) {
+                  const v = (ls2.boiler_max_temp === null) ? 25 : Number(ls2.boiler_max_temp);
+                  if (Number.isFinite(v)) this._config.boiler_max_temp = v;
+                }
+              }
+            } catch {}
             // Open Window Detection from shared storage
             try { if (s.open_window && typeof s.open_window === 'object') this._config.open_window = { ...s.open_window }; } catch {}
             // Holidays shared settings
@@ -5495,6 +5572,12 @@ class ThermostatTimelineCard extends HTMLElement {
               }
             }
           } catch {}
+          // Preserve backend boiler_enabled unless user explicitly toggled this session
+          try {
+            if (!this._boilerToggleTouched && typeof base.boiler_enabled === 'boolean') {
+              merged.boiler_enabled = base.boiler_enabled;
+            }
+          } catch {}
           const keepIfEmpty = (key)=>{
             try {
               const inc = incoming[key];
@@ -5521,6 +5604,7 @@ class ThermostatTimelineCard extends HTMLElement {
         setTimeout(() => {
           this._saving = false;
           try { this._holidaysToggleTouched = false; } catch {}
+          try { this._boilerToggleTouched = false; } catch {}
           try { this._labelsTouched = false; } catch {}
           // Show "done" for a short moment and ensure UI keeps ticking
           this._syncJustUntil = Date.now() + 2500;
@@ -5994,6 +6078,8 @@ class ThermostatTimelineCard extends HTMLElement {
       };
       // Do not include holidays_enabled in generic payload unless user toggled it in this session
       try { if (!this._holidaysToggleTouched) delete settings.holidays_enabled; } catch {}
+      // Do not include boiler_enabled unless user toggled it in this session
+      try { if (!this._boilerToggleTouched) delete settings.boiler_enabled; } catch {}
       const colors = { color_ranges: this._config.color_ranges, color_global: !!this._config.color_global };
       // When a dedicated colors sensor is configured, avoid duplicating colors inside settings payload
       if (this._config?.storage_enabled && this._storageEntity('colors')) {
@@ -9757,6 +9843,27 @@ class ThermostatTimelineCard extends HTMLElement {
       try { this._applyCardI18n(); } catch {}
       try { this._renderSettingsPopupTabs(); } catch {}
       try { this._renderSettingsPopupTab(); } catch {}
+      // Post-open refresh for Configuration ID toggle from local cache
+      try {
+        const refreshInstance = ()=>{ try { this._hydrateInstanceCfgFromLocal(); this._renderSettingsPopupSettingsTab(); } catch {} };
+        setTimeout(refreshInstance, 0);
+        setTimeout(refreshInstance, 300);
+      } catch {}
+      // Ensure boiler toggle reflects backend as soon as it arrives after hard refresh
+      try {
+        (async()=>{
+          try {
+            const api = await this._apiFetchState();
+            const s = api?.settings || null;
+            if (s && (typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number')) {
+              if (this._settingsDraft && this._settingsDraft.boiler_enabled !== !!s.boiler_enabled) {
+                this._settingsDraft.boiler_enabled = !!s.boiler_enabled;
+                try { this._renderSettingsPopupBoilerTab(); } catch {}
+              }
+            }
+          } catch {}
+        })();
+      } catch {}
       try {
         const onKey = (ev) => { if (ev.key === 'Escape') { this._closeSettingsPopup(false); } };
         try { if (this._settingsPopupKeyHandler) window.removeEventListener('keydown', this._settingsPopupKeyHandler); } catch {}
@@ -9832,7 +9939,26 @@ class ThermostatTimelineCard extends HTMLElement {
   _initSettingsPopupDraft(){
     try {
       try { this._hydrateInstanceCfgFromLocal(); } catch {}
-      const cfg = this._config || {};
+      // Start with current config
+      const cfg = { ...(this._config || {}) };
+      // On initial open after a hard refresh, backend settings may not be loaded yet.
+      // Prefer last localStorage copy for boiler settings so the toggle reflects saved state.
+      try {
+        const raw = localStorage.getItem(this._localStoreKey()) || '';
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const ls = parsed?.settings || {};
+          const has = (obj,k)=> Object.prototype.hasOwnProperty.call(obj||{}, k);
+          if (!this._yamlProvided?.boiler_enabled && has(ls, 'boiler_enabled')) cfg.boiler_enabled = !!ls.boiler_enabled;
+          if (!this._yamlProvided?.boiler_switch && has(ls, 'boiler_switch')) cfg.boiler_switch = String(ls.boiler_switch || '');
+          if (!this._yamlProvided?.boiler_rooms && has(ls, 'boiler_rooms')) cfg.boiler_rooms = Array.isArray(ls.boiler_rooms) ? ls.boiler_rooms.filter(Boolean).map(String) : (ls.boiler_rooms === null ? null : cfg.boiler_rooms);
+          if (!this._yamlProvided?.boiler_on_offset && has(ls, 'boiler_on_offset')) { const v = (ls.boiler_on_offset === null) ? 0 : Number(ls.boiler_on_offset); if (Number.isFinite(v)) cfg.boiler_on_offset = Math.max(-10, Math.min(10, v)); }
+          if (!this._yamlProvided?.boiler_off_offset && has(ls, 'boiler_off_offset')) { const v = (ls.boiler_off_offset === null) ? 0 : Number(ls.boiler_off_offset); if (Number.isFinite(v)) cfg.boiler_off_offset = Math.max(-10, Math.min(10, v)); }
+          if (!this._yamlProvided?.boiler_temp_sensor && has(ls, 'boiler_temp_sensor')) cfg.boiler_temp_sensor = String(ls.boiler_temp_sensor || '');
+          if (!this._yamlProvided?.boiler_min_temp && has(ls, 'boiler_min_temp')) { const v = (ls.boiler_min_temp === null) ? 20 : Number(ls.boiler_min_temp); if (Number.isFinite(v)) cfg.boiler_min_temp = v; }
+          if (!this._yamlProvided?.boiler_max_temp && has(ls, 'boiler_max_temp')) { const v = (ls.boiler_max_temp === null) ? 25 : Number(ls.boiler_max_temp); if (Number.isFinite(v)) cfg.boiler_max_temp = v; }
+        }
+      } catch {}
       const ow = (cfg.open_window && typeof cfg.open_window === 'object') ? cfg.open_window : {};
       const owEnabled = (typeof ow.enabled === 'boolean') ? ow.enabled : false;
       const owSensors = (ow.sensors && typeof ow.sensors === 'object') ? ow.sensors : {};
@@ -12723,6 +12849,7 @@ class ThermostatTimelineCard extends HTMLElement {
             try {
               if (!this._settingsDraft) return;
               this._settingsDraft.boiler_enabled = !!e.target.checked;
+              this._boilerToggleTouched = true;
               this._renderSettingsPopupBoilerTab();
             } catch {}
           });
