@@ -904,6 +904,101 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["backup_last_ts"] = _latest_backup_ts(slots)
         await _save_backup()
 
+    async def import_backup(call: ServiceCall):
+        """Import backup slots from a JSON payload and append as new slots.
+
+        Accepted inputs:
+        - slots: [ {slot objects} ]
+        - data: { schedules, settings, weekdays, profiles, slots?, partial_flags? }
+          If 'slots' is provided inside data, those are used. Otherwise a single
+          slot is synthesized from schedules/settings/weekdays/profiles.
+        """
+        try:
+            payload = call.data or {}
+            slots_in = []
+            if isinstance(payload.get("slots"), list):
+                slots_in = payload.get("slots")
+            elif isinstance(payload.get("data"), dict):
+                d = payload.get("data")
+                if isinstance(d.get("slots"), list):
+                    slots_in = d.get("slots")
+                else:
+                    # Build a single slot from provided sections
+                    sections = {
+                        "schedules": d.get("schedules", {}) or {},
+                        "settings": d.get("settings", {}) or {},
+                        "weekdays": d.get("weekdays", {}) or {},
+                        "profiles": d.get("profiles", {}) or {},
+                        "colors": (d.get("colors") or {}),
+                    }
+                    slot = {
+                        "ts": dt_util.utcnow().isoformat(),
+                        "version": hass.data[DOMAIN].get("version", 1),
+                        "settings_version": hass.data[DOMAIN].get("settings_version", 1),
+                        "weekday_version": hass.data[DOMAIN].get("weekday_version", 1),
+                        "profile_version": hass.data[DOMAIN].get("profile_version", 1),
+                        "colors_version": hass.data[DOMAIN].get("colors_version", 1),
+                        "partial_flags": d.get("partial_flags") or None,
+                        "sections": sections,
+                        "imported": True,
+                    }
+                    slots_in = [slot]
+            else:
+                # Try synthesizing from top-level sections (backward compat)
+                sections = {
+                    "schedules": payload.get("schedules", {}) or {},
+                    "settings": payload.get("settings", {}) or {},
+                    "weekdays": payload.get("weekdays", {}) or {},
+                    "profiles": payload.get("profiles", {}) or {},
+                    "colors": (payload.get("colors") or {}),
+                }
+                if any(len(sections.get(k, {})) for k in ("schedules","settings","weekdays","profiles")):
+                    slots_in = [{
+                        "ts": dt_util.utcnow().isoformat(),
+                        "version": hass.data[DOMAIN].get("version", 1),
+                        "settings_version": hass.data[DOMAIN].get("settings_version", 1),
+                        "weekday_version": hass.data[DOMAIN].get("weekday_version", 1),
+                        "profile_version": hass.data[DOMAIN].get("profile_version", 1),
+                        "colors_version": hass.data[DOMAIN].get("colors_version", 1),
+                        "partial_flags": payload.get("partial_flags") or None,
+                        "sections": sections,
+                    }]
+
+            if not isinstance(slots_in, list) or not slots_in:
+                return
+
+            # Normalize and append
+            slots = hass.data[DOMAIN].get("backup_slots", [])
+            if not isinstance(slots, list):
+                slots = []
+            for s in slots_in:
+                if not isinstance(s, dict):
+                    continue
+                sec = s.get("sections") if isinstance(s.get("sections"), dict) else None
+                if sec is None:
+                    # Skip invalid slot
+                    continue
+                # Ensure timestamp strings
+                if not isinstance(s.get("ts"), str) or not s.get("ts"):
+                    s["ts"] = dt_util.utcnow().isoformat()
+                # Mark as imported (for UI labeling)
+                try:
+                    if "imported" not in s:
+                        s["imported"] = True
+                except Exception:
+                    pass
+                slots.append(s)
+
+            hass.data[DOMAIN]["backup_slots"] = [x for x in slots if (x is None or isinstance(x, dict))]
+            hass.data[DOMAIN]["backup_slot_index"] = len(hass.data[DOMAIN]["backup_slots"])
+            hass.data[DOMAIN]["backup_version"] = int(hass.data[DOMAIN].get("backup_version", 1)) + 1
+            hass.data[DOMAIN]["backup_last_ts"] = _latest_backup_ts(hass.data[DOMAIN]["backup_slots"]) or dt_util.utcnow().isoformat()
+            await _save_backup()
+            # Also broadcast so UI refreshes
+            async_dispatcher_send(hass, SIGNAL_UPDATED)
+        except Exception:
+            _LOGGER.warning("%s: import_backup failed", DOMAIN, exc_info=True)
+
     async def restore_now(call: ServiceCall):
         """Restore from backup.
 
@@ -912,6 +1007,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         Optional slot (1-based) to restore from rolling backup slots.
         If backup contains partial_flags and no mode is provided, merge is used by default.
         """
+        # Always operate on the active instance as well as the legacy pointers.
+        _ensure_instances_loaded(hass)
+        instances = hass.data[DOMAIN].setdefault("instances", {})
+        active_iid = _norm_instance_id(hass.data[DOMAIN].get("active_instance_id") or "default")
+        inst = instances.get(active_iid)
+        if not isinstance(inst, dict):
+            inst = {"schedules": {}, "weekdays": {}, "profiles": {}, "settings": {}, "colors": {}}
+            instances[active_iid] = inst
         slot_num = call.data.get("slot")
         slot_entry = None
         if slot_num is not None:
@@ -942,10 +1045,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # If no flags and mode empty, keep legacy behavior (replace)
         if not flags and mode not in ("merge", "replace"):
+            # Legacy: full replace
             hass.data[DOMAIN]["schedules"] = dict(backup_sched)
             hass.data[DOMAIN]["settings"] = dict(backup_set)
             hass.data[DOMAIN]["weekday_schedules"] = dict(backup_week)
             hass.data[DOMAIN]["profile_schedules"] = dict(backup_prof)
+            # Mirror into active instance so persistence uses the restored data
+            inst["schedules"] = dict(backup_sched)
+            inst["weekdays"] = dict(backup_week)
+            inst["profiles"] = dict(backup_prof)
+            inst["settings"] = dict(backup_set)
+            # Keep colors in sync with settings if present
+            try:
+                inst["colors"] = {
+                    "color_ranges": (backup_set.get("color_ranges") if isinstance(backup_set, dict) else {}) or {},
+                    "color_global": bool((backup_set.get("color_global") if isinstance(backup_set, dict) else False)),
+                }
+            except Exception:
+                pass
             hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN].get("version", 1)) + 1
             hass.data[DOMAIN]["settings_version"] = int(hass.data[DOMAIN].get("settings_version", 1)) + 1
             hass.data[DOMAIN]["weekday_version"] = int(hass.data[DOMAIN].get("weekday_version", 1)) + 1
@@ -960,6 +1077,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.data[DOMAIN]["settings"] = dict(backup_set)
             hass.data[DOMAIN]["weekday_schedules"] = dict(backup_week)
             hass.data[DOMAIN]["profile_schedules"] = dict(backup_prof)
+            # Mirror into active instance so persistence uses the restored data
+            inst["schedules"] = dict(backup_sched)
+            inst["weekdays"] = dict(backup_week)
+            inst["profiles"] = dict(backup_prof)
+            inst["settings"] = dict(backup_set)
+            # Sync colors from settings if present
+            try:
+                inst["colors"] = {
+                    "color_ranges": (backup_set.get("color_ranges") if isinstance(backup_set, dict) else {}) or {},
+                    "color_global": bool((backup_set.get("color_global") if isinstance(backup_set, dict) else False)),
+                }
+            except Exception:
+                pass
             hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN].get("version", 1)) + 1
             hass.data[DOMAIN]["settings_version"] = int(hass.data[DOMAIN].get("settings_version", 1)) + 1
             hass.data[DOMAIN]["weekday_version"] = int(hass.data[DOMAIN].get("weekday_version", 1)) + 1
@@ -1037,6 +1167,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         hass.data[DOMAIN]["schedules"] = cur_sched
         hass.data[DOMAIN]["settings"] = cur_set
+        # Mirror merge results into active instance for persistence
+        inst["schedules"] = dict(cur_sched)
+        inst["settings"] = dict(cur_set)
+        inst["weekdays"] = dict(hass.data[DOMAIN]["weekday_schedules"])
+        inst["profiles"] = dict(hass.data[DOMAIN]["profile_schedules"])
+        try:
+            if want_colors:
+                inst["colors"] = {
+                    "color_ranges": (backup_set.get("color_ranges") if isinstance(backup_set, dict) else {}) or inst.get("colors", {}).get("color_ranges", {}),
+                    "color_global": bool((backup_set.get("color_global") if isinstance(backup_set, dict) else inst.get("colors", {}).get("color_global", False))),
+                }
+        except Exception:
+            pass
         hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN].get("version", 1)) + 1
         hass.data[DOMAIN]["settings_version"] = int(hass.data[DOMAIN].get("settings_version", 1)) + 1
         if want_week:
@@ -1070,6 +1213,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "rename_instance", rename_instance)
     hass.services.async_register(DOMAIN, "backup_now", backup_now)
     hass.services.async_register(DOMAIN, "delete_backup", delete_backup)
+    hass.services.async_register(DOMAIN, "import_backup", import_backup)
     hass.services.async_register(DOMAIN, "restore_now", restore_now)
     hass.services.async_register(DOMAIN, "patch_entity", patch_entity)
     hass.services.async_register(DOMAIN, "clear", clear)
@@ -1091,6 +1235,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Keep legacy key for compatibility (points to the multi wrapper).
     hass.data[DOMAIN]["open_window_manager"] = owd
     await owd.async_start()
+    # ---- Presence Sensor Manager (background, multi-instance) ----
+    psm = MultiInstancePresenceSensorManager(hass, apply_multi=mgr)
+    hass.data[DOMAIN]["presence_sensor_manager"] = psm
+    await psm.async_start()
     # ---- Backup Manager (auto backup) ----
     bkm = BackupManager(hass, backup_cb=backup_now)
     hass.data[DOMAIN]["backup_manager"] = bkm
@@ -1458,6 +1606,28 @@ class AutoApplyManager:
                 if not anyone_home and ("target_c" in away):
                     target_c = float(away.get("target_c", want))
                     want = min(want, target_c)
+        except Exception:
+            pass
+        # Per-room presence sensor override (simple presence entity)
+        try:
+            # Only when feature is enabled in settings
+            if bool(settings.get("presence_sensor_enabled")):
+                # Map of primary climate/input_number to binary_sensor entity id
+                pmap = settings.get("presence_sensors") or {}
+                if isinstance(pmap, dict):
+                    s_eid = str(pmap.get(primary) or "").strip()
+                    if s_eid and s_eid.startswith("binary_sensor."):
+                        st = self.hass.states.get(s_eid)
+                        s = str(st.state if st else "").lower().strip()
+                        if s == "on":
+                            # Temperature override when presence is ON
+                            tmap = settings.get("presence_sensor_temps") or {}
+                            try:
+                                val = tmap.get(primary)
+                                if isinstance(val, (int, float, str)):
+                                    want = float(val)
+                            except Exception:
+                                pass
         except Exception:
             pass
         # Clamp
@@ -2682,6 +2852,264 @@ class OpenWindowManager:
                     await self._mgr.async_apply_entity_now(eid, reconcile=True)
                 except Exception:
                     pass
+        except Exception:
+            return
+
+
+class MultiInstancePresenceSensorManager:
+    """Runs PresenceSensorManager per instance for per-room presence entity delays.
+
+    This mirrors the card's frontend presence feature in the background so
+    overrides apply even when the card is closed.
+    """
+
+    def __init__(self, hass: HomeAssistant, apply_multi: MultiInstanceAutoApplyManager):
+        self.hass = hass
+        self._apply_multi = apply_multi
+        self._managers: dict[str, PresenceSensorManager] = {}
+
+    def get(self, instance_id: str) -> 'PresenceSensorManager' | None:
+        try:
+            return self._managers.get(_norm_instance_id(instance_id))
+        except Exception:
+            return None
+
+    async def async_start(self) -> None:
+        await self._sync()
+
+        @callback
+        def _on_update():
+            self.hass.async_create_task(self._sync())
+        async_dispatcher_connect(self.hass, SIGNAL_UPDATED, _on_update)
+
+    async def _sync(self) -> None:
+        try:
+            _ensure_instances_loaded(self.hass)
+            d = self.hass.data.get(DOMAIN, {})
+            instances = d.get("instances") if isinstance(d.get("instances"), dict) else {}
+            for iid in (instances.keys() if isinstance(instances, dict) else []):
+                try:
+                    iidn = _norm_instance_id(iid)
+                    if iidn in self._managers:
+                        continue
+                    mgr = self._apply_multi.get(iidn)
+                    if not mgr:
+                        continue
+                    psm = PresenceSensorManager(self.hass, apply_mgr=mgr, instance_id=iidn)
+                    self._managers[iidn] = psm
+                    await psm.async_start()
+                except Exception:
+                    continue
+            d["presence_sensor_managers"] = self._managers
+        except Exception:
+            return
+
+
+class PresenceSensorManager:
+    """Background handler for simple per-room presence sensors with ON/OFF delays."""
+
+    def __init__(self, hass: HomeAssistant, apply_mgr: AutoApplyManager, instance_id: str = "default"):
+        self.hass = hass
+        self._mgr = apply_mgr
+        self._instance_id = _norm_instance_id(instance_id)
+        self._unsub = None
+        self._room_sensor: dict[str, str] = {}
+        self._delays_s: dict[str, tuple[int, int]] = {}  # room -> (on_s, off_s)
+        self._tasks: dict[tuple[str, str], asyncio.Task] = {}  # (room, kind)
+
+    def _settings(self) -> dict:
+        try:
+            d = self.hass.data.get(DOMAIN, {}) or {}
+            insts = d.get("instances") if isinstance(d.get("instances"), dict) else None
+            if isinstance(insts, dict):
+                inst = insts.get(self._instance_id)
+                if isinstance(inst, dict):
+                    s = inst.get("settings")
+                    if isinstance(s, dict):
+                        return s
+        except Exception:
+            pass
+        return (self.hass.data.get(DOMAIN, {}) or {}).get("settings", {}) or {}
+
+    def _enabled(self, settings: dict | None = None) -> bool:
+        try:
+            settings = settings if isinstance(settings, dict) else self._settings()
+            if not bool(settings.get("presence_sensor_enabled")):
+                return False
+            if not bool(settings.get("auto_apply_enabled")):
+                return False
+            # Respect pause via sensor and pause gates
+            try:
+                if bool(settings.get("pause_sensor_enabled")):
+                    eid = str(settings.get("pause_sensor_entity") or "").strip()
+                    if eid and eid.startswith("binary_sensor."):
+                        st = self.hass.states.get(eid)
+                        if str(st.state if st else "").lower().strip() == "on":
+                            return False
+            except Exception:
+                pass
+            if bool(settings.get("pause_indef")):
+                return False
+            pu = settings.get("pause_until_ms")
+            if isinstance(pu, (int, float)):
+                now_ms = dt_util.utcnow().timestamp() * 1000.0
+                if float(pu) > now_ms:
+                    return False
+            return True
+        except Exception:
+            return False
+
+    async def async_start(self) -> None:
+        @callback
+        def _on_update():
+            self.hass.async_create_task(self._rebuild())
+        async_dispatcher_connect(self.hass, SIGNAL_UPDATED, _on_update)
+        await self._rebuild()
+
+    def _cancel_task(self, room: str, kind: str) -> None:
+        t = self._tasks.pop((room, kind), None)
+        if t:
+            try:
+                t.cancel()
+            except Exception:
+                pass
+
+    async def _rebuild(self) -> None:
+        # Unsubscribe previous watchers and cancel tasks
+        try:
+            if self._unsub:
+                self._unsub()
+                self._unsub = None
+        except Exception:
+            self._unsub = None
+        for k, t in list(self._tasks.items()):
+            try:
+                t.cancel()
+            except Exception:
+                pass
+        self._tasks.clear()
+
+        settings = self._settings()
+        if not self._enabled(settings):
+            return
+
+        # Build maps
+        rooms_list = settings.get("entities") or []
+        pmap = settings.get("presence_sensors") or {}
+        dmap = settings.get("presence_sensor_delays") or {}
+        room_sensor: dict[str, str] = {}
+        delays_s: dict[str, tuple[int, int]] = {}
+        flat: list[str] = []
+        if isinstance(pmap, dict):
+            for room in (rooms_list if isinstance(rooms_list, list) else []):
+                try:
+                    if not isinstance(room, str) or not room:
+                        continue
+                    s_eid = str(pmap.get(room) or "").strip()
+                    if not s_eid or not s_eid.startswith("binary_sensor."):
+                        continue
+                    room_sensor[room] = s_eid
+                    flat.append(s_eid)
+                    # delays stored in seconds by the editor
+                    cfg = dmap.get(room) if isinstance(dmap, dict) else None
+                    on_s = int(float(cfg.get("on_s", 180))) if isinstance(cfg, dict) else 180
+                    off_s = int(float(cfg.get("off_s", 180))) if isinstance(cfg, dict) else 180
+                    on_s = max(0, on_s)
+                    off_s = max(0, off_s)
+                    delays_s[room] = (on_s, off_s)
+                except Exception:
+                    continue
+        self._room_sensor = room_sensor
+        self._delays_s = delays_s
+
+        if not flat:
+            return
+
+        @callback
+        def _ch(event):
+            try:
+                eid = str(event.data.get("entity_id") or "")
+                # Find the room for this sensor
+                for room, se in list(self._room_sensor.items()):
+                    if se == eid:
+                        ns = event.data.get("new_state")
+                        s = str(ns.state if ns else "").lower().strip()
+                        self.hass.async_create_task(self._schedule_room(room, s))
+                        break
+            except Exception:
+                return
+
+        self._unsub = async_track_state_change_event(self.hass, sorted(set(flat)), _ch)
+
+        # Initial evaluation: if sensors already stable past delay, apply now
+        try:
+            for room, se in self._room_sensor.items():
+                st = self.hass.states.get(se)
+                if not st:
+                    continue
+                s = str(st.state or "").lower().strip()
+                try:
+                    changed = st.last_changed
+                    if hasattr(changed, "timestamp"):
+                        age_s = max(0.0, (dt_util.utcnow() - changed).total_seconds())
+                    else:
+                        age_s = 0.0
+                except Exception:
+                    age_s = 0.0
+                on_s, off_s = self._delays_s.get(room, (180, 180))
+                need = on_s if s == "on" else off_s
+                if age_s >= need:
+                    # Apply immediately based on current state
+                    self.hass.async_create_task(self._mgr._maybe_apply_now(force=True))
+        except Exception:
+            pass
+
+    async def _schedule_room(self, room: str, state: str) -> None:
+        try:
+            on_s, off_s = self._delays_s.get(room, (180, 180))
+            if state == "on":
+                self._cancel_task(room, "off")
+                if (room, "on") in self._tasks:
+                    return
+                async def _fire_on():
+                    try:
+                        if on_s:
+                            await asyncio.sleep(on_s)
+                        # still on?
+                        se = self._room_sensor.get(room)
+                        st = self.hass.states.get(se) if se else None
+                        if str(st.state if st else "").lower().strip() != "on":
+                            return
+                        await self._mgr._maybe_apply_now(force=True)
+                        await self._mgr._schedule_next()
+                    except asyncio.CancelledError:
+                        return
+                    except Exception:
+                        return
+                    finally:
+                        self._tasks.pop((room, "on"), None)
+                self._tasks[(room, "on")] = self.hass.async_create_task(_fire_on())
+            elif state == "off":
+                self._cancel_task(room, "on")
+                if (room, "off") in self._tasks:
+                    return
+                async def _fire_off():
+                    try:
+                        if off_s:
+                            await asyncio.sleep(off_s)
+                        se = self._room_sensor.get(room)
+                        st = self.hass.states.get(se) if se else None
+                        if str(st.state if st else "").lower().strip() != "off":
+                            return
+                        await self._mgr._maybe_apply_now(force=True)
+                        await self._mgr._schedule_next()
+                    except asyncio.CancelledError:
+                        return
+                    except Exception:
+                        return
+                    finally:
+                        self._tasks.pop((room, "off"), None)
+                self._tasks[(room, "off")] = self.hass.async_create_task(_fire_off())
         except Exception:
             return
 
