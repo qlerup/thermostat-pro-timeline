@@ -1,4 +1,4 @@
-name: Check reported versions vs latest releases
+name: Check reported version vs latest release
 
 on:
   issues:
@@ -17,17 +17,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Extract versions + compare with latest releases
+      - name: Extract version + compare with latest release (this repo)
         uses: actions/github-script@v7
-        env:
-          CARD_REPO: qlerup/lovelace-thermostat-pro-timeline
-          SYNC_REPO: qlerup/thermostat-pro-timeline-sync
         with:
           script: |
             const marker = '<!-- version-latest-check -->';
-
-            const cardRepo = process.env.CARD_REPO;
-            const syncRepo = process.env.SYNC_REPO;
 
             function normalizeVersion(v) {
               if (!v) return '';
@@ -46,7 +40,7 @@ jobs:
               return false;
             }
 
-            // Validate versions like 1.2, 1.2.3, 10.1.5, 5.10.3, 1.2.3-beta.1
+            // Accept: 1.2, 1.2.3, v1.2.3, 1.2.3-beta.1, 1.2.3+build
             const SEMVERISH = /^(?:v)?\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z\.-]+)?$/;
 
             function parseSemverish(v) {
@@ -80,22 +74,30 @@ jobs:
               return best;
             }
 
-            function parseOwnerRepo(s) {
-              const parts = (s || '').trim().split('/');
-              if (parts.length !== 2) return null;
-              return { owner: parts[0], repo: parts[1] };
-            }
+            async function getLatestTagThisRepo() {
+              const owner = context.repo.owner;
+              const repo = context.repo.repo;
 
-            async function getLatestTag(fullRepo) {
-              const or = parseOwnerRepo(fullRepo);
-              if (!or) return { tag: '', url: '', error: `Invalid repo format: ${fullRepo}` };
+              // Primary: latest release (non-prerelease)
               try {
-                const res = await github.rest.repos.getLatestRelease({ owner: or.owner, repo: or.repo });
+                const res = await github.rest.repos.getLatestRelease({ owner, repo });
                 const tag = res?.data?.tag_name || '';
-                const url = res?.data?.html_url || `https://github.com/${or.owner}/${or.repo}/releases/latest`;
+                const url = res?.data?.html_url || `https://github.com/${owner}/${repo}/releases/latest`;
                 return { tag: normalizeVersion(tag), url, error: '' };
               } catch (e) {
-                return { tag: '', url: '', error: `Could not fetch latest release for ${fullRepo}: ${e.message}` };
+                // Fallback: list releases (in case getLatestRelease 404s)
+                try {
+                  const rel = await github.rest.repos.listReleases({ owner, repo, per_page: 20 });
+                  const releases = (rel?.data || []).filter(r => !r.draft);
+                  // pick first non-prerelease if possible, otherwise first release
+                  const best = releases.find(r => !r.prerelease) || releases[0];
+                  if (!best) throw new Error("No releases found");
+                  const tag = best.tag_name || '';
+                  const url = best.html_url || `https://github.com/${owner}/${repo}/releases`;
+                  return { tag: normalizeVersion(tag), url, error: '' };
+                } catch (e2) {
+                  return { tag: '', url: '', error: `Could not fetch releases: ${e.message}; fallback failed: ${e2.message}` };
+                }
               }
             }
 
@@ -109,46 +111,40 @@ jobs:
               try { return JSON.parse(s0.slice(start, end + 1)); } catch { return null; }
             }
 
-            // --- IMPORTANT: safer version core ---
+            // version core:
             // - allows 1.2.3 or 1.2 (but not partial matches inside 1.0.2 like "0.2")
             // - we enforce: NOT preceded by a dot (so we can't start mid-version)
             const versionCore = String.raw`(?:v)?(?:\d+\.\d+\.\d+|\d+\.\d+(?!\.\d))(?:[-+][0-9A-Za-z\.-]+)?`;
 
-            // --- Regex extraction: collect all matches near keywords and pick highest ---
-            function extractVersionsRegexAll(text) {
-              const cardKw = /(?:\bcard\b|\bkort\b|\blovelace\b|\bthermostat\b)/i;
-              const syncKw = /(?:\bsync\b(?:\s+integration)?|\bsync-integration\b|\bthermostat-pro-timeline-sync\b)/i;
-
+            function extractVersionRegex(text) {
               const t = text || "";
 
-              function collectNear(keywordRegex) {
-                const out = [];
-                const p1 = new RegExp(
-                  String.raw`${keywordRegex.source}[^\n]{0,240}\b(?<!\.)(` + versionCore + String.raw`)\b`,
-                  'ig'
-                );
-                const p2 = new RegExp(
-                  String.raw`\b(?<!\.)(` + versionCore + String.raw`)\b[^\n]{0,160}${keywordRegex.source}`,
-                  'ig'
-                );
+              // Try to find versions near typical "version" words first
+              const kw = /(?:\bversion\b|\bver\b|\bv\.\b|\binstalled\b|\binstallation\b|\baddon\b|\bintegration\b|\bplugin\b|\bhacs\b|\brelease\b)/i;
 
-                for (const m of t.matchAll(p1)) if (m?.[1]) out.push(m[1]);
-                for (const m of t.matchAll(p2)) if (m?.[1]) out.push(m[1]);
+              const near = new RegExp(
+                String.raw`${kw.source}[^\n]{0,240}\b(?<!\.)(` + versionCore + String.raw`)\b`,
+                'ig'
+              );
+              const before = new RegExp(
+                String.raw`\b(?<!\.)(` + versionCore + String.raw`)\b[^\n]{0,120}${kw.source}`,
+                'ig'
+              );
 
-                return out;
+              const candidates = [];
+              for (const m of t.matchAll(near)) if (m?.[1]) candidates.push(m[1]);
+              for (const m of t.matchAll(before)) if (m?.[1]) candidates.push(m[1]);
+
+              // Fallback: if nothing near keywords, grab all semverish and pick the highest
+              if (candidates.length === 0) {
+                const all = new RegExp(String.raw`\b(?<!\.)(` + versionCore + String.raw`)\b`, 'ig');
+                for (const m of t.matchAll(all)) if (m?.[1]) candidates.push(m[1]);
               }
 
-              const cardCandidates = collectNear(cardKw);
-              const syncCandidates = collectNear(syncKw);
-
-              return {
-                card: maxVersion(cardCandidates),
-                sync: maxVersion(syncCandidates),
-              };
+              return maxVersion(candidates);
             }
 
-            // --- AI extraction (per text block) ---
-            async function extractVersionsAI(text) {
+            async function extractVersionAI(text) {
               const payload = {
                 model: "openai/gpt-4.1",
                 temperature: 0,
@@ -156,25 +152,22 @@ jobs:
                   {
                     role: "system",
                     content: [
-                      "You extract software version numbers from text.",
+                      "You extract ONE software version number from text.",
                       "",
-                      "Return ONLY valid JSON with keys:",
-                      '- card_version: string or ""',
-                      '- sync_version: string or ""',
+                      "Return ONLY valid JSON with key:",
+                      '- reported_version: string or ""',
                       "",
                       "Rules:",
                       "- If you are not sure, return empty string.",
                       "- Do NOT invent versions.",
                       "- Treat placeholders like 0.0, 0.0.0, N/A, unknown as empty string.",
                       "- Accept versions like: 1.2, 1.2.3, v1.2.3, 1.2.3-beta.1",
-                      "- card_version refers to the Lovelace card / dashboard card.",
-                      "- sync_version refers to the Sync integration.",
+                      "- Prefer the version that refers to THIS repository's installation/integration.",
+                      "- Ignore unrelated versions (e.g., Home Assistant core, OS, HACS, other addons).",
                     ].join("\n"),
                   },
                   { role: "user", content: text || "" },
                 ],
-                // If supported:
-                // response_format: { type: "json_object" },
               };
 
               const res = await fetch("https://models.github.ai/inference/chat/completions", {
@@ -190,20 +183,16 @@ jobs:
 
               if (!res.ok) {
                 core.warning(`Models API failed: ${res.status} ${res.statusText}`);
-                return { card: "", sync: "" };
+                return "";
               }
 
               const data = await res.json();
               const raw = (data?.choices?.[0]?.message?.content || "").trim();
               const obj = safeJsonFromModel(raw) || {};
+              let v = normalizeVersion(obj.reported_version || "");
 
-              let card = normalizeVersion(obj.card_version || "");
-              let sync = normalizeVersion(obj.sync_version || "");
-
-              if (!SEMVERISH.test(card) || isMissingOrPlaceholderVersion(card)) card = "";
-              if (!SEMVERISH.test(sync) || isMissingOrPlaceholderVersion(sync)) sync = "";
-
-              return { card, sync };
+              if (!SEMVERISH.test(v) || isMissingOrPlaceholderVersion(v)) v = "";
+              return v;
             }
 
             // --- Decide what to scan (prefer comment, fill from body) ---
@@ -218,39 +207,38 @@ jobs:
               const comment = payload.comment;
               const creator = issue.user?.login;
               if (!comment || !creator) return;
-              if (comment.user?.login !== creator) return; // only creator
+              if (comment.user?.login !== creator) return; // only the issue creator
               commentText = comment.body || "";
             }
 
-            let card = "", sync = "";
+            // Extract reported version (prefer comment, then body)
+            let reported = "";
 
             if (commentText) {
-              const ai = await extractVersionsAI(commentText);
-              card = ai.card;
-              sync = ai.sync;
-
-              if (!card || !sync) {
-                const rx = extractVersionsRegexAll(commentText);
-                card = card || rx.card;
-                sync = sync || rx.sync;
-              }
+              reported = await extractVersionAI(commentText);
+              if (!reported) reported = extractVersionRegex(commentText);
             }
 
-            if (!card || !sync) {
-              const aiBody = await extractVersionsAI(bodyText);
-              card = card || aiBody.card;
-              sync = sync || aiBody.sync;
-
-              if (!card || !sync) {
-                const rxBody = extractVersionsRegexAll(bodyText);
-                card = card || rxBody.card;
-                sync = sync || rxBody.sync;
-              }
+            if (!reported) {
+              reported = await extractVersionAI(bodyText);
+              if (!reported) reported = extractVersionRegex(bodyText);
             }
 
-            if (!card || !sync) return;
+            if (!reported) return;
 
-            // Avoid duplicate comments for the same version pair
+            // Fetch latest release for THIS repo
+            const latest = await getLatestTagThisRepo();
+            if (!latest.tag) return;
+
+            const vCmp = cmp(parseSemverish(reported), parseSemverish(latest.tag));
+            if (vCmp === null) return;
+
+            const status =
+              vCmp === -1 ? "outdated" :
+              vCmp ===  0 ? "latest" :
+                           "newer";
+
+            // Avoid duplicate comments for same (reported + latest + status)
             const existingComments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -258,63 +246,50 @@ jobs:
               per_page: 100,
             });
 
-            const signatureLine = `Checked versions: card=${card}, sync=${sync}`;
+            const repoFull = `${context.repo.owner}/${context.repo.repo}`;
+            const signatureLine = `Checked version: repo=${repoFull}, reported=${reported}, latest=${latest.tag}, status=${status}`;
+
             const already = (existingComments.data || []).some(c =>
               (c.body || "").includes(marker) &&
-              (c.body || "").includes(`card=${card}`) &&
-              (c.body || "").includes(`sync=${sync}`)
+              (c.body || "").includes(`repo=${repoFull}`) &&
+              (c.body || "").includes(`reported=${reported}`) &&
+              (c.body || "").includes(`latest=${latest.tag}`) &&
+              (c.body || "").includes(`status=${status}`)
             );
             if (already) return;
 
-            // Fetch latest releases
-            const latestCard = await getLatestTag(cardRepo);
-            const latestSync = await getLatestTag(syncRepo);
-            if (!latestCard.tag || !latestSync.tag) return;
-
-            const cardCmp = cmp(parseSemverish(card), parseSemverish(latestCard.tag));
-            const syncCmp = cmp(parseSemverish(sync), parseSemverish(latestSync.tag));
-            if (cardCmp === null || syncCmp === null) return;
-
-            const needsCardUpdate = cardCmp === -1;
-            const needsSyncUpdate = syncCmp === -1;
-
-            if (!needsCardUpdate && !needsSyncUpdate) return;
-
             const lines = [marker, signatureLine, ""];
 
-            if (needsCardUpdate && needsSyncUpdate) {
+            if (status === "outdated") {
               lines.push(
-                "Hi! It looks like both the Card and the Sync integration are not on the latest release.",
-                "Please update both to the latest versions and try again. If the issue still happens afterwards, reply here with the results.",
-                ""
+                "Hi! It looks like your installation is not on the latest release.",
+                "Please update to the latest version and try again. If the issue still happens afterwards, reply here with the results.",
+                "",
+                `- You have: \`${reported}\` ❌`,
+                `- Latest release: \`${latest.tag}\` — ${latest.url}`,
+                "",
+                "Thanks 🙏"
               );
-            } else if (needsCardUpdate && !needsSyncUpdate) {
+            } else if (status === "latest") {
               lines.push(
-                "Hi! Your Sync integration version looks up to date, but the Card is not on the latest release.",
-                "Please update the Card to the latest version and try again. If the issue still happens afterwards, reply here with the results.",
-                ""
+                "Thanks! Your version looks up to date ✅",
+                "",
+                `- You have: \`${reported}\` ✅`,
+                `- Latest release: \`${latest.tag}\` — ${latest.url}`,
+                "",
+                "If the issue still happens, please share steps to reproduce and any relevant logs/screenshots. 🙏"
               );
-            } else if (!needsCardUpdate && needsSyncUpdate) {
-              lines.push(
-                "Hi! Your Card version looks up to date, but the Sync integration is not on the latest release.",
-                "Please update the Sync integration to the latest version and try again. If the issue still happens afterwards, reply here with the results.",
-                ""
-              );
-            }
-
-            if (needsCardUpdate) {
-              lines.push(`- **Card**: you have \`${card}\` ❌ (latest is \`${latestCard.tag}\` — ${latestCard.url})`);
             } else {
-              lines.push(`- **Card**: you have \`${card}\` ✅ (latest)`);
+              lines.push(
+                "Note: Your reported version looks newer than the latest GitHub release.",
+                "If you're on a dev/pre-release build, that's fine — otherwise please double-check the version number.",
+                "",
+                `- You have: \`${reported}\` ⚠️`,
+                `- Latest release: \`${latest.tag}\` — ${latest.url}`,
+                "",
+                "Thanks 🙏"
+              );
             }
-
-            if (needsSyncUpdate) {
-              lines.push(`- **Sync integration**: you have \`${sync}\` ❌ (latest is \`${latestSync.tag}\` — ${latestSync.url})`);
-            } else {
-              lines.push(`- **Sync integration**: you have \`${sync}\` ✅ (latest)`);
-            }
-
-            lines.push("", "Thanks 🙏");
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
