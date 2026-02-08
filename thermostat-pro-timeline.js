@@ -3806,7 +3806,7 @@ function ttLocalize(key, langOrHass) {
 // Simple runtime version to help with cache-busting diagnostics in HA.
 // Update this when shipping changes so the version appears in the
 // "Custom cards" panel and in logs.
-const TT_CARD_VERSION = "2026.01.18-boiler-domain";
+const TT_CARD_VERSION = "2026.02.08-away-persist";
 
 class ThermostatTimelineCard extends HTMLElement {
   static get version() { return TT_CARD_VERSION; }
@@ -4258,11 +4258,11 @@ class ThermostatTimelineCard extends HTMLElement {
     };
 
     // Guard: Away/Presence should not be active until at least one person is selected.
+    // Keep the user's enabled toggle, but disable advanced features if no persons are set.
     try {
       const ap = Array.isArray(this._config?.away?.persons) ? this._config.away.persons.filter(Boolean).map(String) : [];
       this._config.away.persons = ap;
       if (!ap.length) {
-        this._config.away.enabled = false;
         this._config.away.advanced_enabled = false;
       }
     } catch {}
@@ -5274,10 +5274,11 @@ class ThermostatTimelineCard extends HTMLElement {
               } catch {}
             }
             // Guard: Away/Presence should not be active until at least one person is selected.
+            // Keep the enabled toggle; only disable advanced features when no persons are set.
             try {
               const ap = Array.isArray(this._config?.away?.persons) ? this._config.away.persons.filter(Boolean).map(String) : [];
               this._config.away.persons = ap;
-              if (!ap.length) { this._config.away.enabled = false; this._config.away.advanced_enabled = false; }
+              if (!ap.length) { this._config.away.advanced_enabled = false; }
             } catch {}
             // Pause flags from shared storage
             try {
@@ -5529,10 +5530,11 @@ class ThermostatTimelineCard extends HTMLElement {
       } catch {}
     }
   // Guard: Away/Presence should not be active until at least one person is selected.
+  // Keep the enabled toggle; only disable advanced features when no persons are set.
   try {
     const ap = Array.isArray(this._config?.away?.persons) ? this._config.away.persons.filter(Boolean).map(String) : [];
     this._config.away.persons = ap;
-    if (!ap.length) { this._config.away.enabled = false; this._config.away.advanced_enabled = false; }
+    if (!ap.length) { this._config.away.advanced_enabled = false; }
   } catch {}
   // Load flags from local storage copy
     try { this._pauseIndef = !!s.pause_indef; const pu = Number(s.pause_until_ms); this._pauseUntilMs = Number.isFinite(pu) ? pu : 0; } catch {}
@@ -5712,7 +5714,7 @@ class ThermostatTimelineCard extends HTMLElement {
     const mode = this._config?.storage_sync_mode || 'instant';
     const secsCfg = Number(this._config?.storage_sync_sec || 0);
     const secs = Math.max(5, Math.min(86400, Number.isFinite(secsCfg) ? secsCfg : Math.max(0, Number(this._config?.storage_sync_min || 0))*60));
-    if (this._config?.storage_enabled && mode === 'delay' && secs > 0) {
+    if (this._config?.storage_enabled && mode === 'delay' && secs > 0 && !force) {
       // Trailing save after N minutes; coalesce multiple changes
       const delayMs = secs * 1000;
       if (this._storeDelayTimer) try { clearTimeout(this._storeDelayTimer); } catch {}
@@ -6041,9 +6043,10 @@ class ThermostatTimelineCard extends HTMLElement {
       const awayCfg = this._config?.away || {};
       const awayOut = { ...awayCfg };
       // Guard: Away/Presence should not be active until at least one person is selected.
+      // Keep enabled toggle; only disable advanced features when no persons are set.
       try {
         awayOut.persons = Array.isArray(awayOut.persons) ? awayOut.persons.filter(Boolean).map(String) : [];
-        if (!awayOut.persons.length) { awayOut.enabled = false; awayOut.advanced_enabled = false; }
+        if (!awayOut.persons.length) { awayOut.advanced_enabled = false; }
       } catch {}
       if (typeof awayOut.target_c !== 'undefined') awayOut.target_c = toStore(awayOut.target_c);
       const settings = {
@@ -15644,7 +15647,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const pctStart=(b.startMin/1440)*100, pctW=((b.endMin-b.startMin)/1440)*100; const bl=document.createElement('div'); bl.className='block'; bl.style.left=pctStart+'%'; bl.style.width=pctW+'%';
   try { const clr=this._colorFor(this._holidayRoom, b.temp); if (clr){ bl.style.background=clr; bl.style.borderColor=clr; const txt=this._contrastTextColor(clr); if (txt) bl.style.color=txt; } } catch {}
       UiHelper.genBlockPill(
-        this, b,
+        this, bl,
         `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
       );
       bl.addEventListener('dblclick', ()=> this._openHolidayBlockEditor(b.id));
