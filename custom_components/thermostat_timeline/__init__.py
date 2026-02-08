@@ -1391,6 +1391,47 @@ class AutoApplyManager:
         except Exception:
             return ""
 
+    def _season_key(self, settings: dict) -> str:
+        try:
+            return "summer" if str(settings.get("seasonal_mode") or "winter").lower().strip() == "summer" else "winter"
+        except Exception:
+            return "winter"
+
+    def _seasonal_row(self, row: dict, settings: dict) -> dict:
+        """Return row view using seasonal data when enabled."""
+        try:
+            if not bool(settings.get("seasonal_enabled")):
+                return row
+            seasons = row.get("seasons") if isinstance(row, dict) else None
+            if not isinstance(seasons, dict):
+                return row
+            key = self._season_key(settings)
+            srow = seasons.get(key)
+            if not isinstance(srow, dict):
+                return row
+            out = dict(row)
+            # Blocks: if missing in season, treat as empty (do not inherit).
+            if isinstance(srow.get("blocks"), list):
+                out["blocks"] = srow.get("blocks")
+            else:
+                out["blocks"] = []
+            # Weekly/weekly_modes/presence: if missing, remove to avoid inheriting base data.
+            if "weekly" in srow:
+                out["weekly"] = srow.get("weekly")
+            else:
+                out.pop("weekly", None)
+            if "weekly_modes" in srow:
+                out["weekly_modes"] = srow.get("weekly_modes")
+            else:
+                out.pop("weekly_modes", None)
+            if "presence" in srow:
+                out["presence"] = srow.get("presence")
+            else:
+                out.pop("presence", None)
+            return out
+        except Exception:
+            return row
+
     def _is_holiday_active(self, settings: dict) -> bool:
         """Determine whether Holiday mode is active.
 
@@ -1422,6 +1463,11 @@ class AutoApplyManager:
             return False
 
     def _effective_blocks_today(self, row: dict, settings: dict):
+        # Apply seasonal selection first (affects blocks/weekly/presence buckets).
+        try:
+            row = self._seasonal_row(row, settings)
+        except Exception:
+            pass
         # Holidays override have highest precedence when enabled and active.
         # Note: only apply holiday override when this room actually has holiday blocks.
         try:
@@ -1951,6 +1997,8 @@ class AutoApplyManager:
                 ("boiler_rooms" in settings)
                 or ("boiler_on_offset" in settings)
                 or ("boiler_off_offset" in settings)
+                or ("boiler_multi_enabled" in settings)
+                or ("boiler_room_settings" in settings)
             )
 
             if use_schedule_mode:
@@ -1958,11 +2006,37 @@ class AutoApplyManager:
                 merges = (settings.get("merges") or {}) if isinstance(settings, dict) else {}
 
                 rooms = None
-                br = settings.get("boiler_rooms")
-                if isinstance(br, list):
-                    rooms = [str(x).strip() for x in br if str(x).strip()]
-                    if len(rooms) == 0:
-                        return
+                if bool(settings.get("boiler_multi_enabled")):
+                    try:
+                        room_cfgs = settings.get("boiler_room_settings")
+                        if isinstance(room_cfgs, dict):
+                            rooms = []
+                            for eid, rc in room_cfgs.items():
+                                if not (isinstance(eid, str) and eid.startswith("climate.")):
+                                    continue
+                                if not (isinstance(rc, dict) and bool(rc.get("enabled"))):
+                                    continue
+                                sw = str(rc.get("switch") or "").strip()
+                                if not sw:
+                                    continue
+                                if "." not in sw:
+                                    dom = str(rc.get("switch_domain") or "").strip().lower()
+                                    if dom in ("switch", "input_boolean"):
+                                        sw = f"{dom}.{sw}"
+                                if "." not in sw:
+                                    continue
+                                rooms.append(eid)
+                            if not rooms:
+                                return
+                    except Exception:
+                        rooms = None
+
+                if rooms is None:
+                    br = settings.get("boiler_rooms")
+                    if isinstance(br, list):
+                        rooms = [str(x).strip() for x in br if str(x).strip()]
+                        if len(rooms) == 0:
+                            return
                 if rooms is None:
                     rooms = sorted(list(self._all_targets(schedules if isinstance(schedules, dict) else {}, merges)))
 
@@ -2088,22 +2162,13 @@ class AutoApplyManager:
             if not bool(settings.get("boiler_enabled")):
                 return
 
-            sw = settings.get("boiler_switch")
-            if not isinstance(sw, str) or "." not in sw:
-                return
-            sw_domain = sw.split(".", 1)[0]
-            if sw_domain not in ("switch", "input_boolean"):
-                return
-
             use_schedule_mode = (
                 ("boiler_rooms" in settings)
                 or ("boiler_on_offset" in settings)
                 or ("boiler_off_offset" in settings)
+                or ("boiler_multi_enabled" in settings)
+                or ("boiler_room_settings" in settings)
             )
-
-            # Determine current boiler state up-front (used by both modes)
-            st_sw = self.hass.states.get(sw)
-            cur = str(st_sw.state).lower().strip() if st_sw else ""
 
             if use_schedule_mode:
                 schedules, settings = self._get_data()
@@ -2131,6 +2196,138 @@ class AutoApplyManager:
                     off_offset_c = float(settings.get("boiler_off_offset", 0.0) or 0.0)
                 except Exception:
                     off_offset_c = 0.0
+
+                # Multi-boiler mode
+                if bool(settings.get("boiler_multi_enabled")):
+                    room_cfgs = settings.get("boiler_room_settings")
+                    if not isinstance(room_cfgs, dict):
+                        return
+
+                    def _clamp_offset(v):
+                        try:
+                            n = float(v)
+                            return max(-10.0, min(10.0, n))
+                        except Exception:
+                            return None
+
+                    groups = {}
+                    for eid, rc in room_cfgs.items():
+                        try:
+                            if not (isinstance(eid, str) and eid.startswith("climate.")):
+                                continue
+                            if not (isinstance(rc, dict) and bool(rc.get("enabled"))):
+                                continue
+                            sw = str(rc.get("switch") or "").strip()
+                            if not sw:
+                                continue
+                            if "." not in sw:
+                                dom = str(rc.get("switch_domain") or "").strip().lower()
+                                if dom in ("switch", "input_boolean"):
+                                    sw = f"{dom}.{sw}"
+                            if "." not in sw:
+                                continue
+                            sw_domain = sw.split(".", 1)[0]
+                            if sw_domain not in ("switch", "input_boolean"):
+                                continue
+                            on_off = _clamp_offset(rc.get("on_offset"))
+                            off_off = _clamp_offset(rc.get("off_offset"))
+                            entry = {
+                                "eid": eid,
+                                "on_off": on_off if on_off is not None else on_offset_c,
+                                "off_off": off_off if off_off is not None else off_offset_c,
+                            }
+                            groups.setdefault(sw, []).append(entry)
+                        except Exception:
+                            continue
+
+                    if not groups:
+                        return
+
+                    now_min = self._now_min()
+                    for sw, rooms in groups.items():
+                        try:
+                            if not rooms:
+                                continue
+                            st_sw = self.hass.states.get(sw)
+                            cur = str(st_sw.state).lower().strip() if st_sw else ""
+
+                            any_below = False
+                            all_above = True
+                            any_seen = False
+                            any_unknown = False
+
+                            for r in rooms:
+                                try:
+                                    desired_c = self._desired_for(r["eid"], schedules, settings, now_min)
+                                    if desired_c is None:
+                                        any_unknown = True
+                                        continue
+                                    st = self.hass.states.get(r["eid"])
+                                    if not st:
+                                        any_unknown = True
+                                        continue
+                                    attrs = st.attributes or {}
+                                    cur_ha = attrs.get("current_temperature")
+                                    if cur_ha is None:
+                                        cur_ha = attrs.get("temperature")
+                                    if cur_ha is None:
+                                        any_unknown = True
+                                        continue
+                                    cur_c = _to_c_from_ha(float(cur_ha))
+                                    any_seen = True
+                                    if cur_c < (float(desired_c) - float(r.get("on_off", on_offset_c))):
+                                        any_below = True
+                                        all_above = False
+                                        break
+                                    if cur_c < (float(desired_c) + float(r.get("off_off", off_offset_c))):
+                                        all_above = False
+                                except Exception:
+                                    any_unknown = True
+                                    continue
+
+                            if not any_seen:
+                                continue
+
+                            want = None
+                            if any_below:
+                                want = "on"
+                            else:
+                                if any_unknown:
+                                    continue
+                                if all_above:
+                                    want = "off"
+                                else:
+                                    continue
+
+                            if want == "on" and cur == "on":
+                                continue
+                            if want == "off" and cur == "off":
+                                continue
+
+                            sw_domain = sw.split(".", 1)[0]
+                            if sw_domain not in ("switch", "input_boolean"):
+                                continue
+                            await self.hass.services.async_call(
+                                sw_domain,
+                                "turn_on" if want == "on" else "turn_off",
+                                {"entity_id": sw},
+                                blocking=False,
+                            )
+                        except Exception:
+                            continue
+                    return
+
+                # Single-boiler mode
+                sw = settings.get("boiler_switch")
+                if not isinstance(sw, str) or "." not in sw:
+                    return
+                sw_domain = sw.split(".", 1)[0]
+                if sw_domain not in ("switch", "input_boolean"):
+                    return
+
+                # Determine current boiler state up-front (used by single mode)
+                st_sw = self.hass.states.get(sw)
+                cur = str(st_sw.state).lower().strip() if st_sw else ""
 
                 merges = settings.get("merges") or {}
                 rooms = None
