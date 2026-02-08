@@ -36,18 +36,19 @@ jobs:
               const n = normalizeVersion(v).toLowerCase();
               if (!n) return true;
               if (["n/a", "na", "unknown", "none", "-"].includes(n)) return true;
-              if (/^(?:0+\.)+0+$/.test(n)) return true; // 0.0 / 0.0.0 / ...
+              if (/^(?:0+\.)+0+$/.test(n)) return true; // 0.0 / 0.0.0 / 0.0.0.0 ...
               return false;
             }
 
-            // Accept: 1.2, 1.2.3, v1.2.3, 1.2.3-beta.1, 1.2.3+build
-            const SEMVERISH = /^(?:v)?\d+\.\d+(?:\.\d+)?(?:[-+][0-9A-Za-z\.-]+)?$/;
+            // Accept ONLY: X.Y.Z (optionally prefixed with v) + optional prerelease/build
+            // Examples: 1.2.3, v1.2.3, 10.30.40, 1.2.3-beta.1, 1.2.3+build
+            const SEMVERISH = /^(?:v)?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z\.-]+)?$/;
 
             function parseSemverish(v) {
               const n = normalizeVersion(v);
-              const m = n.match(/(\d+)\.(\d+)(?:\.(\d+))?/);
+              const m = n.match(/(\d+)\.(\d+)\.(\d+)/); // require X.Y.Z
               if (!m) return null;
-              return { major: +m[1], minor: +m[2], patch: +(m[3] ?? 0) };
+              return { major: +m[1], minor: +m[2], patch: +m[3] };
             }
 
             function cmp(a, b) {
@@ -89,7 +90,6 @@ jobs:
                 try {
                   const rel = await github.rest.repos.listReleases({ owner, repo, per_page: 20 });
                   const releases = (rel?.data || []).filter(r => !r.draft);
-                  // pick first non-prerelease if possible, otherwise first release
                   const best = releases.find(r => !r.prerelease) || releases[0];
                   if (!best) throw new Error("No releases found");
                   const tag = best.tag_name || '';
@@ -111,15 +111,12 @@ jobs:
               try { return JSON.parse(s0.slice(start, end + 1)); } catch { return null; }
             }
 
-            // version core:
-            // - allows 1.2.3 or 1.2 (but not partial matches inside 1.0.2 like "0.2")
-            // - we enforce: NOT preceded by a dot (so we can't start mid-version)
-            const versionCore = String.raw`(?:v)?(?:\d+\.\d+\.\d+|\d+\.\d+(?!\.\d))(?:[-+][0-9A-Za-z\.-]+)?`;
+            // version core: ONLY X.Y.Z (+ optional prerelease/build), and not mid-match inside another dotted number
+            const versionCore = String.raw`(?:v)?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z\.-]+)?`;
 
             function extractVersionRegex(text) {
               const t = text || "";
 
-              // Try to find versions near typical "version" words first
               const kw = /(?:\bversion\b|\bver\b|\bv\.\b|\binstalled\b|\binstallation\b|\baddon\b|\bintegration\b|\bplugin\b|\bhacs\b|\brelease\b)/i;
 
               const near = new RegExp(
@@ -135,7 +132,6 @@ jobs:
               for (const m of t.matchAll(near)) if (m?.[1]) candidates.push(m[1]);
               for (const m of t.matchAll(before)) if (m?.[1]) candidates.push(m[1]);
 
-              // Fallback: if nothing near keywords, grab all semverish and pick the highest
               if (candidates.length === 0) {
                 const all = new RegExp(String.raw`\b(?<!\.)(` + versionCore + String.raw`)\b`, 'ig');
                 for (const m of t.matchAll(all)) if (m?.[1]) candidates.push(m[1]);
@@ -160,8 +156,9 @@ jobs:
                       "Rules:",
                       "- If you are not sure, return empty string.",
                       "- Do NOT invent versions.",
-                      "- Treat placeholders like 0.0, 0.0.0, N/A, unknown as empty string.",
-                      "- Accept versions like: 1.2, 1.2.3, v1.2.3, 1.2.3-beta.1",
+                      "- Treat placeholders like 0.0.0, N/A, unknown as empty string.",
+                      "- Accept ONLY versions like: 1.2.3, v1.2.3, 10.30.40, 1.2.3-beta.1, 1.2.3+build",
+                      "- If the text only has 1.2 (two-part), return empty string.",
                       "- Prefer the version that refers to THIS repository's installation/integration.",
                       "- Ignore unrelated versions (e.g., Home Assistant core, OS, HACS, other addons).",
                     ].join("\n"),
@@ -195,7 +192,7 @@ jobs:
               return v;
             }
 
-            // --- Decide what to scan (prefer comment, fill from body) ---
+            // --- Decide what to scan (comment vs body) ---
             const payload = context.payload;
             const issue = payload.issue;
             const issueNumber = issue.number;
@@ -211,20 +208,56 @@ jobs:
               commentText = comment.body || "";
             }
 
-            // Extract reported version (prefer comment, then body)
             let reported = "";
 
-            if (commentText) {
+            if (context.eventName === "issue_comment") {
+              // IMPORTANT: On comments, ONLY scan the comment. No fallback to issue body.
               reported = await extractVersionAI(commentText);
               if (!reported) reported = extractVersionRegex(commentText);
-            }
-
-            if (!reported) {
+              if (!reported) return; // comment didn't contain a version => do nothing
+            } else {
+              // issues opened/edited: scan issue body
               reported = await extractVersionAI(bodyText);
               if (!reported) reported = extractVersionRegex(bodyText);
-            }
 
-            if (!reported) return;
+              if (!reported) {
+                // Ask ONLY on issue creation (opened), and only once
+                if (payload.action !== "opened") return;
+
+                const existingComments = await github.rest.issues.listComments({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  per_page: 100,
+                });
+
+                const repoFull = `${context.repo.owner}/${context.repo.repo}`;
+                const missingSig = `Checked version: repo=${repoFull}, status=missing`;
+
+                const alreadyAsked = (existingComments.data || []).some(c =>
+                  (c.body || "").includes(marker) &&
+                  (c.body || "").includes(missingSig)
+                );
+                if (alreadyAsked) return;
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  body: [
+                    marker,
+                    missingSig,
+                    "",
+                    "Hej! Jeg kan ikke se nogen version i din issue-beskrivelse.",
+                    "Skriv venligst hvilken version du kører i formatet `vX.Y.Z` eller `X.Y.Z` (fx `v10.30.40`).",
+                    "",
+                    "Tak 🙏"
+                  ].join("\n"),
+                });
+
+                return;
+              }
+            }
 
             // Fetch latest release for THIS repo
             const latest = await getLatestTagThisRepo();
