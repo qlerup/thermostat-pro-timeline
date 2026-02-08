@@ -25,12 +25,13 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 - 🏷️ **Profiles**: Named day schedules per room, with quick activate/deactivate and full profile management from the card.
 - 👥 **Presence schedules**: Advanced “who’s home” logic, per-person selection, presence sensors, and Away mode with delays and combinations.
 - 🎉 **Holidays**: Separate schedule for holidays, with support for calendar entities or manual date lists.
+- 🌤️ **Seasonal schedules**: Summer/Winter modes with separate schedules per season, managed in the card and applied in the backend.
 - ⚡ **Auto-apply setpoint**: Instantly applies setpoint to `climate.*` or `input_number.*` at “now”; can also auto-apply on edit or default changes.
 - ⏸️ **Global Pause**: Pause all automation via a button or binary sensor; suppresses all set_temperature commands.
 - 🌡️ **Room temperature bubble**: Shows current temperature per room, with optional override sensor per room.
 - ➕ **Merge thermostats**: Merge multiple thermostats under one room line; supports `turn_on` sequencing (before/after setpoint).
 - 🪟 **Open Window Detection (OWD)**: Turns off rooms when window/door sensors are open, with configurable open/close delays.
-- 🔥 **Boiler control**: Control a boiler (switch or input_boolean) with hysteresis, min/max limits, and optional boiler temperature sensor. Assign rooms, offsets, and domain.
+- 🔥 **Boiler control**: Control one or multiple boilers (switch or input_boolean) with hysteresis, min/max limits, optional boiler temperature sensor, room assignment, and per‑room offsets. Runs in the backend.
 - 🎨 **Color ranges**: Custom color palettes for heat/cool blocks, per-room or global. Full color mapping for temperature intervals.
 - 🗄️ **Shared, multi-user storage**: File-based storage in the integration; no helper sensor required. Multi-user and multi-dashboard safe.
 - 🗂️ **Multi-instance support**: Separate schedules/settings by `instance_id` (e.g., “winter”, “summer”); switch or rename via services.
@@ -44,7 +45,7 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 - ⏱️ **Presence sensor delays and units**: Configure on/off delays and units (seconds/minutes) for presence sensors.
 - 🏡 **Away mode combinations**: Advanced editor for presence/away combinations and delays.
 - 📆 **Holiday sources**: Use calendar entities or manual date lists for holidays.
-- 🏢 **Boiler room assignment**: Assign boiler control to specific rooms or all climate rooms.
+- 🏢 **Boiler room assignment**: Assign boiler control to specific rooms, multiple boilers, or all climate rooms.
 - 📉 **Boiler temperature clamp**: Clamp boiler operation by min/max temperature when using a boiler temp sensor.
 - 🕒 **Storage sync modes**: Choose instant or delayed storage sync, with configurable batching.
 - 🌍 **Internationalization**: Fully localized card with auto-detection and support for 12+ languages.
@@ -203,6 +204,11 @@ Holidays
 - holidays_entity: calendar.* or a binary sensor that is on during holidays
 - holidays_dates: [ "YYYY-MM-DD", ... ] manual date list when using manual source
 
+Seasonal schedules (Summer/Winter)
+
+- seasonal_enabled: true/false to enable separate Summer/Winter schedules per room.
+- seasonal_mode: winter | summer to select which season is active.
+
 Open Window Detection (OWD)
 
 - open_window:
@@ -211,7 +217,7 @@ Open Window Detection (OWD)
 	- open_delay_min: minutes to wait before turning off when open
 	- close_delay_min: minutes to wait before resuming when closed
 
-Boiler control (frontend‑side)
+Boiler control (backend)
 
 - boiler_enabled: true/false to turn on boiler tools in the editor/runtime.
 - boiler_switch: switch.* or input_boolean.* to control the boiler/relay.
@@ -220,6 +226,13 @@ Boiler control (frontend‑side)
 - boiler_on_offset / boiler_off_offset: °C hysteresis relative to current target.
 - boiler_temp_sensor: sensor.* to control boiler by its own temperature if desired.
 - boiler_min_temp / boiler_max_temp: clamp when using boiler_temp_sensor.
+- boiler_multi_enabled: true/false to enable per‑room boiler assignment.
+- boiler_room_settings: per‑room mapping for multi‑boiler mode:
+	- climate.living_room:
+		- enabled: true/false
+		- switch: switch.boiler_1 (or input_boolean.boiler_1)
+		- switch_domain: switch | input_boolean (optional if entity id includes domain)
+		- on_offset / off_offset: optional per‑room offsets (°C)
 
 Color ranges
 
