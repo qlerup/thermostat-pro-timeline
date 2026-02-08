@@ -132,6 +132,12 @@ const TT_I18N = {
   'week.view.days_one_room': 'All days • one room',
   'week.view_switch.title': 'Switch view from timeline',
   'week.view_switch.desc': 'Show a toggle in the timeline header to switch between the two Weekdays view modes.',
+  'week.copy_from_main.title': 'Copy main schedule',
+  'week.copy_from_main.desc': 'You enabled weekdays. Do you want to copy the main schedule into weekdays? Choose the weekday mode to copy into.',
+  'week.copy_from_main.mode_label': 'Weekday mode',
+  'week.copy_from_main.target_label': 'Copy to',
+  'week.copy_from_main.copy_btn': 'Copy',
+  'week.copy_from_main.skip_btn': 'Don’t copy',
   'week.select_room': 'Select room',
   'week.copy_to_rooms': 'Copy weekdays to rooms',
   'week.copy_to_rooms.title': 'Copy weekdays to rooms',
@@ -192,6 +198,12 @@ const TT_I18N = {
   'boiler.switch_type.input_boolean': 'Input boolean',
   'boiler.rooms': 'Rooms included',
   'boiler.rooms.desc': 'Select which rooms should be included in boiler control.',
+  'boiler.multi_enable': 'Enable multiple boilers',
+  'boiler.multi_enable.desc': 'Assign rooms to different boilers and set per-room offsets.',
+  'boiler.multi_rooms': 'Boiler per room',
+  'boiler.multi_rooms.desc': 'Select boiler switch and offsets for each room.',
+  'boiler.room.enable': 'Include room',
+  'boiler.room.enable.desc': 'Include this room in boiler control.',
   'boiler.enable': 'Enable boiler control',
   'boiler.enable.desc': 'Show boiler settings in this card editor.',
   'boiler.temp_sensor': 'Boiler temperature sensor',
@@ -320,6 +332,11 @@ const TT_I18N = {
 
   'profiles.enable': 'Enable profiles (override)',
   'profiles.enable.desc': 'Allow named day schedules that can be activated to override the main plan.',
+  'season.enable.title': 'Enable summer/winter schedules',
+  'season.enable.desc': 'When enabled, each schedule has separate Summer and Winter versions that you can switch between.',
+  'season.mode.title': 'Season',
+  'season.mode.winter': 'Winter',
+  'season.mode.summer': 'Summer',
   'profiles.button': 'Profiles',
   'profiles.editor.title': 'Profiles',
   'profiles.add': 'Add profile',
@@ -512,6 +529,12 @@ const TT_I18N = {
     'week.view.days_one_room': 'Alle dage • ét rum',
     'week.view_switch.title': 'Skift visning fra tidslinjen',
     'week.view_switch.desc': 'Vis en toggle i tidslinjens header, så du kan skifte ugedags-visning uden at åbne indstillinger.',
+    'week.copy_from_main.title': 'Kopiér main‑skema',
+    'week.copy_from_main.desc': 'Du har slået ugedage til. Vil du kopiere main‑skemaet over i ugedage? Vælg ugedags‑mode der kopieres til.',
+    'week.copy_from_main.mode_label': 'Ugedags‑mode',
+    'week.copy_from_main.target_label': 'Kopiér til',
+    'week.copy_from_main.copy_btn': 'Kopiér',
+    'week.copy_from_main.skip_btn': 'Kopiér ikke',
     'week.select_room': 'Vælg rum',
     'week.copy_to_rooms': 'Kopiér ugedage til rum',
     'week.copy_to_rooms.title': 'Kopiér ugedage til rum',
@@ -564,6 +587,12 @@ const TT_I18N = {
     'boiler.switch_type.input_boolean': 'Input boolean',
     'boiler.rooms': 'Rum der er med',
     'boiler.rooms.desc': 'Vælg hvilke rum der skal være med i kedelstyringen.',
+    'boiler.multi_enable': 'Slå flere boilers til',
+    'boiler.multi_enable.desc': 'Vælg hvilken kedel hvert rum skal bruge, og angiv offsets pr. rum.',
+    'boiler.multi_rooms': 'Kedel pr. rum',
+    'boiler.multi_rooms.desc': 'Vælg kedel‑switch og offsets for hvert rum.',
+    'boiler.room.enable': 'Medtag rum',
+    'boiler.room.enable.desc': 'Medtag dette rum i kedelstyringen.',
     'boiler.enable': 'Aktivér kedelstyring',
     'boiler.enable.desc': 'Vis kedelindstillinger i denne cards editor.',
     'boiler.temp_sensor': 'Kedel temperatursensor',
@@ -683,6 +712,11 @@ const TT_I18N = {
     'editor.integration.disconnected': 'Integration ikke tilgængelig',
     'profiles.enable': 'Aktivér skema overrule',
     'profiles.enable.desc': 'Tillad navngivne dagsskemaer som kan aktiveres og overrule hovedplanen.',
+    'season.enable.title': 'Aktivér sommer-/vinterskema',
+    'season.enable.desc': 'Når aktiv, får hver tidsplan både en Sommer- og en Vinter-version, som du kan skifte mellem.',
+    'season.mode.title': 'Sæson',
+    'season.mode.winter': 'Vinter',
+    'season.mode.summer': 'Sommer',
     'profiles.button': 'Manuelt skema',
     'profiles.editor.title': 'Skemaer',
     'profiles.add': 'Tilføj skema',
@@ -1043,6 +1077,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Input boolean'
   , 'boiler.rooms': 'Rum som ingår'
   , 'boiler.rooms.desc': 'Välj vilka rum som ska ingå i pannstyrningen.'
+  , 'boiler.multi_enable': 'Aktivera flera pannor'
+  , 'boiler.multi_enable.desc': 'Tilldela rum till olika pannor och ange offsets per rum.'
+  , 'boiler.multi_rooms': 'Panna per rum'
+  , 'boiler.multi_rooms.desc': 'Välj pannbrytare och offsets för varje rum.'
+  , 'boiler.room.enable': 'Inkludera rum'
+  , 'boiler.room.enable.desc': 'Inkludera detta rum i pannstyrningen.'
   , 'boiler.enable': 'Aktivera pannstyrning'
   , 'boiler.enable.desc': 'Visa panninställningar i den här korteditorn.'
   , 'boiler.temp_sensor': 'Pannans temperatursensor'
@@ -1058,6 +1098,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Chips visas i högra hörnet.'
   , 'profiles.enable': 'Aktivera profiler (åsidosättning)'
   , 'profiles.enable.desc': 'Tillåt namngivna dagsscheman som kan aktiveras för att åsidosätta huvudplanen.'
+  , 'season.enable.title': 'Aktivera sommar-/vinterscheman'
+  , 'season.enable.desc': 'När aktiverat får varje schema en Sommar- och en Vinter-version som du kan växla mellan.'
+  , 'season.mode.title': 'Säsong'
+  , 'season.mode.winter': 'Vinter'
+  , 'season.mode.summer': 'Sommar'
   , 'profiles.active_label': 'Manuell profil aktiv:'
   , 'profiles.save_new': 'Spara ny profil'
   , 'profiles.save_existing': 'Spara ändringar i vald profil'
@@ -1066,6 +1111,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Alla dagar • ett rum'
   , 'week.view_switch.title': 'Byt vy från tidslinjen'
   , 'week.view_switch.desc': 'Visa en växlare i tidslinjens rubrik så att du kan byta mellan de två veckodagsvisningarna.'
+  , 'week.copy_from_main.title': 'Kopiera huvudschema'
+  , 'week.copy_from_main.desc': 'Du aktiverade veckodagar. Vill du kopiera huvudschemat till veckodagar? Välj veckodagsläge att kopiera till.'
+  , 'week.copy_from_main.mode_label': 'Veckodagsläge'
+  , 'week.copy_from_main.target_label': 'Kopiera till'
+  , 'week.copy_from_main.copy_btn': 'Kopiera'
+  , 'week.copy_from_main.skip_btn': 'Kopiera inte'
   , 'week.title': 'Veckodagar'
   , 'week.select_room': 'Välj rum'
   , 'err.config_entities': "Konfigurationen måste ha 'entities: [climate.xxx, ...]'."
@@ -1378,6 +1429,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Input boolean'
   , 'boiler.rooms': 'Rom som er med'
   , 'boiler.rooms.desc': 'Velg hvilke rom som skal være med i kjelstyringen.'
+  , 'boiler.multi_enable': 'Aktiver flere kjeler'
+  , 'boiler.multi_enable.desc': 'Tildel rom til ulike kjeler og sett forskyvninger per rom.'
+  , 'boiler.multi_rooms': 'Kjel per rom'
+  , 'boiler.multi_rooms.desc': 'Velg kjelbryter og forskyvninger for hvert rom.'
+  , 'boiler.room.enable': 'Inkluder rom'
+  , 'boiler.room.enable.desc': 'Inkluder dette rommet i kjelstyringen.'
   , 'boiler.enable': 'Aktiver kjelstyring'
   , 'boiler.enable.desc': 'Vis kjelinnstillinger i denne kort‑editoren.'
   , 'boiler.temp_sensor': 'Kjelens temperatursensor'
@@ -1393,6 +1450,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Chips vises i høyre hjørne.'
   , 'profiles.enable': 'Aktiver profiler (overstyring)'
   , 'profiles.enable.desc': 'Tillat navngitte dagsskjemaer som kan aktiveres for å overstyre hovedplanen.'
+  , 'season.enable.title': 'Aktiver sommer-/vinterplaner'
+  , 'season.enable.desc': 'Når aktivert får hver plan en Sommer- og en Vinter-versjon som du kan bytte mellom.'
+  , 'season.mode.title': 'Sesong'
+  , 'season.mode.winter': 'Vinter'
+  , 'season.mode.summer': 'Sommer'
   , 'profiles.active_label': 'Manuell profil aktiv:'
   , 'profiles.save_new': 'Lagre ny profil'
   , 'profiles.save_existing': 'Lagre endringer i valgt profil'
@@ -1401,6 +1463,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Alle dager • ett rom'
   , 'week.view_switch.title': 'Bytt visning fra tidslinjen'
   , 'week.view_switch.desc': 'Vis en bryter i tidslinjens toppfelt for å bytte mellom de to ukedagsvisningene.'
+  , 'week.copy_from_main.title': 'Kopier hovedplan'
+  , 'week.copy_from_main.desc': 'Du aktiverte ukedager. Vil du kopiere hovedplanen til ukedager? Velg ukedagsmodus å kopiere til.'
+  , 'week.copy_from_main.mode_label': 'Ukedagsmodus'
+  , 'week.copy_from_main.target_label': 'Kopier til'
+  , 'week.copy_from_main.copy_btn': 'Kopier'
+  , 'week.copy_from_main.skip_btn': 'Ikke kopier'
   , 'week.title': 'Ukedager'
   , 'week.select_room': 'Velg rom'
   , 'err.config_entities': "Konfig må ha 'entities: [climate.xxx, ...]'."
@@ -1712,6 +1780,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Input Boolean'
   , 'boiler.rooms': 'Einbezogene Räume'
   , 'boiler.rooms.desc': 'Wähle, welche Räume in der Kesselsteuerung berücksichtigt werden.'
+  , 'boiler.multi_enable': 'Mehrere Kessel aktivieren'
+  , 'boiler.multi_enable.desc': 'Räume verschiedenen Kesseln zuweisen und Offsets pro Raum setzen.'
+  , 'boiler.multi_rooms': 'Kessel pro Raum'
+  , 'boiler.multi_rooms.desc': 'Kesselschalter und Offsets pro Raum auswählen.'
+  , 'boiler.room.enable': 'Raum einbeziehen'
+  , 'boiler.room.enable.desc': 'Diesen Raum in die Kesselsteuerung einbeziehen.'
   , 'boiler.enable': 'Kesselsteuerung aktivieren'
   , 'boiler.enable.desc': 'Kesseleinstellungen in diesem Karten‑Editor anzeigen.'
   , 'boiler.temp_sensor': 'Kessel‑Temperatursensor'
@@ -1727,6 +1801,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Chips werden in der rechten Ecke angezeigt.'
   , 'profiles.enable': 'Profile aktivieren (Überschreiben)'
   , 'profiles.enable.desc': 'Benannte Tagespläne erlauben, die den Hauptplan bei Aktivierung überschreiben.'
+  , 'season.enable.title': 'Sommer-/Winterpläne aktivieren'
+  , 'season.enable.desc': 'Wenn aktiviert, hat jeder Plan eine Sommer- und eine Winter-Version, zwischen denen du wechseln kannst.'
+  , 'season.mode.title': 'Saison'
+  , 'season.mode.winter': 'Winter'
+  , 'season.mode.summer': 'Sommer'
   , 'profiles.active_label': 'Manuelles Profil aktiv:'
   , 'profiles.save_new': 'Neues Profil speichern'
   , 'profiles.save_existing': 'Änderungen im ausgewählten Profil speichern'
@@ -1735,6 +1814,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Alle Tage • ein Raum'
   , 'week.view_switch.title': 'Ansicht in der Zeitleiste wechseln'
   , 'week.view_switch.desc': 'Zeigt einen Umschalter in der Kopfzeile der Zeitleiste, um zwischen den beiden Wochentagsansichten zu wechseln.'
+  , 'week.copy_from_main.title': 'Hauptplan kopieren'
+  , 'week.copy_from_main.desc': 'Du hast Wochentage aktiviert. Soll der Hauptplan in die Wochentage kopiert werden? Wähle den Wochentagsmodus zum Kopieren.'
+  , 'week.copy_from_main.mode_label': 'Wochentagsmodus'
+  , 'week.copy_from_main.target_label': 'Kopieren nach'
+  , 'week.copy_from_main.copy_btn': 'Kopieren'
+  , 'week.copy_from_main.skip_btn': 'Nicht kopieren'
   , 'week.title': 'Wochentage'
   , 'week.select_room': 'Raum auswählen'
   , 'err.config_entities': "Die Konfiguration muss 'entities: [climate.xxx, ...]' enthalten."
@@ -2046,6 +2131,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Booleano de entrada'
   , 'boiler.rooms': 'Habitaciones incluidas'
   , 'boiler.rooms.desc': 'Selecciona qué habitaciones deben incluirse en el control de la caldera.'
+  , 'boiler.multi_enable': 'Habilitar varias calderas'
+  , 'boiler.multi_enable.desc': 'Asigna habitaciones a distintas calderas y define offsets por habitación.'
+  , 'boiler.multi_rooms': 'Caldera por habitación'
+  , 'boiler.multi_rooms.desc': 'Selecciona el interruptor de caldera y los offsets para cada habitación.'
+  , 'boiler.room.enable': 'Incluir habitación'
+  , 'boiler.room.enable.desc': 'Incluir esta habitación en el control de la caldera.'
   , 'boiler.enable': 'Activar control de caldera'
   , 'boiler.enable.desc': 'Mostrar ajustes de caldera en el editor de esta tarjeta.'
   , 'boiler.temp_sensor': 'Sensor de temperatura de caldera'
@@ -2061,6 +2152,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Las fichas se muestran en la esquina derecha.'
   , 'profiles.enable': 'Habilitar perfiles (sobrescribir)'
   , 'profiles.enable.desc': 'Permitir horarios diarios con nombre que puedas activar para sobrescribir el plan principal.'
+  , 'season.enable.title': 'Habilitar horarios de verano/invierno'
+  , 'season.enable.desc': 'Cuando está habilitado, cada horario tiene versiones de Verano e Invierno que puedes alternar.'
+  , 'season.mode.title': 'Temporada'
+  , 'season.mode.winter': 'Invierno'
+  , 'season.mode.summer': 'Verano'
   , 'profiles.active_label': 'Perfil manual activo:'
   , 'profiles.save_new': 'Guardar perfil nuevo'
   , 'profiles.save_existing': 'Guardar cambios en el perfil seleccionado'
@@ -2069,6 +2165,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Todos los días • una habitación'
   , 'week.view_switch.title': 'Cambiar vista desde la línea de tiempo'
   , 'week.view_switch.desc': 'Muestra un selector en el encabezado de la línea de tiempo para alternar entre los dos modos de vista de los días de la semana.'
+  , 'week.copy_from_main.title': 'Copiar plan principal'
+  , 'week.copy_from_main.desc': 'Activaste los días de la semana. ¿Quieres copiar el plan principal a los días de la semana? Elige el modo para copiar.'
+  , 'week.copy_from_main.mode_label': 'Modo de días de la semana'
+  , 'week.copy_from_main.target_label': 'Copiar a'
+  , 'week.copy_from_main.copy_btn': 'Copiar'
+  , 'week.copy_from_main.skip_btn': 'No copiar'
   , 'week.title': 'Días de la semana'
   , 'week.select_room': 'Seleccionar habitación'
   , 'err.config_entities': "La configuración debe tener 'entities: [climate.xxx, ...]'."
@@ -2373,6 +2475,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': "Booléen d’entrée"
   , 'boiler.rooms': 'Pièces incluses'
   , 'boiler.rooms.desc': 'Sélectionnez les pièces à inclure dans le contrôle de la chaudière.'
+  , 'boiler.multi_enable': 'Activer plusieurs chaudières'
+  , 'boiler.multi_enable.desc': 'Assignez des pièces à différentes chaudières et définissez des offsets par pièce.'
+  , 'boiler.multi_rooms': 'Chaudière par pièce'
+  , 'boiler.multi_rooms.desc': 'Sélectionnez l’interrupteur de chaudière et les offsets pour chaque pièce.'
+  , 'boiler.room.enable': 'Inclure la pièce'
+  , 'boiler.room.enable.desc': 'Inclure cette pièce dans le contrôle de la chaudière.'
   , 'boiler.enable': 'Activer le contrôle chaudière'
   , 'boiler.enable.desc': 'Afficher les réglages de chaudière dans l’éditeur de cette carte.'
   , 'boiler.temp_sensor': 'Capteur de température chaudière'
@@ -2388,6 +2496,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Les puces sont affichées dans le coin droit.'
   , 'profiles.enable': 'Activer les profils (remplacement)'
   , 'profiles.enable.desc': 'Autoriser des plannings journaliers nommés pouvant remplacer le plan principal lorsque vous les activez.'
+  , 'season.enable.title': 'Activer les plannings été/hiver'
+  , 'season.enable.desc': 'Lorsque activé, chaque planning possède une version Été et Hiver que vous pouvez alterner.'
+  , 'season.mode.title': 'Saison'
+  , 'season.mode.winter': 'Hiver'
+  , 'season.mode.summer': 'Été'
   , 'profiles.active_label': 'Profil manuel actif :'
   , 'profiles.save_new': 'Enregistrer un nouveau profil'
   , 'profiles.save_existing': 'Enregistrer les modifications du profil sélectionné'
@@ -2396,6 +2509,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Tous les jours • une pièce'
   , 'week.view_switch.title': 'Changer la vue depuis la frise'
   , 'week.view_switch.desc': 'Affiche un sélecteur dans l’en-tête de la frise pour basculer entre les deux modes de vue des jours de semaine.'
+  , 'week.copy_from_main.title': 'Copier le planning principal'
+  , 'week.copy_from_main.desc': 'Vous avez activé les jours de semaine. Voulez-vous copier le planning principal vers les jours de semaine ? Choisissez le mode à copier.'
+  , 'week.copy_from_main.mode_label': 'Mode jours de semaine'
+  , 'week.copy_from_main.target_label': 'Copier vers'
+  , 'week.copy_from_main.copy_btn': 'Copier'
+  , 'week.copy_from_main.skip_btn': 'Ne pas copier'
   , 'week.title': 'Jours de semaine'
   , 'week.select_room': 'Sélectionner une pièce'
   , 'err.config_entities': "La configuration doit contenir 'entities: [climate.xxx, ...]'."
@@ -2529,6 +2648,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Tutti i giorni • una stanza'
   , 'week.view_switch.title': 'Cambia vista dalla timeline'
   , 'week.view_switch.desc': 'Mostra un selettore nell’intestazione della timeline per passare tra le due modalità di visualizzazione dei giorni feriali.'
+  , 'week.copy_from_main.title': 'Copia programma principale'
+  , 'week.copy_from_main.desc': 'Hai attivato i giorni feriali. Vuoi copiare il programma principale nei giorni feriali? Scegli la modalità da copiare.'
+  , 'week.copy_from_main.mode_label': 'Modalità giorni feriali'
+  , 'week.copy_from_main.target_label': 'Copia in'
+  , 'week.copy_from_main.copy_btn': 'Copia'
+  , 'week.copy_from_main.skip_btn': 'Non copiare'
   , 'week.title': 'Giorni feriali'
   , 'week.select_room': 'Seleziona stanza'
   , 'week.copy_to_rooms': 'Copia settimana nelle stanze'
@@ -2580,6 +2705,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Booleano di input'
   , 'boiler.rooms': 'Stanze incluse'
   , 'boiler.rooms.desc': 'Seleziona quali stanze includere nel controllo della caldaia.'
+  , 'boiler.multi_enable': 'Abilita più caldaie'
+  , 'boiler.multi_enable.desc': 'Assegna le stanze a caldaie diverse e imposta offset per stanza.'
+  , 'boiler.multi_rooms': 'Caldaia per stanza'
+  , 'boiler.multi_rooms.desc': 'Seleziona l’interruttore della caldaia e gli offset per ogni stanza.'
+  , 'boiler.room.enable': 'Includi stanza'
+  , 'boiler.room.enable.desc': 'Includi questa stanza nel controllo caldaia.'
   , 'boiler.enable': 'Attiva controllo caldaia'
   , 'boiler.enable.desc': 'Mostra le impostazioni caldaia nell’editor di questa scheda.'
   , 'boiler.temp_sensor': 'Sensore temperatura caldaia'
@@ -2648,6 +2779,11 @@ const TT_I18N = {
   , 'editor.integration.disconnected': 'Integrazione non disponibile'
   , 'profiles.enable': 'Abilita profili (override)'
   , 'profiles.enable.desc': 'Consenti programmi giornalieri nominati che possono sostituire il piano principale.'
+  , 'season.enable.title': 'Abilita programmi estivi/invernali'
+  , 'season.enable.desc': 'Quando attivo, ogni programma ha una versione Estate e Inverno tra cui puoi passare.'
+  , 'season.mode.title': 'Stagione'
+  , 'season.mode.winter': 'Inverno'
+  , 'season.mode.summer': 'Estate'
   , 'profiles.button': 'Programma manuale'
   , 'profiles.editor.title': 'Profili'
   , 'profiles.add': 'Aggiungi profilo'
@@ -3039,6 +3175,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Input boolean'
   , 'boiler.rooms': 'Mukana olevat huoneet'
   , 'boiler.rooms.desc': 'Valitse, mitkä huoneet otetaan mukaan kattilan ohjaukseen.'
+  , 'boiler.multi_enable': 'Ota käyttöön useita kattiloita'
+  , 'boiler.multi_enable.desc': 'Määritä huoneet eri kattiloille ja aseta offsetit huonekohtaisesti.'
+  , 'boiler.multi_rooms': 'Kattila per huone'
+  , 'boiler.multi_rooms.desc': 'Valitse kattilakytkin ja offsetit jokaiselle huoneelle.'
+  , 'boiler.room.enable': 'Sisällytä huone'
+  , 'boiler.room.enable.desc': 'Sisällytä tämä huone kattilan ohjaukseen.'
   , 'boiler.enable': 'Ota kattilan ohjaus käyttöön'
   , 'boiler.enable.desc': 'Näytä kattila-asetukset tämän kortin editorissa.'
   , 'boiler.temp_sensor': 'Kattilan lämpötila‑anturi'
@@ -3054,6 +3196,11 @@ const TT_I18N = {
   , 'presence.live_header.desc': 'Siruja näytetään oikeassa kulmassa.'
   , 'profiles.enable': 'Ota profiilit käyttöön (ohitus)'
   , 'profiles.enable.desc': 'Salli nimettyjä päiväaikatauluja, jotka voit aktivoida ohittaaksesi pääsuunnitelman.'
+  , 'season.enable.title': 'Ota käyttöön kesä-/talviaikataulut'
+  , 'season.enable.desc': 'Kun käytössä, jokaisella aikataululla on erillinen Kesä- ja Talvi-versio, joiden välillä voit vaihtaa.'
+  , 'season.mode.title': 'Kausi'
+  , 'season.mode.winter': 'Talvi'
+  , 'season.mode.summer': 'Kesä'
   , 'profiles.active_label': 'Manuaalinen profiili aktiivinen:'
   , 'profiles.save_new': 'Tallenna uusi profiili'
   , 'profiles.save_existing': 'Tallenna muutokset valittuun profiiliin'
@@ -3062,6 +3209,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Kaikki päivät • yksi huone'
   , 'week.view_switch.title': 'Vaihda näkymää aikajanasta'
   , 'week.view_switch.desc': 'Näyttää valitsimen aikajanan otsikossa, jolla voi vaihtaa kahden viikonpäivänäkymän välillä.'
+  , 'week.copy_from_main.title': 'Kopioi pääaikataulu'
+  , 'week.copy_from_main.desc': 'Otit viikonpäivät käyttöön. Haluatko kopioida pääaikataulun viikonpäiviin? Valitse tila, johon kopioidaan.'
+  , 'week.copy_from_main.mode_label': 'Viikonpäivätila'
+  , 'week.copy_from_main.target_label': 'Kopioi kohteeseen'
+  , 'week.copy_from_main.copy_btn': 'Kopioi'
+  , 'week.copy_from_main.skip_btn': 'Älä kopioi'
   , 'week.title': 'Viikonpäivät'
   , 'week.select_room': 'Valitse huone'
   , 'err.config_entities': "Määrityksessä täytyy olla 'entities: [climate.xxx, ...]'."
@@ -3217,6 +3370,12 @@ const TT_I18N = {
     'boiler.switch_type.input_boolean': 'Vstupní boolean',
     'boiler.rooms': 'Zahrnuté místnosti',
     'boiler.rooms.desc': 'Vyberte, které místnosti mají být zahrnuty do ovládání kotle.',
+    'boiler.multi_enable': 'Povolit více kotlů',
+    'boiler.multi_enable.desc': 'Přiřaďte místnosti různým kotlům a nastavte odchylky pro každou místnost.',
+    'boiler.multi_rooms': 'Kotel pro místnost',
+    'boiler.multi_rooms.desc': 'Vyberte spínač kotle a odchylky pro každou místnost.',
+    'boiler.room.enable': 'Zahrnout místnost',
+    'boiler.room.enable.desc': 'Zahrnout tuto místnost do řízení kotle.',
     'editor.tabs.presence_sensor': 'Senzor přítomnosti',
     'boiler.enable': 'Povolit ovládání kotle',
     'boiler.enable.desc': 'Zobrazit nastavení kotle v editoru této karty.',
@@ -3349,6 +3508,11 @@ const TT_I18N = {
     // Profily
     'profiles.enable': 'Povolit profily (přepis)',
     'profiles.enable.desc': 'Povolit pojmenované denní rozvrhy, které můžete aktivovat pro přepsání hlavního plánu.',
+    'season.enable.title': 'Povolit letní/zimní rozvrhy',
+    'season.enable.desc': 'Když je povoleno, každý rozvrh má verzi Léto a Zima, mezi kterými můžete přepínat.',
+    'season.mode.title': 'Sezóna',
+    'season.mode.winter': 'Zima',
+    'season.mode.summer': 'Léto',
   'profiles.button': 'Manuální plán',
     'profiles.editor.title': 'Profily',
     'profiles.add': 'Přidat profil',
@@ -3419,6 +3583,12 @@ const TT_I18N = {
     , 'week.view.days_one_room': 'Všechny dny • jedna místnost'
     , 'week.view_switch.title': 'Přepnout zobrazení z časové osy'
     , 'week.view_switch.desc': 'Zobrazí přepínač v záhlaví časové osy pro přepínání mezi dvěma režimy zobrazení dnů v týdnu.'
+    , 'week.copy_from_main.title': 'Kopírovat hlavní rozvrh'
+    , 'week.copy_from_main.desc': 'Zapnuli jste dny v týdnu. Chcete zkopírovat hlavní rozvrh do dnů v týdnu? Vyberte režim, do kterého se kopíruje.'
+    , 'week.copy_from_main.mode_label': 'Režim dnů v týdnu'
+    , 'week.copy_from_main.target_label': 'Kopírovat do'
+    , 'week.copy_from_main.copy_btn': 'Kopírovat'
+    , 'week.copy_from_main.skip_btn': 'Nekopírovat'
     , 'week.title': 'Dny v týdnu'
     , 'week.select_room': 'Vyberte místnost'
     , 'err.config_entities': "Konfigurace musí obsahovat 'entities: [climate.xxx, ...]'."
@@ -3552,6 +3722,12 @@ const TT_I18N = {
   , 'week.view.days_one_room': 'Vsi dnevi • en prostor'
   , 'week.view_switch.title': 'Preklopi pogled na časovnici'
   , 'week.view_switch.desc': 'Prikaže preklopnik v glavi časovnice za preklapljanje med obema načinoma pogleda za dneve v tednu.'
+  , 'week.copy_from_main.title': 'Kopiraj glavni urnik'
+  , 'week.copy_from_main.desc': 'Omogočili ste dneve v tednu. Želite kopirati glavni urnik v dneve v tednu? Izberite način, v katerega se kopira.'
+  , 'week.copy_from_main.mode_label': 'Način dni v tednu'
+  , 'week.copy_from_main.target_label': 'Kopiraj v'
+  , 'week.copy_from_main.copy_btn': 'Kopiraj'
+  , 'week.copy_from_main.skip_btn': 'Ne kopiraj'
   , 'week.title': 'Dnevi v tednu'
   , 'week.select_room': 'Izberi prostor'
   , 'week.copy_to_rooms': 'Kopiraj teden v prostore'
@@ -3603,6 +3779,12 @@ const TT_I18N = {
   , 'boiler.switch_type.input_boolean': 'Vhodni boolean'
   , 'boiler.rooms': 'Vključeni prostori'
   , 'boiler.rooms.desc': 'Izberite, kateri prostori naj bodo vključeni v krmiljenje kotla.'
+  , 'boiler.multi_enable': 'Omogoči več kotlov'
+  , 'boiler.multi_enable.desc': 'Dodeli sobe različnim kotlom in nastavi odmike za posamezno sobo.'
+  , 'boiler.multi_rooms': 'Kotel na sobo'
+  , 'boiler.multi_rooms.desc': 'Izberi stikalo kotla in odmike za vsako sobo.'
+  , 'boiler.room.enable': 'Vključi sobo'
+  , 'boiler.room.enable.desc': 'Vključi to sobo v krmiljenje kotla.'
   , 'boiler.enable': 'Omogoči krmiljenje kotla'
   , 'boiler.enable.desc': 'Prikaži nastavitve kotla v urejevalniku te kartice.'
   , 'boiler.temp_sensor': 'Temperaturni senzor kotla'
@@ -3671,6 +3853,11 @@ const TT_I18N = {
   , 'editor.integration.disconnected': 'Integracija ni na voljo'
   , 'profiles.enable': 'Omogoči profile (prepis)'
   , 'profiles.enable.desc': 'Dovoli poimenovane dnevne urnike, ki lahko preglasijo glavni načrt.'
+  , 'season.enable.title': 'Omogoči poletne/zimne urnike'
+  , 'season.enable.desc': 'Ko je omogočeno, ima vsak urnik ločeni poletni in zimski različici, med katerimi lahko preklapljate.'
+  , 'season.mode.title': 'Sezona'
+  , 'season.mode.winter': 'Zima'
+  , 'season.mode.summer': 'Poletje'
   , 'profiles.button': 'Ročni urnik'
   , 'profiles.editor.title': 'Profili'
   , 'profiles.add': 'Dodaj profil'
@@ -3806,7 +3993,7 @@ function ttLocalize(key, langOrHass) {
 // Simple runtime version to help with cache-busting diagnostics in HA.
 // Update this when shipping changes so the version appears in the
 // "Custom cards" panel and in logs.
-const TT_CARD_VERSION = "2026.02.08-away-persist";
+const TT_CARD_VERSION = "2026.02.08-seasonal";
 
 class ThermostatTimelineCard extends HTMLElement {
   static get version() { return TT_CARD_VERSION; }
@@ -3851,7 +4038,11 @@ class ThermostatTimelineCard extends HTMLElement {
       boiler_temp_sensor: '',  // optional sensor.* entity used for boiler temperature control
       boiler_min_temp: 20,     // boiler min temp (stored internally as °C)
       boiler_max_temp: 25,     // boiler max temp (stored internally as °C)
+      boiler_multi_enabled: false, // enable per-room boiler mapping
+      boiler_room_settings: {},    // { [room_eid]: { enabled, switch, switch_domain, on_offset, off_offset } }
       weekdays_enabled: false,
+      seasonal_enabled: false,
+      seasonal_mode: 'winter', // 'winter' | 'summer'
       weekdays_mode: 'weekday_weekend', // 'weekday_weekend' | 'weekday_sat_sun' | 'all_7'
       weekdays_view: 'all_rooms_one_day', // 'all_rooms_one_day' | 'one_room_all_days'
       weekdays_view_switch_in_timeline: false,
@@ -4230,11 +4421,22 @@ class ThermostatTimelineCard extends HTMLElement {
   boiler_temp_sensor: String(config.boiler_temp_sensor ?? this._config?.boiler_temp_sensor ?? ''),
   boiler_min_temp: boilerMin,
   boiler_max_temp: boilerMax,
+  boiler_multi_enabled: !!(config.boiler_multi_enabled ?? this._config?.boiler_multi_enabled ?? false),
+  boiler_room_settings: (()=>{
+    try {
+      const src = (config.boiler_room_settings && typeof config.boiler_room_settings === 'object')
+        ? config.boiler_room_settings
+        : (this._config?.boiler_room_settings || {});
+      return JSON.parse(JSON.stringify(src || {}));
+    } catch { return {}; }
+  })(),
   color_ranges: { ...(config.color_ranges || {}) },
     color_global: !!(config.color_global ?? this._config?.color_global ?? false),
       per_room_defaults: !!(config.per_room_defaults ?? this._config?.per_room_defaults ?? false),
       presence_live_header: !!(config.presence_live_header ?? this._config?.presence_live_header ?? true),
       weekdays_enabled: !!(config.weekdays_enabled ?? false),
+        seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
+        seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
   weekdays_mode: (config.weekdays_mode || 'weekday_weekend'),
   weekdays_view: (config.weekdays_view || this._config?.weekdays_view || 'all_rooms_one_day'),
   weekdays_view_switch_in_timeline: !!(config.weekdays_view_switch_in_timeline ?? this._config?.weekdays_view_switch_in_timeline ?? false),
@@ -4364,7 +4566,7 @@ class ThermostatTimelineCard extends HTMLElement {
   this._storeDelayDue = 0;
     // Defer writes while an editor is open to avoid rapid file churn
     this._pendingSaveAfterEdit = false;
-    this._markPendingSave = ()=>{ this._pendingSaveAfterEdit = true; try { this._persistDraftNow(); } catch {} try { this._render(); } catch {} };
+    this._markPendingSave = ()=>{ this._pendingSaveAfterEdit = true; try { this._syncSeasonalRowsToBucket(); } catch {} try { this._persistDraftNow(); } catch {} try { this._render(); } catch {} };
     this._lastVersion = 0;
     this._lastProfileVersion = 0;
   // Polling watcher to pick up sensor updates in case frontend misses events
@@ -4410,6 +4612,8 @@ class ThermostatTimelineCard extends HTMLElement {
     this._lastPresenceKey = null; // Track last active presence combo key
     // Track per-row tools open state
     this._toolsOpen = {}; // { [entity_id]: boolean }
+    // Seasonal schedule state
+    this._seasonAppliedKey = null; // 'winter' | 'summer' | null
 
     // Copy/paste schedule state
     this._copyFrom = null;        // entity id of source room
@@ -4868,6 +5072,7 @@ class ThermostatTimelineCard extends HTMLElement {
             if (storeWasF) sch = this._convertSchedulesTemps(sch, 'C');
           } catch {}
           this._schedules = sch;
+          try { this._seasonAppliedKey = null; } catch {}
           // If there is a pending delayed sync (due stored locally), prefer draft schedules
           try {
             if (hardReset) throw new Error('hard reset active');
@@ -4880,6 +5085,7 @@ class ThermostatTimelineCard extends HTMLElement {
                 const dsch = parsed?.schedules && parsed.schedules.schedules ? parsed.schedules.schedules : (parsed?.schedules || parsed || {});
                 if (dsch && typeof dsch === 'object') {
                   this._schedules = dsch;
+                  try { this._seasonAppliedKey = null; } catch {}
                 }
               }
             }
@@ -5163,11 +5369,23 @@ class ThermostatTimelineCard extends HTMLElement {
                       if (Number.isFinite(v)) this._config.boiler_max_temp = v;
                     }
                   }
+                  if (!this._yamlProvided?.boiler_multi_enabled && !hasBool(s.boiler_multi_enabled)) {
+                    if (hasBool(ls.boiler_multi_enabled)) this._config.boiler_multi_enabled = !!ls.boiler_multi_enabled;
+                  }
+                  if (!this._yamlProvided?.boiler_room_settings && (!s.boiler_room_settings || typeof s.boiler_room_settings !== 'object')) {
+                    if (ls.boiler_room_settings && typeof ls.boiler_room_settings === 'object') {
+                      try { this._config.boiler_room_settings = JSON.parse(JSON.stringify(ls.boiler_room_settings)); } catch { this._config.boiler_room_settings = { ...(ls.boiler_room_settings||{}) }; }
+                    }
+                  }
                 } catch {}
               }
             } catch {}
             if ((typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number') && !this._yamlProvided?.boiler_enabled) this._config.boiler_enabled = !!s.boiler_enabled;
             if (typeof s.boiler_switch === 'string' && !this._yamlProvided?.boiler_switch) this._config.boiler_switch = s.boiler_switch || '';
+            if ((typeof s.boiler_multi_enabled === 'boolean' || typeof s.boiler_multi_enabled === 'number') && !this._yamlProvided?.boiler_multi_enabled) this._config.boiler_multi_enabled = !!s.boiler_multi_enabled;
+            if (s.boiler_room_settings && typeof s.boiler_room_settings === 'object' && !this._yamlProvided?.boiler_room_settings) {
+              try { this._config.boiler_room_settings = JSON.parse(JSON.stringify(s.boiler_room_settings)); } catch { this._config.boiler_room_settings = { ...(s.boiler_room_settings||{}) }; }
+            }
             if (!this._yamlProvided?.boiler_rooms) {
               if (Array.isArray(s.boiler_rooms)) this._config.boiler_rooms = s.boiler_rooms.filter(Boolean).map(String);
               else if (s.boiler_rooms === null) this._config.boiler_rooms = null;
@@ -5230,6 +5448,10 @@ class ThermostatTimelineCard extends HTMLElement {
                   const v = (ls2.boiler_max_temp === null) ? 25 : Number(ls2.boiler_max_temp);
                   if (Number.isFinite(v)) this._config.boiler_max_temp = v;
                 }
+                if (!this._yamlProvided?.boiler_multi_enabled && has(ls2, 'boiler_multi_enabled')) this._config.boiler_multi_enabled = !!ls2.boiler_multi_enabled;
+                if (!this._yamlProvided?.boiler_room_settings && has(ls2, 'boiler_room_settings')) {
+                  try { this._config.boiler_room_settings = JSON.parse(JSON.stringify(ls2.boiler_room_settings)); } catch { this._config.boiler_room_settings = { ...(ls2.boiler_room_settings||{}) }; }
+                }
               }
             } catch {}
             // Open Window Detection from shared storage
@@ -5246,6 +5468,8 @@ class ThermostatTimelineCard extends HTMLElement {
             if (this._config?.respect_storage_weekdays !== false) {
               try { if (typeof s.weekdays_enabled === 'boolean') this._config.weekdays_enabled = !!s.weekdays_enabled; } catch {}
               try { if (typeof s.weekdays_mode === 'string') this._config.weekdays_mode = s.weekdays_mode; } catch {}
+              try { if (typeof s.seasonal_enabled === 'boolean') this._config.seasonal_enabled = !!s.seasonal_enabled; } catch {}
+              try { if (typeof s.seasonal_mode === 'string') this._config.seasonal_mode = (s.seasonal_mode === 'summer' ? 'summer' : 'winter'); } catch {}
               try { if (typeof s.weekdays_view === 'string') this._config.weekdays_view = s.weekdays_view; } catch {}
               try { if (typeof s.weekdays_view_switch_in_timeline === 'boolean') this._config.weekdays_view_switch_in_timeline = !!s.weekdays_view_switch_in_timeline; } catch {}
               try { if (typeof s.weekdays_selected_room === 'string') this._config.weekdays_selected_room = s.weekdays_selected_room; } catch {}
@@ -5505,6 +5729,8 @@ class ThermostatTimelineCard extends HTMLElement {
   if (this._config?.respect_storage_weekdays !== false) {
     try { if (typeof s.weekdays_enabled === 'boolean') this._config.weekdays_enabled = !!s.weekdays_enabled; } catch {}
     try { if (typeof s.weekdays_mode === 'string') this._config.weekdays_mode = s.weekdays_mode; } catch {}
+    try { if (typeof s.seasonal_enabled === 'boolean') this._config.seasonal_enabled = !!s.seasonal_enabled; } catch {}
+    try { if (typeof s.seasonal_mode === 'string') this._config.seasonal_mode = (s.seasonal_mode === 'summer' ? 'summer' : 'winter'); } catch {}
     try { if (typeof s.weekdays_view === 'string') this._config.weekdays_view = s.weekdays_view; } catch {}
     try { if (typeof s.weekdays_view_switch_in_timeline === 'boolean') this._config.weekdays_view_switch_in_timeline = !!s.weekdays_view_switch_in_timeline; } catch {}
     try { if (typeof s.weekdays_selected_room === 'string') this._config.weekdays_selected_room = s.weekdays_selected_room; } catch {}
@@ -5560,6 +5786,7 @@ class ThermostatTimelineCard extends HTMLElement {
       } else {
         // backward compat: schedules stored directly
         this._schedules = parsed || {};
+        try { this._seasonAppliedKey = null; } catch {}
       }
     }
     catch { this._schedules = {}; }
@@ -5607,6 +5834,26 @@ class ThermostatTimelineCard extends HTMLElement {
               boiler_temp_sensor: String(this._config.boiler_temp_sensor || ''),
               boiler_min_temp: (this._config.boiler_min_temp === null || this._config.boiler_min_temp === undefined) ? null : Number(this._config.boiler_min_temp),
               boiler_max_temp: (this._config.boiler_max_temp === null || this._config.boiler_max_temp === undefined) ? null : Number(this._config.boiler_max_temp),
+              boiler_multi_enabled: !!this._config.boiler_multi_enabled,
+              boiler_room_settings: (()=>{
+                try {
+                  const src = (this._config.boiler_room_settings && typeof this._config.boiler_room_settings === 'object') ? this._config.boiler_room_settings : {};
+                  const out = {};
+                  for (const k of Object.keys(src||{})) {
+                    const r = src[k]; if (!r || typeof r !== 'object') continue;
+                    const enabled = !!r.enabled;
+                    const sw = String(r.switch || '');
+                    const dom = String(r.switch_domain || '').toLowerCase().trim();
+                    const onOff = Number(r.on_offset);
+                    const offOff = Number(r.off_offset);
+                    const obj = { enabled, switch: sw, switch_domain: (dom === 'input_boolean') ? 'input_boolean' : 'switch' };
+                    if (Number.isFinite(onOff)) obj.on_offset = onOff;
+                    if (Number.isFinite(offOff)) obj.off_offset = offOff;
+                    if (enabled || sw || Number.isFinite(onOff) || Number.isFinite(offOff) || dom) out[String(k)] = obj;
+                  }
+                  return out;
+                } catch { return {}; }
+              })(),
               show_pause_button: !!(this._config.show_pause_button ?? true), 
               show_room_temp: !!(this._config.show_room_temp ?? true),
               pause_sensor_enabled: !!(this._config.pause_sensor_enabled ?? false),
@@ -5970,6 +6217,18 @@ class ThermostatTimelineCard extends HTMLElement {
         try { convertBlocks(row?.holiday?.blocks); } catch {}
         // Presence
         try { const pres = row?.presence||{}; for (const key of Object.keys(pres)){ convertBlocks(pres[key]?.blocks); } } catch {}
+        // Seasonal (summer/winter)
+        try {
+          const seasons = row?.seasons || {};
+          for (const sk of Object.keys(seasons||{})) {
+            const srow = seasons[sk]; if (!srow || typeof srow !== 'object') continue;
+            if ('defaultTemp' in srow) srow.defaultTemp = conv(srow.defaultTemp);
+            convertBlocks(srow.blocks);
+            try { const days = srow?.weekly?.days||{}; for (const k of Object.keys(days)) convertBlocks(days[k]); } catch {}
+            try { const wm = srow?.weekly_modes||{}; for (const mk of Object.keys(wm||{})) { const d2 = wm[mk]?.days||{}; for (const dk of Object.keys(d2)) convertBlocks(d2[dk]); } } catch {}
+            try { const pres = srow?.presence||{}; for (const pk of Object.keys(pres||{})) convertBlocks(pres[pk]?.blocks); } catch {}
+          }
+        } catch {}
       }
       return clone;
     } catch { return schedules; }
@@ -6000,6 +6259,17 @@ class ThermostatTimelineCard extends HTMLElement {
         try { const prof = row?.profiles||{}; for (const p of Object.keys(prof)) scanBlocks(prof[p]?.blocks); } catch {}
         try { scanBlocks(row?.holiday?.blocks); } catch {}
         try { const pres = row?.presence||{}; for (const key of Object.keys(pres)) scanBlocks(pres[key]?.blocks); } catch {}
+        try {
+          const seasons = row?.seasons || {};
+          for (const sk of Object.keys(seasons||{})) {
+            const srow = seasons[sk]; if (!srow || typeof srow !== 'object') continue;
+            const d = Number(srow.defaultTemp);
+            if (Number.isFinite(d)) maxV = Math.max(maxV, d);
+            scanBlocks(srow.blocks);
+            try { const days = srow?.weekly?.days||{}; for (const k of Object.keys(days)) scanBlocks(days[k]); } catch {}
+            try { const wm = srow?.weekly_modes||{}; for (const mk of Object.keys(wm||{})) { const d2 = wm[mk]?.days||{}; for (const dk of Object.keys(d2)) scanBlocks(d2[dk]); } } catch {}
+          }
+        } catch {}
       }
     } catch {}
     return Number.isFinite(maxV) ? maxV : -Infinity;
@@ -6008,6 +6278,7 @@ class ThermostatTimelineCard extends HTMLElement {
   // Build payload for shared storage respecting selected unit for numbers
   _makeStoragePayload(includeSchedules=true){
     try {
+      try { this._syncSeasonalRowsToBucket(); } catch {}
       // Canonical shared storage is always °C to avoid drift when multiple clients use different display units.
       // (Display unit is controlled by settings.temp_unit and is independent of stored numeric values.)
       const wantF = false;
@@ -6087,6 +6358,8 @@ class ThermostatTimelineCard extends HTMLElement {
         min_temp: toStore(Number(this._config.min_temp ?? 5)),
         max_temp: toStore(Number(this._config.max_temp ?? 25)),
         weekdays_enabled: !!this._config.weekdays_enabled,
+        seasonal_enabled: !!this._config.seasonal_enabled,
+        seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         weekdays_mode: this._config.weekdays_mode || 'weekday_weekend',
         weekdays_view: this._config.weekdays_view || 'all_rooms_one_day',
         weekdays_view_switch_in_timeline: !!(this._config.weekdays_view_switch_in_timeline ?? false),
@@ -6147,6 +6420,26 @@ class ThermostatTimelineCard extends HTMLElement {
         boiler_temp_sensor: String(this._config.boiler_temp_sensor || ''),
         boiler_min_temp: (this._config.boiler_min_temp === null || this._config.boiler_min_temp === undefined) ? null : toStore(this._config.boiler_min_temp),
         boiler_max_temp: (this._config.boiler_max_temp === null || this._config.boiler_max_temp === undefined) ? null : toStore(this._config.boiler_max_temp),
+        boiler_multi_enabled: !!this._config.boiler_multi_enabled,
+        boiler_room_settings: (()=>{
+          try {
+            const src = (this._config.boiler_room_settings && typeof this._config.boiler_room_settings === 'object') ? this._config.boiler_room_settings : {};
+            const out = {};
+            for (const k of Object.keys(src||{})) {
+              const r = src[k]; if (!r || typeof r !== 'object') continue;
+              const enabled = !!r.enabled;
+              const sw = String(r.switch || '');
+              const dom = String(r.switch_domain || '').toLowerCase().trim();
+              const onOff = Number(r.on_offset);
+              const offOff = Number(r.off_offset);
+              const obj = { enabled, switch: sw, switch_domain: (dom === 'input_boolean') ? 'input_boolean' : 'switch' };
+              if (Number.isFinite(onOff)) obj.on_offset = toStore(onOff);
+              if (Number.isFinite(offOff)) obj.off_offset = toStore(offOff);
+              if (enabled || sw || Number.isFinite(onOff) || Number.isFinite(offOff) || dom) out[String(k)] = obj;
+            }
+            return out;
+          } catch { return {}; }
+        })(),
         show_pause_button: !!(this._config.show_pause_button ?? true),
         show_room_temp: !!(this._config.show_room_temp ?? true),
           pause_sensor_enabled: !!(this._config.pause_sensor_enabled ?? false),
@@ -6213,6 +6506,119 @@ class ThermostatTimelineCard extends HTMLElement {
     }
   }
 
+  // --- Seasonal schedule helpers ---
+  _seasonEnabled(){ try { return !!this._config?.seasonal_enabled; } catch { return false; } }
+  _seasonKey(){ try { return (String(this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter'; } catch { return 'winter'; } }
+  _cloneSeasonDataFromRow(row){
+    try {
+      return {
+        blocks: Array.isArray(row?.blocks) ? JSON.parse(JSON.stringify(row.blocks)) : [],
+        weekly: row?.weekly ? JSON.parse(JSON.stringify(row.weekly)) : undefined,
+        weekly_modes: row?.weekly_modes ? JSON.parse(JSON.stringify(row.weekly_modes)) : undefined,
+        presence: row?.presence ? JSON.parse(JSON.stringify(row.presence)) : undefined,
+      };
+    } catch { return { blocks: [] }; }
+  }
+  _ensureSeasonStruct(row){
+    try {
+      if (!row) return row;
+      if (!row.seasons || typeof row.seasons !== 'object') row.seasons = {};
+      const ensureBucket = (key)=>{
+        if (!row.seasons[key] || typeof row.seasons[key] !== 'object') row.seasons[key] = {};
+        if (!Array.isArray(row.seasons[key].blocks)) row.seasons[key].blocks = [];
+      };
+      ensureBucket('winter');
+      ensureBucket('summer');
+      return row;
+    } catch { return row; }
+  }
+  _syncSeasonDataFromRow(row, seasonKey){
+    try {
+      if (!row) return;
+      this._ensureSeasonStruct(row);
+      const key = (seasonKey === 'summer') ? 'summer' : 'winter';
+      row.seasons[key] = this._cloneSeasonDataFromRow(row);
+    } catch {}
+  }
+  _loadSeasonDataIntoRow(row, seasonKey){
+    try {
+      if (!row) return;
+      this._ensureSeasonStruct(row);
+      const key = (seasonKey === 'summer') ? 'summer' : 'winter';
+      const src = row.seasons?.[key] || {};
+      row.blocks = Array.isArray(src.blocks) ? JSON.parse(JSON.stringify(src.blocks)) : [];
+      if (src.weekly) row.weekly = JSON.parse(JSON.stringify(src.weekly)); else delete row.weekly;
+      if (src.weekly_modes) row.weekly_modes = JSON.parse(JSON.stringify(src.weekly_modes)); else delete row.weekly_modes;
+      if (src.presence) row.presence = JSON.parse(JSON.stringify(src.presence)); else delete row.presence;
+    } catch {}
+  }
+  _prepareSeasonalRowsOnEnable(){
+    try {
+      if (!this._seasonEnabled()) return;
+      for (const eid of (this._config?.entities || [])) {
+        const row = this._schedules?.[eid];
+        if (!row) continue;
+        this._ensureSeasonStruct(row);
+        const hasData = (bucket)=>{
+          try {
+            if (!bucket || typeof bucket !== 'object') return false;
+            if (Array.isArray(bucket.blocks) && bucket.blocks.length) return true;
+            if (bucket.weekly && typeof bucket.weekly === 'object') return true;
+            if (bucket.weekly_modes && typeof bucket.weekly_modes === 'object') return true;
+          } catch {}
+          return false;
+        };
+        const curData = this._cloneSeasonDataFromRow(row);
+        if (!hasData(row.seasons?.winter)) row.seasons.winter = JSON.parse(JSON.stringify(curData));
+        if (!hasData(row.seasons?.summer)) row.seasons.summer = JSON.parse(JSON.stringify(curData));
+      }
+    } catch {}
+  }
+  _applySeasonalModeToRows(force=false, prevSeasonOverride=null){
+    try {
+      if (!this._seasonEnabled()) { this._seasonAppliedKey = null; return; }
+      const next = this._seasonKey();
+      if (!force && this._seasonAppliedKey === next) return;
+      const prev = prevSeasonOverride || this._seasonAppliedKey || next;
+      for (const eid of (this._config?.entities || [])) {
+        const row = this._schedules?.[eid];
+        if (!row) continue;
+        this._ensureSeasonStruct(row);
+        // Store current working data into previous season bucket
+        if (prev) this._syncSeasonDataFromRow(row, prev);
+        // Load target season into working fields
+        this._loadSeasonDataIntoRow(row, next);
+      }
+      this._seasonAppliedKey = next;
+    } catch {}
+  }
+  _setSeasonMode(next){
+    try {
+      if (!this._seasonEnabled()) return;
+      const prev = this._seasonKey();
+      const target = (String(next) === 'summer') ? 'summer' : 'winter';
+      if (target === prev) return;
+      this._config.seasonal_mode = target;
+      try { if (this._settingsDraft) this._settingsDraft.seasonal_mode = target; } catch {}
+      this._applySeasonalModeToRows(true, prev);
+      try { this._render(); } catch {}
+      try { this._scheduleNextApply(); } catch {}
+      try { this._debouncedSaveStore(); } catch {}
+    } catch {}
+  }
+  _toggleSeasonMode(){ try { const next = (this._seasonKey() === 'summer') ? 'winter' : 'summer'; this._setSeasonMode(next); } catch {} }
+  _syncSeasonalRowsToBucket(){
+    try {
+      if (!this._seasonEnabled()) return;
+      const key = this._seasonKey();
+      for (const eid of (this._config?.entities || [])) {
+        const row = this._schedules?.[eid];
+        if (!row) continue;
+        this._syncSeasonDataFromRow(row, key);
+      }
+    } catch {}
+  }
+
   _weekdayFullName(dayKey){
     try {
       const k = String(dayKey || '').toLowerCase();
@@ -6248,6 +6654,69 @@ class ThermostatTimelineCard extends HTMLElement {
 
   // --- Weekday helpers ---
   _weekdayNames(){ return ['mon','tue','wed','thu','fri','sat','sun']; }
+
+  _hasAnyMainBlocks(){
+    try {
+      for (const eid of (this._config?.entities || [])) {
+        const row = this._schedules?.[eid];
+        if (row && Array.isArray(row.blocks) && row.blocks.length) return true;
+      }
+    } catch {}
+    return false;
+  }
+
+  _promptWeekdayCopyMode(){
+    try {
+      const m1 = this._t('week.mode.weekday_weekend') || 'Weekdays + Weekend';
+      const m2 = this._t('week.mode.weekday_sat_sun') || 'Weekdays + Saturday + Sunday';
+      const m3 = this._t('week.mode.all_7') || 'All days';
+      const msgT = this._t('week.copy_from_main.mode_prompt') || 'Choose weekday mode:\n1) {m1}\n2) {m2}\n3) {m3}\nEnter 1-3:';
+      const msg = msgT.replace('{m1}', m1).replace('{m2}', m2).replace('{m3}', m3);
+      const defMode = String(this._config?.weekdays_mode || 'weekday_weekend');
+      const def = defMode === 'weekday_sat_sun' ? '2' : (defMode === 'all_7' ? '3' : '1');
+      const ans = prompt(msg, def);
+      if (ans == null) return null;
+      const a = String(ans).trim().toLowerCase();
+      if (a === '2' || a === 'weekday_sat_sun') return 'weekday_sat_sun';
+      if (a === '3' || a === 'all_7' || a === 'all7') return 'all_7';
+      if (a === '1' || a === 'weekday_weekend') return 'weekday_weekend';
+      return 'weekday_weekend';
+    } catch { return null; }
+  }
+
+  _copyMainToWeekdays(mode, target){
+    try {
+      const m = (mode === 'weekday_sat_sun' || mode === 'all_7') ? mode : 'weekday_weekend';
+      const makeBlocks = (arr)=> (Array.isArray(arr) ? arr.map(b=>({ id: Math.random().toString(36).slice(2,9), startMin: b.startMin, endMin: b.endMin, temp: b.temp })) : []);
+      const names = this._weekdayNames();
+      const t = String(target || '').toLowerCase().trim();
+      for (const eid of (this._config?.entities || [])) {
+        const row = this._schedules[eid] || { defaultTemp: this._config.default_temp, blocks: [] };
+        this._ensureWeeklyStruct(row);
+        const days = {};
+        for (const k of names) days[k] = [];
+        const src = row.blocks || [];
+        if (m === 'weekday_weekend') {
+          const tgt = (t === 'weekend') ? ['sat','sun'] : ['mon','tue','wed','thu','fri'];
+          for (const k of tgt) days[k] = makeBlocks(src);
+        } else if (m === 'weekday_sat_sun') {
+          if (t === 'sat' || t === 'sun') {
+            days[t] = makeBlocks(src);
+          } else {
+            for (const k of ['mon','tue','wed','thu','fri']) days[k] = makeBlocks(src);
+          }
+        } else {
+          const dk = names.includes(t) ? t : 'mon';
+          days[dk] = makeBlocks(src);
+        }
+        row.weekly_modes[m] = { days: JSON.parse(JSON.stringify(days)) };
+        row.weekly = { mode: m, days: JSON.parse(JSON.stringify(days)) };
+        this._schedules[eid] = row;
+      }
+      this._config.weekdays_mode = m;
+      try { this._syncSeasonalRowsToBucket(); } catch {}
+    } catch {}
+  }
 
   _timelineDisplayDayKey(){
     try {
@@ -6902,10 +7371,24 @@ class ThermostatTimelineCard extends HTMLElement {
       if (this._config?.storage_enabled) return;
       if (!this._config?.auto_apply) return;
       if (!this._config?.boiler_enabled) return;
-      const sw = String(this._config.boiler_switch || '');
-      if (!sw) return;
-      const dom = String(sw).split('.')[0];
-      if (!(dom === 'switch' || dom === 'input_boolean')) return;
+      const multiOn = !!this._config?.boiler_multi_enabled;
+      if (!multiOn) {
+        const sw = String(this._config.boiler_switch || '');
+        if (!sw) return;
+        const dom = String(sw).split('.')[0];
+        if (!(dom === 'switch' || dom === 'input_boolean')) return;
+      } else {
+        const map = (this._config.boiler_room_settings && typeof this._config.boiler_room_settings === 'object') ? this._config.boiler_room_settings : {};
+        const hasAny = Object.values(map||{}).some(r=>{
+          try {
+            if (!r || !r.enabled) return false;
+            const sw = String(r.switch || '').trim();
+            const dom = String(sw).split('.')[0];
+            return !!sw && (dom === 'switch' || dom === 'input_boolean');
+          } catch { return false; }
+        });
+        if (!hasAny) return;
+      }
 
       // Run once immediately + then every minute.
       try { this._boilerTick(); } catch {}
@@ -6921,8 +7404,77 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!this._config?.boiler_enabled) return;
       if (this._isPaused && this._isPaused()) return;
 
+      const nowMin = this._getNowMin();
+      const allRooms = (Array.isArray(this._config.entities) ? this._config.entities : [])
+        .map(e=>String(e||''))
+        .filter(e=>e.startsWith('climate.'));
+      if (!allRooms.length) return;
+
+      const multiOn = !!this._config?.boiler_multi_enabled;
+      const clampOffset = (v)=>{ const n = Number(v); return Number.isFinite(n) ? Math.max(-10, Math.min(10, n)) : null; };
+
+      // Multi-boiler mode: group rooms by assigned boiler switch
+      if (multiOn) {
+        const roomCfgs = (this._config.boiler_room_settings && typeof this._config.boiler_room_settings === 'object') ? this._config.boiler_room_settings : {};
+        const groups = {};
+        for (const eid of allRooms) {
+          const rc = roomCfgs?.[eid];
+          if (!rc || typeof rc !== 'object') continue;
+          if (!rc.enabled) continue;
+          const sw = String(rc.switch || '').trim();
+          if (!sw) continue;
+          const dom = String(sw).split('.')[0];
+          if (!(dom === 'switch' || dom === 'input_boolean')) continue;
+          const onOff = clampOffset(rc.on_offset);
+          const offOff = clampOffset(rc.off_offset);
+          const entry = { eid, onOff: (onOff === null ? Number(this._config?.boiler_on_offset ?? 0) : onOff), offOff: (offOff === null ? Number(this._config?.boiler_off_offset ?? 0) : offOff) };
+          if (!groups[sw]) groups[sw] = [];
+          groups[sw].push(entry);
+        }
+        const switches = Object.keys(groups);
+        if (!switches.length) return;
+
+        for (const sw of switches) {
+          const rooms = groups[sw] || [];
+          if (!rooms.length) continue;
+          let anyNeedHeat = false;
+          let anyUnknown = false;
+          let anySeen = false;
+          let allOkForOff = true;
+
+          for (const r of rooms) {
+            const desiredC = Number(this._desiredTempFor ? this._desiredTempFor(r.eid, nowMin) : null);
+            const curC = Number(this._roomCurrentTemperatureC ? this._roomCurrentTemperatureC(r.eid) : NaN);
+            if (!Number.isFinite(desiredC) || !Number.isFinite(curC)) { anyUnknown = true; continue; }
+            anySeen = true;
+            if (curC < (desiredC - r.onOff)) { anyNeedHeat = true; break; }
+            if (curC < (desiredC + r.offOff)) allOkForOff = false;
+          }
+
+          if (!anySeen) continue;
+          let want = null;
+          if (anyNeedHeat) want = 'on';
+          else if (!anyUnknown && allOkForOff) want = 'off';
+          else continue;
+
+          const stSw = this._hass.states?.[sw];
+          const cur = String(stSw?.state || '');
+          if (want === 'on' && cur === 'on') continue;
+          if (want === 'off' && cur === 'off') continue;
+
+          const dom = String(sw).split('.')[0];
+          if (!(dom === 'switch' || dom === 'input_boolean')) continue;
+          if (want === 'on') this._hass.callService(dom, 'turn_on', { entity_id: sw });
+          else this._hass.callService(dom, 'turn_off', { entity_id: sw });
+        }
+        return;
+      }
+
+      // Single-boiler mode
       const sw = String(this._config.boiler_switch || '');
       if (!sw) return;
+      const dom0 = String(sw).split('.')[0];
+      if (!(dom0 === 'switch' || dom0 === 'input_boolean')) return;
 
       // New logic: compare each selected climate entity's current_temperature to
       // its scheduled target temperature for "now".
@@ -6930,10 +7482,6 @@ class ThermostatTimelineCard extends HTMLElement {
       // - If ALL rooms are at/above their scheduled target -> switch OFF
       // If some rooms have missing data, we only turn OFF when we can confirm
       // ALL rooms are at/above target.
-      const nowMin = this._getNowMin();
-      const allRooms = (Array.isArray(this._config.entities) ? this._config.entities : [])
-        .map(e=>String(e||''))
-        .filter(e=>e.startsWith('climate.'));
       const allSet = new Set(allRooms);
       const cfgRooms = this._config?.boiler_rooms;
       const roomEntities = Array.isArray(cfgRooms)
@@ -7442,6 +7990,8 @@ class ThermostatTimelineCard extends HTMLElement {
   .test-btn ha-icon{ --mdc-icon-size: 14px; }
   /* Test popup */
   .modal-test{ width:min(92vw, 520px); max-width:520px; }
+  /* Weekday copy modal */
+  .modal-weekcopy{ width:min(92vw, 520px); max-width:520px; }
   /* Settings popup */
   .modal-settings{
     width:min(95vw, 640px);
@@ -7575,6 +8125,13 @@ class ThermostatTimelineCard extends HTMLElement {
                   <option value="all_7" class="opt-all-7"></option>
                 </select>
               </div>
+              <div class="week-season-row" style="display:grid; gap:4px;">
+                <label style="font-size:.85rem; color: var(--secondary-text-color);" class="week-season-label"></label>
+                <select class="week-season" style="padding:6px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+                  <option value="winter" class="opt-season-winter"></option>
+                  <option value="summer" class="opt-season-summer"></option>
+                </select>
+              </div>
               <div class="week-tabs" role="tablist"></div>
               <div class="week-toolbar" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                 <div class="week-note" style="font-size:.85rem; color: var(--secondary-text-color);"></div>
@@ -7683,6 +8240,13 @@ class ThermostatTimelineCard extends HTMLElement {
               </div>
               <div style="display:grid; gap:8px; align-items:start;">
                 <div class="presence-combo-active" style="font-size:.9rem; color: var(--secondary-text-color);"></div>
+                <div class="presence-season-row" style="display:grid; gap:4px;">
+                  <label style="font-size:.85rem; color: var(--secondary-text-color);" class="presence-season-label"></label>
+                  <select class="presence-season" style="padding:6px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+                    <option value="winter" class="opt-season-winter"></option>
+                    <option value="summer" class="opt-season-summer"></option>
+                  </select>
+                </div>
                 <div class="presence-roomtabs" role="tablist" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
                 <div class="week-scale" style="position:relative; height:32px;">
                   <div class="week-scale-inner" style="position:relative; height:100%;"></div>
@@ -7870,6 +8434,14 @@ class ThermostatTimelineCard extends HTMLElement {
                     <ha-switch class="sp-profiles"></ha-switch>
                   </div>
 
+                  <div class="setting">
+                    <div class="text">
+                      <div class="title sp-seasonal-title"></div>
+                      <div class="desc sp-seasonal-desc"></div>
+                    </div>
+                    <ha-switch class="sp-seasonal"></ha-switch>
+                  </div>
+
                   <div class="setting sp-instance-setting">
                     <div class="text">
                       <div class="title sp-instance-title"></div>
@@ -7945,6 +8517,29 @@ class ThermostatTimelineCard extends HTMLElement {
                 <button class="btn primary test-export" type="button" disabled class="test-export-btn"></button>
                 <button class="btn ghost test-close" type="button"></button>
               </div>
+            </div>
+          </div>
+        </div>
+        <!-- Weekdays: copy main schedule modal -->
+        <div class="overlay overlay-weekcopy" part="overlay">
+          <div class="modal modal-weekcopy" role="dialog" aria-modal="true">
+            <h3 class="weekcopy-title"></h3>
+            <div class="weekcopy-desc" style="font-size:.9rem; color: var(--secondary-text-color); margin-bottom:10px;"></div>
+            <label style="display:grid; gap:6px; margin-bottom:12px;">
+              <span style="font-size:.85rem; color: var(--secondary-text-color);" class="weekcopy-mode-label"></span>
+              <select class="weekcopy-mode" style="padding:6px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);">
+                <option value="weekday_weekend" class="opt-weekday-weekend"></option>
+                <option value="weekday_sat_sun" class="opt-weekday-sat-sun"></option>
+                <option value="all_7" class="opt-all-7"></option>
+              </select>
+            </label>
+            <label style="display:grid; gap:6px; margin-bottom:12px;">
+              <span style="font-size:.85rem; color: var(--secondary-text-color);" class="weekcopy-target-label"></span>
+              <select class="weekcopy-target" style="padding:6px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--primary-text-color);"></select>
+            </label>
+            <div class="actions" style="display:flex; justify-content:flex-end; gap:8px;">
+              <button class="btn ghost weekcopy-skip" type="button"></button>
+              <button class="btn primary weekcopy-apply" type="button"></button>
             </div>
           </div>
         </div>
@@ -8214,8 +8809,8 @@ class ThermostatTimelineCard extends HTMLElement {
       return true;
     } catch { return false; }
   }
-  _persistDraftNow(){ try { localStorage.setItem(this._draftKey(), JSON.stringify({ ts: Date.now(), schedules: this._schedules })); } catch {} }
-  _tryRestoreDraftRecent(maxAgeMs=15*60*1000){ try { const raw = localStorage.getItem(this._draftKey()) || ''; if (!raw) return false; const parsed = JSON.parse(raw); const ts = Number(parsed?.ts); if (!Number.isFinite(ts) || (Date.now()-ts) > maxAgeMs) return false; const sch = parsed?.schedules && parsed.schedules.schedules ? parsed.schedules.schedules : (parsed?.schedules || parsed || {}); if (sch && typeof sch === 'object') { this._schedules = sch; this._ensureSchedules(); return true; } } catch {} return false; }
+  _persistDraftNow(){ try { this._syncSeasonalRowsToBucket(); } catch {} try { localStorage.setItem(this._draftKey(), JSON.stringify({ ts: Date.now(), schedules: this._schedules })); } catch {} }
+  _tryRestoreDraftRecent(maxAgeMs=15*60*1000){ try { const raw = localStorage.getItem(this._draftKey()) || ''; if (!raw) return false; const parsed = JSON.parse(raw); const ts = Number(parsed?.ts); if (!Number.isFinite(ts) || (Date.now()-ts) > maxAgeMs) return false; const sch = parsed?.schedules && parsed.schedules.schedules ? parsed.schedules.schedules : (parsed?.schedules || parsed || {}); if (sch && typeof sch === 'object') { this._schedules = sch; try { this._seasonAppliedKey = null; } catch {} this._ensureSchedules(); return true; } } catch {} return false; }
   _restoreSyncDue(){
     try {
       if (!this._config?.storage_enabled || this._config?.storage_sync_mode !== 'delay') return;
@@ -8360,7 +8955,14 @@ class ThermostatTimelineCard extends HTMLElement {
       this._ensureProfilesStruct(this._schedules[eid]);
       this._ensureHolidayStruct(this._schedules[eid]);
       this._ensurePresenceStruct(this._schedules[eid]);
-      if (this._config?.weekdays_enabled) this._ensureWeeklyStruct(this._schedules[eid]);
+      if (this._config?.seasonal_enabled) this._ensureSeasonStruct(this._schedules[eid]);
+    }
+    // Apply seasonal mode and ensure weekly structure for the active season
+    try { this._applySeasonalModeToRows(); } catch {}
+    if (this._config?.weekdays_enabled) {
+      for (const eid of this._config.entities) {
+        this._ensureWeeklyStruct(this._schedules[eid]);
+      }
     }
   }
 
@@ -8441,6 +9043,7 @@ class ThermostatTimelineCard extends HTMLElement {
   const scaleEl = qs('.scale-inner');
   const headerEl = qs('.header');
     if (!rowsEl || !scaleEl || !titleEl) return;
+  try { this._applySeasonalModeToRows(); } catch {}
 
     // Helper: build "All rooms" / "All days" view switch
     const makeWeekViewSeg = (extraClass='')=>{
@@ -8750,6 +9353,24 @@ class ThermostatTimelineCard extends HTMLElement {
             sbtn.innerHTML = '<ha-icon icon="mdi:cog-outline"></ha-icon>';
             sbtn.addEventListener('click', ()=>{ try { this._openSettingsPopup(); } catch {} });
             wrap.append(sbtn);
+          }
+        } catch {}
+
+        // Seasonal switch (Summer/Winter)
+        try {
+          if (this._config?.seasonal_enabled) {
+            const cur = this._seasonKey();
+            const label = this._t(cur === 'summer' ? 'season.mode.summer' : 'season.mode.winter') || (cur === 'summer' ? 'Summer' : 'Winter');
+            const next = (cur === 'summer') ? 'winter' : 'summer';
+            const nextLabel = this._t(next === 'summer' ? 'season.mode.summer' : 'season.mode.winter') || (next === 'summer' ? 'Summer' : 'Winter');
+            const sb = document.createElement('button');
+            sb.className = 'profiles-btn primary season-btn';
+            sb.type = 'button';
+            sb.textContent = label;
+            sb.setAttribute('title', `${label} → ${nextLabel}`);
+            sb.setAttribute('aria-label', `${label} → ${nextLabel}`);
+            sb.addEventListener('click', ()=>{ try { this._setSeasonMode(next); } catch {} });
+            wrap.append(sb);
           }
         } catch {}
         
@@ -9843,6 +10464,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const unitC = qs('.overlay-settings .sp-unitC');
       const unitF = qs('.overlay-settings .sp-unitF');
       const swProfiles = qs('.overlay-settings .sp-profiles');
+      const swSeasonal = qs('.overlay-settings .sp-seasonal');
       const swInstance = qs('.overlay-settings .sp-instance-enable');
       const btnRegenerateInstance = qs('.overlay-settings .sp-instance-regenerate-btn');
       if (fmt24) fmt24.onclick = ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.time_12h = false; this._renderSettingsPopupSettingsTab(); } catch {} };
@@ -9852,6 +10474,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (unitC) unitC.onclick = ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.temp_unit = 'C'; this._renderSettingsPopupTab(); } catch {} };
       if (unitF) unitF.onclick = ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.temp_unit = 'F'; this._renderSettingsPopupTab(); } catch {} };
       if (swProfiles) swProfiles.onchange = onSw('profiles_enabled');
+      if (swSeasonal) swSeasonal.onchange = onSw('seasonal_enabled');
 
       // Configuration ID (instance) toggle (persists outside of the popup draft)
       if (swInstance) {
@@ -9923,6 +10546,16 @@ class ThermostatTimelineCard extends HTMLElement {
         };
       }
     } catch {}
+
+    // Weekdays copy modal events
+    try {
+      const wov = qs('.overlay-weekcopy');
+      const applyBtn = qs('.weekcopy-apply');
+      const skipBtn = qs('.weekcopy-skip');
+      if (applyBtn) applyBtn.onclick = ()=>{ try { this._applyWeekCopyModal(true); } catch {} };
+      if (skipBtn) skipBtn.onclick = ()=>{ try { this._applyWeekCopyModal(false); } catch {} };
+      if (wov) wov.onclick = (e)=>{ if (e.target === wov) { e.preventDefault(); this._applyWeekCopyModal(false); } };
+    } catch {}
   }
 
   // --- Settings popup (in-card, not HA editor) ---
@@ -9988,6 +10621,116 @@ class ThermostatTimelineCard extends HTMLElement {
         try { b.setAttribute('aria-selected', isActive ? 'true' : 'false'); } catch {}
       }
     } catch {}
+  }
+
+  _openWeekCopyModal(){
+    try {
+      if (this._disablePopups) return;
+      const ov = this.shadowRoot && this.shadowRoot.querySelector('.overlay-weekcopy');
+      if (!ov) return;
+      ov.classList.add('open');
+      try { this.shadowRoot.querySelector('ha-card')?.classList.add('overlay-open'); } catch {}
+      try { this._renderWeekCopyModal(); } catch {}
+    } catch {}
+  }
+
+  _closeWeekCopyModal(){
+    try {
+      const ov = this.shadowRoot && this.shadowRoot.querySelector('.overlay-weekcopy');
+      if (ov) ov.classList.remove('open');
+      try {
+        const settingsOpen = !!this.shadowRoot?.querySelector('.overlay-settings')?.classList.contains('open');
+        if (!settingsOpen) this.shadowRoot.querySelector('ha-card')?.classList.remove('overlay-open');
+      } catch {}
+    } catch {}
+  }
+
+  _renderWeekCopyModal(){
+    try {
+      const title = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-title');
+      const desc = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-desc');
+      const modeLabel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-mode-label');
+      const sel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-mode');
+      const targetLabel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-target-label');
+      const targetSel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-target');
+      const applyBtn = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-apply');
+      const skipBtn = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-skip');
+
+      if (title) title.textContent = this._t('week.copy_from_main.title') || 'Copy main schedule';
+      if (desc) desc.textContent = this._t('week.copy_from_main.desc') || '';
+      if (modeLabel) modeLabel.textContent = this._t('week.copy_from_main.mode_label') || (this._t('week.mode') || 'Weekday mode');
+      if (targetLabel) targetLabel.textContent = this._t('week.copy_from_main.target_label') || 'Copy to';
+      if (applyBtn) applyBtn.textContent = this._t('week.copy_from_main.copy_btn') || (this._t('ui.copy_plan') || 'Copy');
+      if (skipBtn) skipBtn.textContent = this._t('week.copy_from_main.skip_btn') || (this._t('ui.cancel') || 'Skip');
+
+      const renderTargets = (mode, preferred='')=>{
+        if (!targetSel) return;
+        const m = String(mode || 'weekday_weekend');
+        const opts = [];
+        if (m === 'weekday_weekend') {
+          opts.push({ v: 'weekdays', l: this._t('week.group.weekdays') || 'Weekdays' });
+          opts.push({ v: 'weekend', l: this._t('week.group.weekend') || 'Weekend' });
+        } else if (m === 'weekday_sat_sun') {
+          opts.push({ v: 'weekdays', l: this._t('week.group.weekdays') || 'Weekdays' });
+          opts.push({ v: 'sat', l: this._t('week.days_full.sat') || 'Saturday' });
+          opts.push({ v: 'sun', l: this._t('week.days_full.sun') || 'Sunday' });
+        } else {
+          opts.push({ v: 'mon', l: this._t('week.days_full.mon') || 'Monday' });
+          opts.push({ v: 'tue', l: this._t('week.days_full.tue') || 'Tuesday' });
+          opts.push({ v: 'wed', l: this._t('week.days_full.wed') || 'Wednesday' });
+          opts.push({ v: 'thu', l: this._t('week.days_full.thu') || 'Thursday' });
+          opts.push({ v: 'fri', l: this._t('week.days_full.fri') || 'Friday' });
+          opts.push({ v: 'sat', l: this._t('week.days_full.sat') || 'Saturday' });
+          opts.push({ v: 'sun', l: this._t('week.days_full.sun') || 'Sunday' });
+        }
+        targetSel.innerHTML = '';
+        for (const o of opts) {
+          const opt = document.createElement('option');
+          opt.value = o.v; opt.textContent = o.l; targetSel.append(opt);
+        }
+        const allowed = new Set(opts.map(o=>o.v));
+        let pick = String(preferred || '').toLowerCase();
+        if (!allowed.has(pick)) {
+          if (allowed.has('weekdays')) pick = 'weekdays';
+          else pick = opts[0]?.v || '';
+        }
+        if (pick) targetSel.value = pick;
+      };
+
+      if (sel) {
+        const opt1 = sel.querySelector('.opt-weekday-weekend');
+        const opt2 = sel.querySelector('.opt-weekday-sat-sun');
+        const opt3 = sel.querySelector('.opt-all-7');
+        if (opt1) opt1.textContent = this._t('week.mode.weekday_weekend') || 'Weekdays + Weekend';
+        if (opt2) opt2.textContent = this._t('week.mode.weekday_sat_sun') || 'Weekdays + Saturday + Sunday';
+        if (opt3) opt3.textContent = this._t('week.mode.all_7') || 'All days';
+        const defMode = String(this._config?.weekdays_mode || 'weekday_weekend');
+        sel.value = (defMode === 'weekday_sat_sun' || defMode === 'all_7') ? defMode : 'weekday_weekend';
+        try { renderTargets(sel.value, this._settingsDraft?.weekdays_copy_from_main_target || ''); } catch {}
+        sel.onchange = ()=>{ try { renderTargets(sel.value, targetSel?.value || ''); } catch {} };
+      } else {
+        try { renderTargets('weekday_weekend', this._settingsDraft?.weekdays_copy_from_main_target || ''); } catch {}
+      }
+    } catch {}
+  }
+
+  _applyWeekCopyModal(doCopy){
+    try {
+      if (this._settingsDraft) {
+        if (doCopy) {
+          const sel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-mode');
+          const tsel = this.shadowRoot && this.shadowRoot.querySelector('.weekcopy-target');
+          const v = String(sel?.value || 'weekday_weekend');
+          this._settingsDraft.weekdays_copy_from_main_mode = (v === 'weekday_sat_sun' || v === 'all_7') ? v : 'weekday_weekend';
+          this._settingsDraft.weekdays_copy_from_main_target = String(tsel?.value || '').toLowerCase();
+        } else {
+          this._settingsDraft.weekdays_copy_from_main_mode = '';
+          this._settingsDraft.weekdays_copy_from_main_target = '';
+        }
+      }
+      this._closeWeekCopyModal();
+      try { this._renderSettingsPopupWeekdaysTab(); } catch {}
+    } catch { try { this._closeWeekCopyModal(); } catch {} }
   }
 
   _renderSettingsPopupTab(){
@@ -10153,6 +10896,10 @@ class ThermostatTimelineCard extends HTMLElement {
         presence_sensor_delay_units: (()=>{ try { return (cfg.presence_sensor_delay_units && typeof cfg.presence_sensor_delay_units === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_delay_units)) : {}; } catch { return {}; } })(),
 
         weekdays_enabled: !!cfg.weekdays_enabled,
+        weekdays_copy_from_main_mode: '',
+        weekdays_copy_from_main_target: '',
+        seasonal_enabled: !!cfg.seasonal_enabled,
+        seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
         weekdays_view: String(cfg.weekdays_view || 'all_rooms_one_day'),
         weekdays_view_switch_in_timeline: !!(cfg.weekdays_view_switch_in_timeline ?? false),
         weekdays_selected_room: String(cfg.weekdays_selected_room || ''),
@@ -10187,6 +10934,8 @@ class ThermostatTimelineCard extends HTMLElement {
         boiler_temp_sensor: String(cfg.boiler_temp_sensor || ''),
         boiler_min_temp: this._ttCoerceNum(cfg.boiler_min_temp, 20),
         boiler_max_temp: this._ttCoerceNum(cfg.boiler_max_temp, 25),
+        boiler_multi_enabled: !!cfg.boiler_multi_enabled,
+        boiler_room_settings: (()=>{ try { return (cfg.boiler_room_settings && typeof cfg.boiler_room_settings === 'object') ? JSON.parse(JSON.stringify(cfg.boiler_room_settings)) : {}; } catch { return {}; } })(),
 
         color_ranges: (()=>{
           try {
@@ -10239,6 +10988,9 @@ class ThermostatTimelineCard extends HTMLElement {
       const d = this._settingsDraft;
       if (!d) return;
       const cfg = { ...(this._config || {}) };
+      const prevSeasonalEnabled = !!this._config?.seasonal_enabled;
+      const prevSeasonalMode = (String(this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter';
+      const prevWeekEnabled = !!this._config?.weekdays_enabled;
 
       // Rooms settings (entities + per-room mode + merges/labels)
       try {
@@ -10348,6 +11100,8 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.time_source = (d.time_source === 'ha') ? 'ha' : 'browser';
       cfg.temp_unit = (String(d.temp_unit || 'C').toUpperCase() === 'F') ? 'F' : 'C';
       cfg.profiles_enabled = !!d.profiles_enabled;
+      cfg.seasonal_enabled = !!d.seasonal_enabled;
+      cfg.seasonal_mode = (String(d.seasonal_mode || prevSeasonalMode || 'winter') === 'summer') ? 'summer' : 'winter';
 
       cfg.presence_sensor_enabled = !!d.presence_sensor_enabled;
 
@@ -10425,6 +11179,17 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
 
+      // Optional: copy main schedule into weekdays when enabling
+      try {
+        const copyMode = String(d.weekdays_copy_from_main_mode || '').trim();
+        const copyTarget = String(d.weekdays_copy_from_main_target || '').trim();
+        if (!prevWeekEnabled && cfg.weekdays_enabled && copyMode) {
+          const m = (copyMode === 'weekday_sat_sun' || copyMode === 'all_7') ? copyMode : 'weekday_weekend';
+          cfg.weekdays_mode = m;
+          this._copyMainToWeekdays(m, copyTarget);
+        }
+      } catch {}
+
       // Boiler settings
       cfg.boiler_enabled = !!d.boiler_enabled;
       cfg.boiler_switch = String(d.boiler_switch || '');
@@ -10465,6 +11230,36 @@ class ThermostatTimelineCard extends HTMLElement {
         cfg.boiler_min_temp = cfg.boiler_max_temp;
         cfg.boiler_max_temp = tmpB;
       }
+
+      // Multi-boiler per-room settings
+      cfg.boiler_multi_enabled = !!d.boiler_multi_enabled;
+      try {
+        const ents = Array.isArray(cfg.entities) ? cfg.entities.filter(Boolean).map(String) : [];
+        const climateRooms = ents.filter(e=>String(e).startsWith('climate.'));
+        const src = (d.boiler_room_settings && typeof d.boiler_room_settings === 'object') ? d.boiler_room_settings : {};
+        const out = {};
+        const clampOffsetLocal = (n, fallback)=>{
+          const v = Number(n);
+          if (!Number.isFinite(v)) return fallback;
+          return Math.max(-10, Math.min(10, v));
+        };
+        for (const eid of climateRooms) {
+          const raw = src?.[eid];
+          if (!raw || typeof raw !== 'object') continue;
+          const enabled = !!raw.enabled;
+          const sw = String(raw.switch || '').trim();
+          const domFromEid = (sw ? String(sw).split('.')[0] : '');
+          const rawDom = String(raw.switch_domain || '').toLowerCase().trim();
+          const dom = (domFromEid === 'input_boolean' || domFromEid === 'switch')
+            ? domFromEid
+            : ((rawDom === 'input_boolean') ? 'input_boolean' : 'switch');
+          const onOff = clampOffsetLocal(raw.on_offset, this._ttCoerceNum(cfg.boiler_on_offset, 0));
+          const offOff = clampOffsetLocal(raw.off_offset, this._ttCoerceNum(cfg.boiler_off_offset, 0));
+          const hasAny = enabled || sw || Number.isFinite(Number(raw.on_offset)) || Number.isFinite(Number(raw.off_offset)) || !!raw.switch_domain;
+          if (hasAny) out[eid] = { enabled, switch: sw, switch_domain: dom, on_offset: onOff, off_offset: offOff };
+        }
+        cfg.boiler_room_settings = out;
+      } catch { cfg.boiler_room_settings = {}; }
 
       // Colors settings
       try {
@@ -10582,6 +11377,16 @@ class ThermostatTimelineCard extends HTMLElement {
       } catch {}
 
       this._config = cfg;
+      try {
+        if (cfg.seasonal_enabled) {
+          if (!prevSeasonalEnabled) {
+            this._prepareSeasonalRowsOnEnable();
+          }
+          this._applySeasonalModeToRows(true, prevSeasonalMode);
+        } else if (prevSeasonalEnabled) {
+          this._seasonAppliedKey = null;
+        }
+      } catch {}
     } catch {}
   }
 
@@ -12801,6 +13606,20 @@ class ThermostatTimelineCard extends HTMLElement {
               </div>
               <ha-switch class="sp-boiler-enable"></ha-switch>
             </div>
+            <div class="setting sp-boiler-multi-setting">
+              <div class="text">
+                <div class="title sp-boiler-multi-title"></div>
+                <div class="desc sp-boiler-multi-desc"></div>
+              </div>
+              <ha-switch class="sp-boiler-multi"></ha-switch>
+            </div>
+            <div class="setting sp-boiler-multi-rooms-setting" style="grid-template-columns: 1fr;">
+              <div class="text">
+                <div class="title sp-boiler-multi-rooms-title"></div>
+                <div class="desc sp-boiler-multi-rooms-desc"></div>
+              </div>
+              <div class="sp-boiler-multi-rooms-list" style="display:grid; gap:10px;"></div>
+            </div>
             <div class="setting sp-boiler-switch-setting" style="grid-template-columns: 1fr;">
               <div class="text">
                 <div class="title sp-boiler-switch-title"></div>
@@ -12845,17 +13664,30 @@ class ThermostatTimelineCard extends HTMLElement {
 
       // Visibility of dependent controls
       const boilerOn = !!d.boiler_enabled;
+      const multiOn = !!d.boiler_multi_enabled;
       try {
         const switchRow = q('.overlay-settings .sp-boiler-switch-setting');
         const roomsRow = q('.overlay-settings .sp-boiler-rooms-setting');
         const offRow = q('.overlay-settings .sp-boiler-offsets-setting');
-        [switchRow, roomsRow, offRow].forEach(r=>{ if (r) r.style.display = boilerOn ? '' : 'none'; });
+        const multiRow = q('.overlay-settings .sp-boiler-multi-setting');
+        const multiRoomsRow = q('.overlay-settings .sp-boiler-multi-rooms-setting');
+        if (switchRow) switchRow.style.display = (boilerOn && !multiOn) ? '' : 'none';
+        if (roomsRow) roomsRow.style.display = (boilerOn && !multiOn) ? '' : 'none';
+        if (offRow) offRow.style.display = (boilerOn && !multiOn) ? '' : 'none';
+        if (multiRow) multiRow.style.display = boilerOn ? '' : 'none';
+        if (multiRoomsRow) multiRoomsRow.style.display = (boilerOn && multiOn) ? '' : 'none';
       } catch {}
 
       // Master toggle
       try {
         const sw = q('.overlay-settings .sp-boiler-enable');
         if (sw) sw.checked = !!d.boiler_enabled;
+      } catch {}
+
+      // Multi toggle
+      try {
+        const mw = q('.overlay-settings .sp-boiler-multi');
+        if (mw) mw.checked = !!d.boiler_multi_enabled;
       } catch {}
 
       // Pickers
@@ -12916,6 +13748,289 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
 
+      // Multi-boiler rooms list (per-room foldouts)
+      try {
+        const list = q('.overlay-settings .sp-boiler-multi-rooms-list');
+        if (list) {
+          list.innerHTML = '';
+          const ents = Array.isArray(d.entities) ? d.entities.map(String) : [];
+          const rooms = ents.filter(e=>String(e).startsWith('climate.'));
+          const labels = (this._config && this._config.labels && typeof this._config.labels === 'object') ? this._config.labels : {};
+          const byName = (eid)=>{
+            try {
+              const lbl = labels && Object.prototype.hasOwnProperty.call(labels, eid) ? String(labels[eid]||'').trim() : '';
+              if (lbl) return lbl;
+              return String(this._hass?.states?.[eid]?.attributes?.friendly_name || (eid.split('.')[1] || eid));
+            } catch { return eid; }
+          };
+          if (!this._openBoilerMultiRooms) this._openBoilerMultiRooms = new Set();
+          const ensureDraftMap = ()=>{
+            if (!this._settingsDraft) return;
+            if (!this._settingsDraft.boiler_room_settings || typeof this._settingsDraft.boiler_room_settings !== 'object') this._settingsDraft.boiler_room_settings = {};
+          };
+          const getRoomCfg = (eid)=>{
+            const src = (d.boiler_room_settings && typeof d.boiler_room_settings === 'object') ? d.boiler_room_settings : {};
+            const raw = (src && Object.prototype.hasOwnProperty.call(src, eid)) ? src[eid] : null;
+            const sw = String(raw?.switch || '');
+            const domFromEid = (sw ? String(sw).split('.')[0] : '');
+            const rawDom = String(raw?.switch_domain || '').toLowerCase().trim();
+            const dom = (domFromEid === 'input_boolean' || domFromEid === 'switch')
+              ? domFromEid
+              : ((rawDom === 'input_boolean') ? 'input_boolean' : 'switch');
+            const onOff = Number.isFinite(Number(raw?.on_offset)) ? Number(raw.on_offset) : Number(d.boiler_on_offset ?? 0);
+            const offOff = Number.isFinite(Number(raw?.off_offset)) ? Number(raw.off_offset) : Number(d.boiler_off_offset ?? 0);
+            const enabled = !!raw?.enabled;
+            return { enabled, switch: sw, switch_domain: dom, on_offset: onOff, off_offset: offOff };
+          };
+          const updateRoomCfg = (eid, patch)=>{
+            try {
+              if (!this._settingsDraft) return;
+              ensureDraftMap();
+              const prev = (this._settingsDraft.boiler_room_settings && this._settingsDraft.boiler_room_settings[eid]) ? this._settingsDraft.boiler_room_settings[eid] : {};
+              this._settingsDraft.boiler_room_settings[eid] = { ...prev, ...patch };
+            } catch {}
+          };
+
+          for (const eid of rooms) {
+            const cfg = getRoomCfg(eid);
+
+            const line = document.createElement('div');
+            line.className = 'inline';
+
+            const summary = document.createElement('div');
+            summary.className = 'summary';
+            const sumLeft = document.createElement('div');
+            sumLeft.className = 'summary-left';
+            const exp = document.createElement('button');
+            exp.type = 'button';
+            exp.className = 'expander';
+            exp.innerHTML = '<ha-icon icon="mdi:chevron-down"></ha-icon>';
+
+            const txtWrap = document.createElement('div');
+            txtWrap.className = 'summary-text';
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'summary-title';
+            titleSpan.textContent = byName(eid);
+            const subSpan = document.createElement('span');
+            subSpan.className = 'summary-sub';
+            const swLabel = (cfg.switch ? (this._hass?.states?.[cfg.switch]?.attributes?.friendly_name || cfg.switch) : '');
+            subSpan.textContent = cfg.enabled ? (swLabel || '') : '';
+
+            txtWrap.append(titleSpan, subSpan);
+            sumLeft.append(exp, txtWrap);
+            summary.append(sumLeft);
+            line.append(summary);
+
+            const details = document.createElement('div');
+            details.className = 'details';
+            line.append(details);
+
+            // Styles (match other popup foldouts)
+            try {
+              summary.style.display = 'flex';
+              summary.style.alignItems = 'center';
+              summary.style.justifyContent = 'space-between';
+              summary.style.padding = '6px';
+              summary.style.border = '1px dashed var(--divider-color)';
+              summary.style.borderRadius = '8px';
+              summary.style.background = 'var(--secondary-background-color, transparent)';
+              sumLeft.style.display = 'flex';
+              sumLeft.style.alignItems = 'center';
+              sumLeft.style.gap = '8px';
+              sumLeft.style.minWidth = '0';
+              txtWrap.style.display = 'grid';
+              txtWrap.style.gap = '2px';
+              txtWrap.style.minWidth = '0';
+              titleSpan.style.fontWeight = '600';
+              titleSpan.style.overflow = 'hidden';
+              titleSpan.style.textOverflow = 'ellipsis';
+              titleSpan.style.whiteSpace = 'nowrap';
+              titleSpan.style.maxWidth = '320px';
+              subSpan.style.fontSize = '.85rem';
+              subSpan.style.color = 'var(--secondary-text-color)';
+              subSpan.style.overflow = 'hidden';
+              subSpan.style.textOverflow = 'ellipsis';
+              subSpan.style.whiteSpace = 'nowrap';
+              subSpan.style.maxWidth = '320px';
+              exp.style.width = '28px';
+              exp.style.height = '28px';
+              exp.style.borderRadius = '8px';
+              exp.style.border = '1px solid var(--divider-color)';
+              exp.style.background = 'var(--card-background-color)';
+              exp.style.display = 'inline-flex';
+              exp.style.alignItems = 'center';
+              exp.style.justifyContent = 'center';
+              exp.style.cursor = 'pointer';
+              details.style.display = 'none';
+              details.style.gridTemplateColumns = 'minmax(250px, 520px)';
+              details.style.gap = '8px';
+              details.style.padding = '8px';
+              details.style.border = '1px dashed var(--divider-color)';
+              details.style.borderRadius = '8px';
+              details.style.background = 'var(--secondary-background-color, transparent)';
+            } catch {}
+
+            const rowKey = String(eid);
+            const applyOpen = (isOpen)=>{
+              try {
+                if (isOpen) {
+                  line.classList.add('open');
+                  details.style.display = 'grid';
+                  exp.style.transform = 'rotate(180deg)';
+                } else {
+                  line.classList.remove('open');
+                  details.style.display = 'none';
+                  exp.style.transform = '';
+                }
+              } catch {}
+            };
+            const toggle = (ev)=>{
+              try { ev?.stopPropagation?.(); } catch {}
+              const nextOpen = !line.classList.contains('open');
+              applyOpen(nextOpen);
+              try {
+                if (!this._openBoilerMultiRooms) this._openBoilerMultiRooms = new Set();
+                if (nextOpen) this._openBoilerMultiRooms.add(rowKey);
+                else this._openBoilerMultiRooms.delete(rowKey);
+              } catch {}
+            };
+            exp.addEventListener('click', toggle);
+            summary.style.cursor = 'pointer';
+            summary.addEventListener('click', (ev)=>{
+              try { if (ev?.target?.closest?.('button, a, input, select, textarea, tt-entity-picker, ha-entity-picker, ha-switch')) return; } catch {}
+              toggle(ev);
+            });
+            try { applyOpen(!!this._openBoilerMultiRooms?.has(rowKey)); } catch {}
+
+            // Details content
+            const left = document.createElement('div');
+            left.style.display = 'grid';
+            left.style.gap = '6px';
+
+            const includeRow = document.createElement('div');
+            includeRow.style.display = 'flex';
+            includeRow.style.alignItems = 'center';
+            includeRow.style.justifyContent = 'space-between';
+            includeRow.style.gap = '10px';
+            const incText = document.createElement('div');
+            incText.style.display = 'grid';
+            incText.style.gap = '2px';
+            const incTitle = document.createElement('div');
+            incTitle.style.fontWeight = '600';
+            incTitle.textContent = this._t('boiler.room.enable') || 'Include room';
+            const incDesc = document.createElement('div');
+            incDesc.style.fontSize = '.85rem';
+            incDesc.style.color = 'var(--secondary-text-color)';
+            incDesc.textContent = this._t('boiler.room.enable.desc') || '';
+            incText.append(incTitle, incDesc);
+            const incSwitch = document.createElement('ha-switch');
+            incSwitch.checked = !!cfg.enabled;
+            incSwitch.addEventListener('change', (e)=>{
+              updateRoomCfg(eid, { enabled: !!e.target.checked });
+              this._renderSettingsPopupBoilerTab();
+            });
+            includeRow.append(incText, incSwitch);
+
+            const domRow = document.createElement('div');
+            domRow.className = 'sfield';
+            const domLabel = document.createElement('div');
+            domLabel.className = 'slabel';
+            domLabel.textContent = this._t('boiler.switch_type') || 'Entity type';
+            const domSel = document.createElement('select');
+            domSel.className = 'settings-input';
+            domSel.innerHTML = '<option value="switch">Switch</option><option value="input_boolean">Input boolean</option>';
+            domSel.value = (cfg.switch_domain === 'input_boolean') ? 'input_boolean' : 'switch';
+            domSel.addEventListener('change', (e)=>{
+              const v = String(e?.target?.value || '').toLowerCase().trim();
+              updateRoomCfg(eid, { switch_domain: (v === 'input_boolean') ? 'input_boolean' : 'switch', switch: '' });
+              this._renderSettingsPopupBoilerTab();
+            });
+            domRow.append(domLabel, domSel);
+
+            const pick = document.createElement('tt-entity-picker');
+            try { pick.style.display = 'block'; pick.style.minHeight = '48px'; pick.style.maxWidth = '440px'; } catch {}
+            try { pick.hass = this._hass; } catch {}
+            pick.setAttribute('include-domains', JSON.stringify([(cfg.switch_domain === 'input_boolean') ? 'input_boolean' : 'switch']));
+            pick.setAttribute('label', this._t('boiler.switch') || 'Boiler switch');
+            try { pick.value = String(cfg.switch || ''); } catch {}
+            pick.addEventListener('value-changed', (e)=>{
+              try {
+                const v = String(e.detail?.value || '');
+                const dom = String(v||'').split('.')[0];
+                const domVal = (dom === 'input_boolean') ? 'input_boolean' : 'switch';
+                updateRoomCfg(eid, { switch: v, switch_domain: domVal });
+                this._renderSettingsPopupBoilerTab();
+              } catch {}
+            });
+
+            const offsetsTitle = document.createElement('div');
+            offsetsTitle.style.fontWeight = '600';
+            offsetsTitle.textContent = this._t('boiler.offsets') || 'Offsets';
+            const offsetsDesc = document.createElement('div');
+            offsetsDesc.style.fontSize = '.85rem';
+            offsetsDesc.style.color = 'var(--secondary-text-color)';
+            offsetsDesc.textContent = this._t('boiler.offsets.desc') || '';
+
+            const grid = document.createElement('div');
+            grid.className = 'grid2';
+            grid.style.marginTop = '6px';
+            const onField = document.createElement('div');
+            onField.className = 'sfield';
+            const onLabel = document.createElement('div');
+            onLabel.className = 'slabel';
+            onLabel.textContent = String(this._t('boiler.on_offset') || '').replace('°C', this._unitSymbol());
+            const onInput = document.createElement('input');
+            onInput.className = 'settings-input';
+            onInput.type = 'number';
+            onInput.step = '0.1';
+            onInput.min = String(wantF ? -18 : -10);
+            onInput.max = String(wantF ? 18 : 10);
+            onInput.value = String(round1(toDispDelta(cfg.on_offset ?? 0)));
+            onInput.addEventListener('change', (e)=>{
+              try {
+                const raw = String(e?.target?.value ?? '').trim().replace(',', '.');
+                if (raw === '') return;
+                const nDisp = Number(raw);
+                const nC = fromDispDelta(nDisp);
+                if (!Number.isFinite(nC)) return;
+                updateRoomCfg(eid, { on_offset: Math.max(-10, Math.min(10, nC)) });
+              } catch {}
+            });
+            onField.append(onLabel, onInput);
+
+            const offField = document.createElement('div');
+            offField.className = 'sfield';
+            const offLabel = document.createElement('div');
+            offLabel.className = 'slabel';
+            offLabel.textContent = String(this._t('boiler.off_offset') || '').replace('°C', this._unitSymbol());
+            const offInput = document.createElement('input');
+            offInput.className = 'settings-input';
+            offInput.type = 'number';
+            offInput.step = '0.1';
+            offInput.min = String(wantF ? -18 : -10);
+            offInput.max = String(wantF ? 18 : 10);
+            offInput.value = String(round1(toDispDelta(cfg.off_offset ?? 0)));
+            offInput.addEventListener('change', (e)=>{
+              try {
+                const raw = String(e?.target?.value ?? '').trim().replace(',', '.');
+                if (raw === '') return;
+                const nDisp = Number(raw);
+                const nC = fromDispDelta(nDisp);
+                if (!Number.isFinite(nC)) return;
+                updateRoomCfg(eid, { off_offset: Math.max(-10, Math.min(10, nC)) });
+              } catch {}
+            });
+            offField.append(offLabel, offInput);
+            grid.append(onField, offField);
+
+            left.append(includeRow, domRow, pick, offsetsTitle, offsetsDesc, grid);
+            details.append(left);
+
+            list.append(line);
+          }
+        }
+      } catch {}
+
       // Offsets
       try {
         const onIn = q('.overlay-settings .sp-boiler-on-offset');
@@ -12946,6 +14061,17 @@ class ThermostatTimelineCard extends HTMLElement {
               if (!this._settingsDraft) return;
               this._settingsDraft.boiler_enabled = !!e.target.checked;
               this._boilerToggleTouched = true;
+              this._renderSettingsPopupBoilerTab();
+            } catch {}
+          });
+        } catch {}
+
+        try {
+          const mw = q('.overlay-settings .sp-boiler-multi');
+          if (mw) mw.addEventListener('change', (e)=>{
+            try {
+              if (!this._settingsDraft) return;
+              this._settingsDraft.boiler_multi_enabled = !!e.target.checked;
               this._renderSettingsPopupBoilerTab();
             } catch {}
           });
@@ -13100,8 +14226,17 @@ class ThermostatTimelineCard extends HTMLElement {
           if (sw) sw.addEventListener('change', (e)=>{
             try {
               if (!this._settingsDraft) return;
+              const wasOn = !!this._settingsDraft.weekdays_enabled;
               const on = !!e.target.checked;
               this._settingsDraft.weekdays_enabled = on;
+              if (!on) {
+                this._settingsDraft.weekdays_copy_from_main_mode = '';
+                this._settingsDraft.weekdays_copy_from_main_target = '';
+              } else if (!wasOn && this._hasAnyMainBlocks()) {
+                this._settingsDraft.weekdays_copy_from_main_mode = '';
+                this._settingsDraft.weekdays_copy_from_main_target = '';
+                this._openWeekCopyModal();
+              }
               // When enabling, default view to all rooms
               if (on && (!this._settingsDraft.weekdays_view || this._settingsDraft.weekdays_view === 'undefined')) {
                 this._settingsDraft.weekdays_view = 'all_rooms_one_day';
@@ -13612,6 +14747,7 @@ class ThermostatTimelineCard extends HTMLElement {
         bF && bF.classList.toggle('active', wantF);
       } catch {}
       setChk('.overlay-settings .sp-profiles', d.profiles_enabled);
+      setChk('.overlay-settings .sp-seasonal', d.seasonal_enabled);
 
       // Configuration ID (instance) toggle + label (not part of the popup draft)
       try {
@@ -13745,6 +14881,8 @@ class ThermostatTimelineCard extends HTMLElement {
       if (String(d.time_source||'browser') !== String(c.time_source||'browser')) return true;
       if (String(d.temp_unit||'C').toUpperCase() !== String(c.temp_unit||'C').toUpperCase()) return true;
       if (!!d.profiles_enabled !== !!c.profiles_enabled) return true;
+      if (!!d.seasonal_enabled !== !!c.seasonal_enabled) return true;
+      if (String(d.seasonal_mode||'winter') !== String(c.seasonal_mode||'winter')) return true;
 
       if (!!d.presence_sensor_enabled !== !!c.presence_sensor_enabled) return true;
 
@@ -13791,6 +14929,35 @@ class ThermostatTimelineCard extends HTMLElement {
       const cOffOff = this._ttCoerceNum(c.boiler_off_offset, 0);
       if (!eqNum(d.boiler_on_offset, cOnOff)) return true;
       if (!eqNum(d.boiler_off_offset, cOffOff)) return true;
+
+      if (!!d.boiler_multi_enabled !== !!c.boiler_multi_enabled) return true;
+      try {
+        const cEnts = Array.isArray(c.entities) ? c.entities.filter(Boolean).map(String) : [];
+        const climateRooms = cEnts.filter(e=>String(e).startsWith('climate.'));
+        const norm = (src)=>{
+          const map = (src && typeof src === 'object') ? src : {};
+          const out = {};
+          for (const eid of climateRooms) {
+            const raw = map?.[eid];
+            if (!raw || typeof raw !== 'object') continue;
+            const enabled = !!raw.enabled;
+            const sw = String(raw.switch || '').trim();
+            const domFromEid = (sw ? String(sw).split('.')[0] : '');
+            const rawDom = String(raw.switch_domain || '').toLowerCase().trim();
+            const dom = (domFromEid === 'input_boolean' || domFromEid === 'switch')
+              ? domFromEid
+              : ((rawDom === 'input_boolean') ? 'input_boolean' : 'switch');
+            const onOff = Number.isFinite(Number(raw.on_offset)) ? Math.max(-10, Math.min(10, Number(raw.on_offset))) : this._ttCoerceNum(c.boiler_on_offset, 0);
+            const offOff = Number.isFinite(Number(raw.off_offset)) ? Math.max(-10, Math.min(10, Number(raw.off_offset))) : this._ttCoerceNum(c.boiler_off_offset, 0);
+            const hasAny = enabled || sw || raw.on_offset !== undefined || raw.off_offset !== undefined || raw.switch_domain;
+            if (hasAny) out[eid] = { enabled, switch: sw, switch_domain: dom, on_offset: onOff, off_offset: offOff };
+          }
+          return out;
+        };
+        const dMap = norm(d.boiler_room_settings);
+        const cMap = norm(c.boiler_room_settings);
+        if (JSON.stringify(dMap) !== JSON.stringify(cMap)) return true;
+      } catch {}
 
       // Colors
       if (!!d.color_global !== !!c.color_global) return true;
@@ -14639,6 +15806,7 @@ class ThermostatTimelineCard extends HTMLElement {
   // ---------- Weekdays modal ----------
   _openWeeklyEditor(entity){
     this._ensureEditModeOn();
+    try { this._applySeasonalModeToRows(); } catch {}
     this._weeklyEntity = entity;
     const row = this._schedules[entity] || { defaultTemp: this._config.default_temp, blocks: [] };
     this._ensureWeeklyStruct(row);
@@ -14810,6 +15978,31 @@ class ThermostatTimelineCard extends HTMLElement {
           this._renderWeeklyModal();
         };
       }
+      // Seasonal selector (Summer/Winter)
+      try {
+        const seasonRow = this.shadowRoot.querySelector('.week-season-row');
+        const seasonLab = this.shadowRoot.querySelector('.week-season-label');
+        const seasonSel = this.shadowRoot.querySelector('.week-season');
+        if (seasonRow && seasonSel && seasonLab) {
+          const on = !!this._config?.seasonal_enabled;
+          seasonRow.style.display = on ? '' : 'none';
+          if (on) {
+            seasonLab.textContent = this._t('season.mode.title') || 'Season';
+            const optW = seasonSel.querySelector('.opt-season-winter');
+            const optS = seasonSel.querySelector('.opt-season-summer');
+            if (optW) optW.textContent = this._t('season.mode.winter') || 'Winter';
+            if (optS) optS.textContent = this._t('season.mode.summer') || 'Summer';
+            seasonSel.value = this._seasonKey();
+            seasonSel.onchange = ()=>{
+              try {
+                const next = (seasonSel.value === 'summer') ? 'summer' : 'winter';
+                this._setSeasonMode(next);
+                this._renderWeeklyModal();
+              } catch {}
+            };
+          }
+        }
+      } catch {}
       // Copy/Paste day logic
       // Helper to resolve which real days are in a group for current mode
       const groupDaysForMode = (mode, key)=>{
@@ -15702,6 +16895,22 @@ class ThermostatTimelineCard extends HTMLElement {
     const track = modalHost?.querySelector('.week-track');
   const tabs = modalHost?.querySelector('.presence-roomtabs');
     const btnSave = modalHost?.querySelector('.presence-save'); const btnClose = modalHost?.querySelector('.presence-close');
+    const seasonRow = modalHost?.querySelector('.presence-season-row');
+    const seasonLab = modalHost?.querySelector('.presence-season-label');
+    const seasonSel = modalHost?.querySelector('.presence-season');
+
+    const buildPresenceDraft = (comboKey)=>{
+      try {
+        const roomsMap = {};
+        for (const eid of (this._config?.entities||[])){
+          const r = this._schedules[eid] || { defaultTemp: this._config.default_temp, blocks: [] };
+          this._ensurePresenceStruct(r);
+          const arr = (comboKey && r.presence && r.presence[comboKey]) ? (r.presence[comboKey].blocks || []) : [];
+          roomsMap[eid] = JSON.parse(JSON.stringify(arr));
+        }
+        this._presenceDraft = { combo: comboKey, rooms: roomsMap };
+      } catch {}
+    };
     // Build readonly vertical list of enabled combos (click to select)
     if (list) {
       list.innerHTML='';
@@ -15715,13 +16924,36 @@ class ThermostatTimelineCard extends HTMLElement {
         const full = it.label; btn.textContent = full; btn.title = full;
         btn.addEventListener('click', ()=>{
           this._presenceCombo = it.key;
-          const roomsMap={}; for (const eid of (this._config?.entities||[])){ const r=this._schedules[eid] || { defaultTemp: this._config.default_temp, blocks: [] }; this._ensurePresenceStruct(r); const arr=(r.presence && r.presence[it.key]) ? (r.presence[it.key].blocks || []) : []; roomsMap[eid]=JSON.parse(JSON.stringify(arr)); }
-          this._presenceDraft = { combo: it.key, rooms: roomsMap }; this._renderPresenceModal();
+          buildPresenceDraft(it.key);
+          this._renderPresenceModal();
         });
         grid.append(btn);
       }
       list.append(grid);
     }
+    // Seasonal selector (Summer/Winter)
+    try {
+      if (seasonRow && seasonSel && seasonLab) {
+        const on = !!this._config?.seasonal_enabled;
+        seasonRow.style.display = on ? '' : 'none';
+        if (on) {
+          seasonLab.textContent = this._t('season.mode.title') || 'Season';
+          const optW = seasonSel.querySelector('.opt-season-winter');
+          const optS = seasonSel.querySelector('.opt-season-summer');
+          if (optW) optW.textContent = this._t('season.mode.winter') || 'Winter';
+          if (optS) optS.textContent = this._t('season.mode.summer') || 'Summer';
+          seasonSel.value = this._seasonKey();
+          seasonSel.onchange = ()=>{
+            try {
+              const next = (seasonSel.value === 'summer') ? 'summer' : 'winter';
+              this._setSeasonMode(next);
+              buildPresenceDraft(this._presenceCombo);
+              this._renderPresenceModal();
+            } catch {}
+          };
+        }
+      }
+    } catch {}
     // Active combo label
     if (wrapActive) {
       const combos = this._presenceAllCombos(); const conf=(this._config?.away?.combos)||{};
@@ -16799,6 +18031,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const pd = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-profiles-desc');
         if (pd) pd.textContent = t('profiles.enable.desc');
 
+        const seasonTitle = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-seasonal-title');
+        if (seasonTitle) seasonTitle.textContent = t('season.enable.title');
+        const seasonDesc = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-seasonal-desc');
+        if (seasonDesc) seasonDesc.textContent = t('season.enable.desc');
+
         const instTitle = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-instance-title');
         if (instTitle) instTitle.textContent = t('editor.instance.title');
         const instDesc = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-instance-desc');
@@ -16855,6 +18092,14 @@ class ThermostatTimelineCard extends HTMLElement {
         if (brT) brT.textContent = t('boiler.rooms');
         const brD = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-rooms-desc');
         if (brD) brD.textContent = t('boiler.rooms.desc');
+        const bmT = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-multi-title');
+        if (bmT) bmT.textContent = t('boiler.multi_enable');
+        const bmD = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-multi-desc');
+        if (bmD) bmD.textContent = t('boiler.multi_enable.desc');
+        const bmrT = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-multi-rooms-title');
+        if (bmrT) bmrT.textContent = t('boiler.multi_rooms');
+        const bmrD = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-multi-rooms-desc');
+        if (bmrD) bmrD.textContent = t('boiler.multi_rooms.desc');
         const boT = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-offsets-title');
         if (boT) boT.textContent = t('boiler.offsets');
         const boD = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-boiler-offsets-desc');
@@ -19857,7 +21102,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
     // These settings are now edited in the in-card popup + stored in shared/local storage,
     // so they should not be emitted into YAML config.
     try {
-      for (const k of ['row_height','default_temp','min_temp','max_temp','auto_apply','apply_on_edit','apply_on_default_change','per_room_defaults','show_pause_button','show_room_temp','pause_sensor_enabled','pause_sensor_entity','presence_sensor_enabled','presence_sensors','presence_sensor_temps','presence_sensor_delays','presence_sensor_delay_units','time_12h','time_source','temp_unit','profiles_enabled','weekdays_enabled','weekdays_view','weekdays_selected_room','boiler_enabled','boiler_switch','boiler_switch_domain','boiler_temp_sensor','boiler_min_temp','boiler_max_temp','open_window','color_ranges','color_global','respect_storage_weekdays']) {
+      for (const k of ['row_height','default_temp','min_temp','max_temp','auto_apply','apply_on_edit','apply_on_default_change','per_room_defaults','show_pause_button','show_room_temp','pause_sensor_enabled','pause_sensor_entity','presence_sensor_enabled','presence_sensors','presence_sensor_temps','presence_sensor_delays','presence_sensor_delay_units','time_12h','time_source','temp_unit','profiles_enabled','weekdays_enabled','weekdays_view','weekdays_selected_room','boiler_enabled','boiler_switch','boiler_switch_domain','boiler_temp_sensor','boiler_min_temp','boiler_max_temp','boiler_multi_enabled','boiler_room_settings','open_window','color_ranges','color_global','respect_storage_weekdays']) {
         if (k in cfg) delete cfg[k];
       }
     } catch {}
