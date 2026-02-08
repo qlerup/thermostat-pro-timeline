@@ -1687,6 +1687,86 @@ class AutoApplyManager:
             desired = self._desired_for(eid, schedules, settings, now_min)
             if desired is None:
                 continue
+            # Manual override guard: if the thermostat target differs from the
+            # scheduled value, do not force it back until the next block boundary.
+            # Guard is only active from 5 min after block start until 5 min
+            # before block end, to keep a buffer around boundaries.
+            # (Boundary ticks and resume reconciles are allowed.)
+            if not boundary_only and not reconcile:
+                try:
+                    # Check if guard window is active for this entity right now
+                    guard_active = False
+                    try:
+                        primary = None
+                        if eid in schedules:
+                            primary = eid
+                        else:
+                            for p, lst in (merges.items() if isinstance(merges, dict) else []):
+                                try:
+                                    if eid in (lst or []):
+                                        primary = p
+                                        break
+                                except Exception:
+                                    continue
+                        if primary is None:
+                            primary = eid
+                        row = schedules.get(primary) or {}
+                        blocks = self._effective_blocks_today(row, settings)
+                        for b in blocks:
+                            try:
+                                s = int(b.get("startMin", -1))
+                                e = int(b.get("endMin", -1))
+                                if s < 0 or e < 0:
+                                    continue
+                                if s <= now_min < e:
+                                    if (e - s) >= 10:
+                                        guard_active = (now_min >= (s + 5)) and (now_min <= (e - 5))
+                                    else:
+                                        guard_active = False
+                                    break
+                            except Exception:
+                                continue
+                    except Exception:
+                        guard_active = False
+
+                    if not guard_active:
+                        pass
+                    st = self.hass.states.get(eid)
+                    cur = None
+                    if st is not None:
+                        if eid.startswith("input_number."):
+                            try:
+                                cur = float(st.state)
+                            except Exception:
+                                cur = None
+                        else:
+                            for attr in ("temperature", "target_temperature", "target_temp"):
+                                v = st.attributes.get(attr)
+                                if isinstance(v, (int, float)):
+                                    cur = float(v)
+                                    break
+
+                    if cur is not None:
+                        try:
+                            u = self.hass.config.units.temperature_unit
+                            ha_is_f = u == UnitOfTemperature.FAHRENHEIT or "F" in str(u).upper()
+                        except Exception:
+                            ha_is_f = False
+                        cur_c = _f_to_c(cur) if ha_is_f else float(cur)
+
+                        # Convert desired to °C (storage is canonical °C, but keep legacy fallback)
+                        desired_c = float(desired)
+                        su = str((settings or {}).get("storage_temp_unit") or "").upper().strip()
+                        if su == "F":
+                            desired_c = _f_to_c(desired_c)
+                        elif su != "C":
+                            legacy_u = str((settings or {}).get("temp_unit") or "").upper().strip()
+                            if legacy_u == "F" and desired_c > 45.0:
+                                desired_c = _f_to_c(desired_c)
+                        if guard_active and abs(cur_c - desired_c) > 0.05:
+                            continue
+                except Exception:
+                    pass
             # Only apply when desired setpoint changes for this entity.
             # This prevents overriding manual thermostat changes just because
             # another room hits a new block (or any global refresh runs).
