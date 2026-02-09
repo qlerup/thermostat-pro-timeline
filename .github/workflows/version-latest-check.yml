@@ -248,10 +248,10 @@ jobs:
                     marker,
                     missingSig,
                     "",
-                    "Hej! Jeg kan ikke se nogen version i din issue-beskrivelse.",
-                    "Skriv venligst hvilken version du kører i formatet `vX.Y.Z` eller `X.Y.Z` (fx `v10.30.40`).",
+                    "Hi! I couldn't find a version number in the issue description.",
+                    "Please reply with the version you're running in `X.Y.Z` format (e.g. `3.1.1`) or with a `v` prefix (e.g. `v3.1.1`).",
                     "",
-                    "Tak 🙏"
+                    "Thanks 🙏"
                   ].join("\n"),
                 });
 
