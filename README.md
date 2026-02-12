@@ -20,7 +20,7 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 
 ## Highlights (Features)
 
-- 🗓️ **Timeline planner for multiple rooms**: Drag, resize, and double-click to edit heating/cooling periods for each room.
+- 🗓️ **Timeline planner for multiple rooms**: Add or Double-click to edit or add heating/cooling periods for each room.
 - 📅 **Per-weekday schedules**: Two timeline views (all rooms for one day, or all days for one room). Supports weekday grouping (weekday/weekend, Sat/Sun, or all 7 days).
 - 🏷️ **Profiles**: Named day schedules per room, with quick activate/deactivate and full profile management from the card.
 - 👥 **Presence schedules**: Advanced “who’s home” logic, per-person selection, presence sensors, and Away mode with delays and combinations.
