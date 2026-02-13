@@ -66,12 +66,16 @@ def _get_lovelace_resources(hass: HomeAssistant):
         return None
 
 
-def _sha256(path: Path) -> str:
+def _sha256_sync(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
         for chunk in iter(lambda: f.read(1024 * 256), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+async def _sha256(hass: HomeAssistant, path: Path) -> str:
+    return await hass.async_add_executor_job(_sha256_sync, path)
 
 
 async def ensure_frontend(hass: HomeAssistant) -> None:
@@ -127,7 +131,7 @@ async def _ensure_js_in_www(hass: HomeAssistant) -> None:
     # Copy only if missing or changed
     if dst.exists():
         try:
-            if _sha256(src) == _sha256(dst):
+            if await _sha256(hass, src) == await _sha256(hass, dst):
                 return
         except Exception:
             # If hashing fails for any reason, overwrite.
@@ -149,7 +153,7 @@ async def _ensure_lovelace_resource(hass: HomeAssistant) -> None:
         token = "0"
         if deployed.exists():
             try:
-                token = _token_from_hash(_sha256(deployed))
+                token = _token_from_hash(await _sha256(hass, deployed))
             except Exception:
                 token = "0"
         url = f"{RESOURCE_URL}?v={token}"
@@ -208,7 +212,7 @@ async def _ensure_lovelace_resource(hass: HomeAssistant) -> None:
     token = "0"
     if deployed.exists():
         try:
-            token = _token_from_hash(_sha256(deployed))
+            token = _token_from_hash(await _sha256(hass, deployed))
         except Exception:
             token = "0"
     url = f"{RESOURCE_URL}?v={token}"
