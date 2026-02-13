@@ -476,12 +476,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if "settings" in call.data:
             settings = call.data.get("settings")
             if isinstance(settings, dict):
-                if force or settings != cur_set:
-                    inst["settings"] = settings
+                merged_settings = dict(cur_set)
+                merged_settings.update(settings)
+                if force or merged_settings != cur_set:
+                    inst["settings"] = merged_settings
                     settings_changed = True
                     changed = True
-                c_ranges = settings.get("color_ranges")
-                c_global = settings.get("color_global")
+                c_ranges = merged_settings.get("color_ranges")
+                c_global = merged_settings.get("color_global")
                 if c_ranges is not None or c_global is not None:
                     inst["colors"] = {
                         "color_ranges": c_ranges if c_ranges is not None else cur_colors.get("color_ranges", {}),
@@ -2483,8 +2485,10 @@ class AutoApplyManager:
         if (away.get("enabled") or away.get("advanced_enabled")) and isinstance(persons, list) and persons:
             @callback
             def _ch(event):
-                # Apply immediately when presence changes
-                self.hass.async_create_task(self._maybe_apply_now(force=True))
+                # Apply immediately when presence changes.
+                # Use reconcile to bypass manual-override guard so away/presence
+                # transitions take effect even mid-block.
+                self.hass.async_create_task(self._maybe_apply_now(force=True, reconcile=True))
                 self.hass.async_create_task(self._schedule_next())
             self._unsub_persons = async_track_state_change_event(self.hass, persons, _ch)
 
