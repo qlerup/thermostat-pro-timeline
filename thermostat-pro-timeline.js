@@ -6675,6 +6675,7 @@ class ThermostatTimelineCard extends HTMLElement {
   _makeStoragePayload(includeSchedules=true){
     try {
       try { this._syncSeasonalRowsToBucket(); } catch {}
+      const base = (this._config && typeof this._config === 'object') ? this._config : {};
       // Canonical shared storage is always °C to avoid drift when multiple clients use different display units.
       // (Display unit is controlled by settings.temp_unit and is independent of stored numeric values.)
       const wantF = false;
@@ -8002,7 +8003,15 @@ class ThermostatTimelineCard extends HTMLElement {
       // When bypassing or using advanced presence, disable simple Away in backend apply
       if (this._awayBypass || _awayOut.advanced_enabled) _awayOut.enabled = false;
       const payload = this._makeStoragePayload(false);
-      payload.settings = { ...payload.settings, away: _awayOut };
+      // set_store replaces the full settings object, so merge with current backend
+      // settings first to avoid dropping unrelated keys (e.g. holidays_*).
+      let mergedSettings = { ...payload.settings, away: _awayOut };
+      try {
+        const state = await this._apiFetchState();
+        const base = (state && typeof state === 'object' && state.settings && typeof state.settings === 'object') ? state.settings : {};
+        mergedSettings = { ...base, ...mergedSettings };
+      } catch {}
+      payload.settings = mergedSettings;
       const p = { settings: payload.settings, force: true };
       if (this._config?.instance_enabled) { p.instance_id = this._instanceId(); p.activate = true; }
       await this._hass.callService('thermostat_timeline','set_store', p);
