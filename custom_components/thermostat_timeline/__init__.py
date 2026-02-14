@@ -478,6 +478,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if isinstance(settings, dict):
                 merged_settings = dict(cur_set)
                 merged_settings.update(settings)
+                try:
+                    sw = merged_settings.get("boiler_switch")
+                    if isinstance(sw, str) and sw:
+                        dom = sw.split(".")[0]
+                        if dom in ("switch", "input_boolean"):
+                            merged_settings["boiler_switch_domain"] = dom
+                except Exception:
+                    pass
                 if force or merged_settings != cur_set:
                     inst["settings"] = merged_settings
                     settings_changed = True
