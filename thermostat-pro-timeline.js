@@ -4660,15 +4660,16 @@ class ThermostatTimelineCard extends HTMLElement {
       max_temp: Object.prototype.hasOwnProperty.call(config, 'max_temp'),
       temp_sensors: Object.prototype.hasOwnProperty.call(config, 'temp_sensors'),
       turn_on: Object.prototype.hasOwnProperty.call(config, 'turn_on'),
-      boiler_enabled: Object.prototype.hasOwnProperty.call(config, 'boiler_enabled'),
-      boiler_switch: Object.prototype.hasOwnProperty.call(config, 'boiler_switch'),
-      boiler_switch_domain: Object.prototype.hasOwnProperty.call(config, 'boiler_switch_domain'),
-      boiler_rooms: Object.prototype.hasOwnProperty.call(config, 'boiler_rooms'),
-      boiler_on_offset: Object.prototype.hasOwnProperty.call(config, 'boiler_on_offset'),
-      boiler_off_offset: Object.prototype.hasOwnProperty.call(config, 'boiler_off_offset'),
-      boiler_temp_sensor: Object.prototype.hasOwnProperty.call(config, 'boiler_temp_sensor'),
-      boiler_min_temp: Object.prototype.hasOwnProperty.call(config, 'boiler_min_temp'),
-      boiler_max_temp: Object.prototype.hasOwnProperty.call(config, 'boiler_max_temp'),
+      // Boiler settings are storage-driven; do not lock them from Lovelace/YAML defaults.
+      boiler_enabled: false,
+      boiler_switch: false,
+      boiler_switch_domain: false,
+      boiler_rooms: false,
+      boiler_on_offset: false,
+      boiler_off_offset: false,
+      boiler_temp_sensor: false,
+      boiler_min_temp: false,
+      boiler_max_temp: false,
       show_pause_button: Object.prototype.hasOwnProperty.call(config, 'show_pause_button'),
       show_room_temp: Object.prototype.hasOwnProperty.call(config, 'show_room_temp'),
       pause_sensor_enabled: Object.prototype.hasOwnProperty.call(config, 'pause_sensor_enabled'),
@@ -4677,10 +4678,12 @@ class ThermostatTimelineCard extends HTMLElement {
       time_12h: Object.prototype.hasOwnProperty.call(config, 'time_12h'),
       time_source: Object.prototype.hasOwnProperty.call(config, 'time_source'),
       temp_unit: Object.prototype.hasOwnProperty.call(config, 'temp_unit'),
-      holidays_enabled: Object.prototype.hasOwnProperty.call(config, 'holidays_enabled'),
-      holidays_source: Object.prototype.hasOwnProperty.call(config, 'holidays_source'),
-      holidays_entity: Object.prototype.hasOwnProperty.call(config, 'holidays_entity'),
-      holidays_dates: Object.prototype.hasOwnProperty.call(config, 'holidays_dates'),
+      // Holiday settings are storage-driven; do not lock them from Lovelace/YAML defaults.
+      holidays_enabled: false,
+      holidays_source: false,
+      holidays_entity: false,
+      holidays_dates: false,
+      presence_live_header: false,
       presence_sensor_enabled: Object.prototype.hasOwnProperty.call(config, 'presence_sensor_enabled'),
       presence_sensors: Object.prototype.hasOwnProperty.call(config, 'presence_sensors'),
       presence_sensor_temps: Object.prototype.hasOwnProperty.call(config, 'presence_sensor_temps'),
@@ -4918,6 +4921,9 @@ class ThermostatTimelineCard extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this._initialized = false;
   this._config = ThermostatTimelineCard.getStubConfig();
+  // Track whether storage was loaded from backend to avoid early overwrites.
+  this._storeLoaded = false;
+  this._storeLoadedFromApi = false;
   // Guard: wait for setConfig before any apply logic
   this._hasConfig = false;
   // Track which YAML keys were explicitly provided so storage doesn't
@@ -4971,6 +4977,12 @@ class ThermostatTimelineCard extends HTMLElement {
   this._storeWatchBusy = false; // avoid overlapping polls
   // Track if user explicitly touched boiler toggle this session
   this._boilerToggleTouched = false;
+  // Track explicit edits in Holidays tab so background saves don't overwrite backend values.
+  this._holidaysSourceTouched = false;
+  this._holidaysEntityTouched = false;
+  this._holidaysDatesTouched = false;
+  this._holidaysGroupsTouched = false;
+  this._awayTouched = false;
 
   // Cross-card sync (same dashboard + other tabs). Needed when storage is OFF,
   // because multiple cards otherwise won't notice localStorage changes.
@@ -4981,6 +4993,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const d = ev?.detail || {};
       if (!d || d.origin === this._broadcastId) return;
       if (this._inlineEditing || this._editing) return;
+      if (this._isSettingsPopupOpen && this._isSettingsPopupOpen()) return;
       const key = String(d.key || '');
       const myKey = this._localStoreKey();
       if (!key || !myKey || key !== myKey) return;
@@ -5651,6 +5664,11 @@ class ThermostatTimelineCard extends HTMLElement {
                 this._config.presence_sensor_delay_units = out;
               }
             } catch {}
+            try {
+              if (typeof s.presence_live_header === 'boolean') {
+                this._config.presence_live_header = !!s.presence_live_header;
+              }
+            } catch {}
 
             // Fallbacks for Rooms tab settings if backend didn't persist them:
             // Merge from local browser copy to avoid losing user edits (e.g., custom room names)
@@ -5700,6 +5718,11 @@ class ThermostatTimelineCard extends HTMLElement {
                 if (!this._yamlProvided?.presence_sensor_delay_units && (!s.presence_sensor_delay_units || typeof s.presence_sensor_delay_units !== 'object' || isEmptyObj(s.presence_sensor_delay_units))) {
                   if (ls.presence_sensor_delay_units && typeof ls.presence_sensor_delay_units === 'object') {
                     this._config.presence_sensor_delay_units = { ...(this._config.presence_sensor_delay_units || {}), ...ls.presence_sensor_delay_units };
+                  }
+                }
+                if (!this._yamlProvided?.presence_live_header && typeof s.presence_live_header !== 'boolean') {
+                  if (typeof ls.presence_live_header === 'boolean') {
+                    this._config.presence_live_header = !!ls.presence_live_header;
                   }
                 }
                 if (Array.isArray(this._config.entities) && (!Array.isArray(s.entities) || !s.entities.length)) {
@@ -5777,7 +5800,18 @@ class ThermostatTimelineCard extends HTMLElement {
               }
             } catch {}
             if ((typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number') && !this._yamlProvided?.boiler_enabled) this._config.boiler_enabled = !!s.boiler_enabled;
-            if (typeof s.boiler_switch === 'string' && !this._yamlProvided?.boiler_switch) this._config.boiler_switch = s.boiler_switch || '';
+            if (typeof s.boiler_switch === 'string') {
+              const curSw = String(this._config?.boiler_switch || '');
+              if (!this._yamlProvided?.boiler_switch || !curSw) this._config.boiler_switch = s.boiler_switch || '';
+            }
+            try {
+              const rawDom = String(s.boiler_switch_domain || '').toLowerCase().trim();
+              const domFromSetting = (rawDom === 'input_boolean') ? 'input_boolean' : 'switch';
+              const swDom = String(s.boiler_switch || '').split('.')[0];
+              const domFromSwitch = (swDom === 'input_boolean' || swDom === 'switch') ? swDom : domFromSetting;
+              const curSw = String(this._config?.boiler_switch || '');
+              if (!this._yamlProvided?.boiler_switch_domain || !curSw) this._config.boiler_switch_domain = domFromSwitch;
+            } catch {}
             if ((typeof s.boiler_multi_enabled === 'boolean' || typeof s.boiler_multi_enabled === 'number') && !this._yamlProvided?.boiler_multi_enabled) this._config.boiler_multi_enabled = !!s.boiler_multi_enabled;
             if (s.boiler_room_settings && typeof s.boiler_room_settings === 'object' && !this._yamlProvided?.boiler_room_settings) {
               try { this._config.boiler_room_settings = JSON.parse(JSON.stringify(s.boiler_room_settings)); } catch { this._config.boiler_room_settings = { ...(s.boiler_room_settings||{}) }; }
@@ -5942,6 +5976,8 @@ class ThermostatTimelineCard extends HTMLElement {
         this._lastWeekdayVersion = Number(stWeek?.state || this._lastVersion || 0) || 0;
         this._lastProfileVersion = Number(stProf?.state || this._lastVersion || 0) || 0;
         try { const payload = this._makeStoragePayload(true); localStorage.setItem(this._localStoreKey(), JSON.stringify(payload)); } catch {}
+        this._storeLoaded = true;
+        this._storeLoadedFromApi = true;
         return;
       } catch (e) { /* fallback */ }
     }
@@ -6096,7 +6132,18 @@ class ThermostatTimelineCard extends HTMLElement {
     }
   } catch {}
     if ((typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number') && !this._yamlProvided?.boiler_enabled) this._config.boiler_enabled = !!s.boiler_enabled;
-    if (typeof s.boiler_switch === 'string' && !this._yamlProvided?.boiler_switch) this._config.boiler_switch = s.boiler_switch || '';
+    if (typeof s.boiler_switch === 'string') {
+      const curSw = String(this._config?.boiler_switch || '');
+      if (!this._yamlProvided?.boiler_switch || !curSw) this._config.boiler_switch = s.boiler_switch || '';
+    }
+    try {
+      const rawDom = String(s.boiler_switch_domain || '').toLowerCase().trim();
+      const domFromSetting = (rawDom === 'input_boolean') ? 'input_boolean' : 'switch';
+      const swDom = String(s.boiler_switch || '').split('.')[0];
+      const domFromSwitch = (swDom === 'input_boolean' || swDom === 'switch') ? swDom : domFromSetting;
+      const curSw = String(this._config?.boiler_switch || '');
+      if (!this._yamlProvided?.boiler_switch_domain || !curSw) this._config.boiler_switch_domain = domFromSwitch;
+    } catch {}
     if (!this._yamlProvided?.boiler_rooms) {
       if (Array.isArray(s.boiler_rooms)) this._config.boiler_rooms = s.boiler_rooms.filter(Boolean).map(String);
       else if (s.boiler_rooms === null) this._config.boiler_rooms = null;
@@ -6184,10 +6231,19 @@ class ThermostatTimelineCard extends HTMLElement {
         this._schedules = parsed || {};
         try { this._seasonAppliedKey = null; } catch {}
       }
+      this._storeLoaded = true;
+      this._storeLoadedFromApi = false;
     }
     catch { this._schedules = {}; }
   }
 
+  _isSettingsPopupOpen(){
+    try {
+      const ov = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings');
+      if (!ov) return false;
+      return !!ov.classList.contains('open') || !!this._settingsPopupSuspended;
+    } catch { return false; }
+  }
   _editSessionActive(){ return !!(this._editing || this._inlineEditing || this._weeklyOpen || this._profilesOpen || this._holidayOpen || this._presenceOpen); }
   _ensureEditModeOn(){ this._pendingSaveAfterEdit = true; }
   _flushPendingSave(){
@@ -6211,6 +6267,9 @@ class ThermostatTimelineCard extends HTMLElement {
       localStorage.setItem(this._localStoreKey(), JSON.stringify(payload));
     } catch {}
     try { this._broadcastStoreUpdated(this._localStoreKey()); } catch {}
+    if (this._config?.storage_enabled && !this._storeLoadedFromApi && !force) {
+      return;
+    }
     // Always persist local browser copy immediately
     const writeRemote = async () => {
       if (!this._config?.storage_enabled) {
@@ -6224,6 +6283,7 @@ class ThermostatTimelineCard extends HTMLElement {
               global_profile: this._globalProfile || null, 
               boiler_enabled: !!this._config.boiler_enabled,
               boiler_switch: String(this._config.boiler_switch || ''), 
+              boiler_switch_domain: String((this._config.boiler_switch_domain === 'input_boolean') ? 'input_boolean' : 'switch'),
               boiler_rooms: Array.isArray(this._config.boiler_rooms) ? this._config.boiler_rooms.filter(Boolean).map(String) : null,
               boiler_on_offset: (this._config.boiler_on_offset === null || this._config.boiler_on_offset === undefined) ? null : Number(this._config.boiler_on_offset),
               boiler_off_offset: (this._config.boiler_off_offset === null || this._config.boiler_off_offset === undefined) ? null : Number(this._config.boiler_off_offset),
@@ -6290,6 +6350,18 @@ class ThermostatTimelineCard extends HTMLElement {
             if (!this._holidaysToggleTouched && typeof base.holidays_enabled === 'boolean') {
               merged.holidays_enabled = base.holidays_enabled;
             }
+            if (!this._holidaysSourceTouched && typeof base.holidays_source === 'string') {
+              merged.holidays_source = String(base.holidays_source || 'calendar') === 'manual' ? 'manual' : 'calendar';
+            }
+            if (!this._holidaysEntityTouched && typeof base.holidays_entity === 'string') {
+              merged.holidays_entity = String(base.holidays_entity || '');
+            }
+            if (!this._holidaysDatesTouched && Array.isArray(base.holidays_dates)) {
+              merged.holidays_dates = Array.from(base.holidays_dates);
+            }
+            if (!this._holidaysGroupsTouched && Array.isArray(base.holidays_groups)) {
+              merged.holidays_groups = Array.from(base.holidays_groups);
+            }
           } catch {}
           // Heuristic: avoid flipping holidays_enabled=true -> false on startup if nothing holiday-related changed.
           try {
@@ -6313,6 +6385,19 @@ class ThermostatTimelineCard extends HTMLElement {
           try {
             if (!this._boilerToggleTouched && typeof base.boiler_enabled === 'boolean') {
               merged.boiler_enabled = base.boiler_enabled;
+            }
+            if (!this._awayTouched) {
+              const localAway = (this._config?.away && typeof this._config.away === 'object') ? this._config.away : null;
+              if (localAway) merged.away = JSON.parse(JSON.stringify(localAway));
+              if (typeof this._config?.presence_live_header === 'boolean') {
+                merged.presence_live_header = this._config.presence_live_header;
+              }
+              const ldEn = this._config?.away?.delay_enabled;
+              const ldVal = this._config?.away?.delay_value;
+              const ldUnit = this._config?.away?.delay_unit;
+              if (typeof ldEn === 'boolean') merged.away_delay_enabled = ldEn;
+              if (Number.isFinite(Number(ldVal))) merged.away_delay_value = Number(ldVal);
+              if (typeof ldUnit === 'string') merged.away_delay_unit = (String(ldUnit || 'minutes') === 'seconds') ? 'seconds' : 'minutes';
             }
           } catch {}
           const keepIfEmpty = (key)=>{
@@ -6341,7 +6426,12 @@ class ThermostatTimelineCard extends HTMLElement {
         setTimeout(() => {
           this._saving = false;
           try { this._holidaysToggleTouched = false; } catch {}
+          try { this._holidaysSourceTouched = false; } catch {}
+          try { this._holidaysEntityTouched = false; } catch {}
+          try { this._holidaysDatesTouched = false; } catch {}
+          try { this._holidaysGroupsTouched = false; } catch {}
           try { this._boilerToggleTouched = false; } catch {}
+          try { this._awayTouched = false; } catch {}
           try { this._labelsTouched = false; } catch {}
           // Show "done" for a short moment and ensure UI keeps ticking
           this._syncJustUntil = Date.now() + 2500;
@@ -6784,6 +6874,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
         boiler_enabled: !!this._config.boiler_enabled,
         boiler_switch: String(this._config.boiler_switch || ''),
+        boiler_switch_domain: String((this._config.boiler_switch_domain === 'input_boolean') ? 'input_boolean' : 'switch'),
         boiler_rooms: Array.isArray(this._config.boiler_rooms) ? this._config.boiler_rooms.filter(Boolean).map(String) : null,
         boiler_on_offset: (this._config.boiler_on_offset === null || this._config.boiler_on_offset === undefined) ? null : Number(this._config.boiler_on_offset),
         boiler_off_offset: (this._config.boiler_off_offset === null || this._config.boiler_off_offset === undefined) ? null : Number(this._config.boiler_off_offset),
@@ -6843,6 +6934,15 @@ class ThermostatTimelineCard extends HTMLElement {
         open_window: this._config.open_window,
         boiler_enabled: !!this._config.boiler_enabled,
           boiler_switch: String(this._config.boiler_switch || ''),
+          boiler_switch_domain: (()=>{
+            try {
+              const sw = String(this._config.boiler_switch || '');
+              const dom = sw.split('.')[0];
+              if (dom === 'input_boolean' || dom === 'switch') return dom;
+              const raw = String(this._config.boiler_switch_domain || '').toLowerCase().trim();
+              return (raw === 'input_boolean') ? 'input_boolean' : 'switch';
+            } catch { return 'switch'; }
+          })(),
         boiler_rooms: Array.isArray(this._config.boiler_rooms) ? this._config.boiler_rooms.filter(Boolean).map(String) : null,
         boiler_on_offset: (this._config.boiler_on_offset === null || this._config.boiler_on_offset === undefined) ? null : toStore(this._config.boiler_on_offset),
         boiler_off_offset: (this._config.boiler_off_offset === null || this._config.boiler_off_offset === undefined) ? null : toStore(this._config.boiler_off_offset),
@@ -6895,8 +6995,16 @@ class ThermostatTimelineCard extends HTMLElement {
       };
       // Do not include holidays_enabled in generic payload unless user toggled it in this session
       try { if (!this._holidaysToggleTouched) delete settings.holidays_enabled; } catch {}
+      // Do not include holidays source/entity/dates/groups unless explicitly edited in this session
+      try {
+        if (!this._holidaysSourceTouched) delete settings.holidays_source;
+        if (!this._holidaysEntityTouched) delete settings.holidays_entity;
+        if (!this._holidaysDatesTouched) delete settings.holidays_dates;
+        if (!this._holidaysGroupsTouched) delete settings.holidays_groups;
+      } catch {}
       // Do not include boiler_enabled unless user toggled it in this session
       try { if (!this._boilerToggleTouched) delete settings.boiler_enabled; } catch {}
+      // Always include away settings to avoid losing away.enabled due touch-flag races.
       const colors = { color_ranges: this._config.color_ranges, color_global: !!this._config.color_global };
       // When a dedicated colors sensor is configured, avoid duplicating colors inside settings payload
       if (this._config?.storage_enabled && this._storageEntity('colors')) {
@@ -8000,9 +8108,8 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!this._hass || !this._config?.storage_enabled) return;
       const _awayCfg = this._config?.away || {};
       const _awayOut = { ..._awayCfg };
-      // When bypassing or using advanced presence, disable simple Away in backend apply
-      if (this._awayBypass || _awayOut.advanced_enabled) _awayOut.enabled = false;
       const payload = this._makeStoragePayload(false);
+      // Always include away settings to avoid losing away.enabled due touch-flag races.
       // set_store replaces the full settings object, so merge with current backend
       // settings first to avoid dropping unrelated keys (e.g. holidays_*).
       let mergedSettings = { ...payload.settings, away: _awayOut };
@@ -9281,10 +9388,9 @@ class ThermostatTimelineCard extends HTMLElement {
     this._saving = true;
     const key = this._syncDueKey();
     try {
-      // Build away for backend: if advanced presence is enabled, disable basic away in backend
+      // Build away for backend using current persisted config values.
       const _awayCfg = this._config?.away || {};
       const _awayOut = { ..._awayCfg };
-      if (_awayOut.advanced_enabled) _awayOut.enabled = false;
       let payload = this._makeStoragePayload(true);
       payload.settings = { ...payload.settings, away: _awayOut };
       // Merge with current backend settings to avoid clearing omitted keys (e.g., labels) on delayed write
@@ -9456,6 +9562,7 @@ class ThermostatTimelineCard extends HTMLElement {
           const weekdaysChanged = this._config?.storage_enabled && !this._saving && !Number.isNaN(verWeek) && verWeek !== this._lastWeekdayVersion;
           const profilesChanged = this._config?.storage_enabled && !this._saving && !Number.isNaN(verProf) && verProf !== this._lastProfileVersion;
           if (schedChanged || settingsChanged || colorsChanged || weekdaysChanged || profilesChanged){
+            if (this._isSettingsPopupOpen && this._isSettingsPopupOpen()) return;
             this._lastVersion = verSched;
             this._lastSettingsVersion = verSet;
             this._lastColorsVersion = verCol;
@@ -11036,21 +11143,6 @@ class ThermostatTimelineCard extends HTMLElement {
         setTimeout(refreshInstance, 0);
         setTimeout(refreshInstance, 300);
       } catch {}
-      // Ensure boiler toggle reflects backend as soon as it arrives after hard refresh
-      try {
-        (async()=>{
-          try {
-            const api = await this._apiFetchState();
-            const s = api?.settings || null;
-            if (s && (typeof s.boiler_enabled === 'boolean' || typeof s.boiler_enabled === 'number')) {
-              if (this._settingsDraft && this._settingsDraft.boiler_enabled !== !!s.boiler_enabled) {
-                this._settingsDraft.boiler_enabled = !!s.boiler_enabled;
-                try { this._renderSettingsPopupBoilerTab(); } catch {}
-              }
-            }
-          } catch {}
-        })();
-      } catch {}
       try {
         const onKey = (ev) => { if (ev.key === 'Escape') { this._closeSettingsPopup(false); } };
         try { if (this._settingsPopupKeyHandler) window.removeEventListener('keydown', this._settingsPopupKeyHandler); } catch {}
@@ -11246,6 +11338,7 @@ class ThermostatTimelineCard extends HTMLElement {
           const parsed = JSON.parse(raw);
           const ls = parsed?.settings || {};
           const has = (obj,k)=> Object.prototype.hasOwnProperty.call(obj||{}, k);
+          if (!this._yamlProvided?.presence_live_header && has(ls, 'presence_live_header')) cfg.presence_live_header = !!ls.presence_live_header;
           if (!this._yamlProvided?.boiler_enabled && has(ls, 'boiler_enabled')) cfg.boiler_enabled = !!ls.boiler_enabled;
           if (!this._yamlProvided?.boiler_switch && has(ls, 'boiler_switch')) cfg.boiler_switch = String(ls.boiler_switch || '');
           if (!this._yamlProvided?.boiler_rooms && has(ls, 'boiler_rooms')) cfg.boiler_rooms = Array.isArray(ls.boiler_rooms) ? ls.boiler_rooms.filter(Boolean).map(String) : (ls.boiler_rooms === null ? null : cfg.boiler_rooms);
@@ -11654,11 +11747,12 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.boiler_switch = String(d.boiler_switch || '');
       try {
         const raw = String(d.boiler_switch_domain || '').toLowerCase().trim();
-        cfg.boiler_switch_domain = (raw === 'input_boolean') ? 'input_boolean' : 'switch';
-        // Keep entity + selected domain consistent
+        const rawDom = (raw === 'input_boolean') ? 'input_boolean' : 'switch';
         const swDom = String(cfg.boiler_switch || '').split('.')[0];
-        if (cfg.boiler_switch && (swDom === 'switch' || swDom === 'input_boolean') && swDom !== cfg.boiler_switch_domain) {
-          cfg.boiler_switch = '';
+        if (cfg.boiler_switch && (swDom === 'switch' || swDom === 'input_boolean')) {
+          cfg.boiler_switch_domain = swDom;
+        } else {
+          cfg.boiler_switch_domain = rawDom;
         }
       } catch { cfg.boiler_switch_domain = 'switch'; }
       try {
@@ -11790,6 +11884,8 @@ class ThermostatTimelineCard extends HTMLElement {
 
       // Away settings
       try {
+        const __prevAway = JSON.stringify(cfg.away || {});
+        const __prevLive = !!(cfg.presence_live_header ?? true);
         const src = (d.away && typeof d.away === 'object') ? d.away : {};
         const cur = { ...(cfg.away || {}) };
         cur.enabled = !!src.enabled;
@@ -11822,17 +11918,20 @@ class ThermostatTimelineCard extends HTMLElement {
         }
         cur.combos = combosOut;
 
-        // If Away is turned OFF, disable live presence chips (and advanced)
+        // If Away is turned OFF, disable advanced mode only.
+        // Keep live-header preference persisted; visibility is gated at runtime.
         if (!cur.enabled) {
           cur.advanced_enabled = false;
-          cfg.presence_live_header = false;
-        } else {
-          // Presence live header is available whenever Away mode is enabled
-          const live = !!(d.presence_live_header ?? true);
-          cfg.presence_live_header = live;
         }
+        const live = !!(d.presence_live_header ?? true);
+        cfg.presence_live_header = live;
 
         cfg.away = cur;
+        try {
+          const __nextAway = JSON.stringify(cfg.away || {});
+          const __nextLive = !!(cfg.presence_live_header ?? true);
+          if (__prevAway !== __nextAway || __prevLive !== __nextLive) this._awayTouched = true;
+        } catch {}
       } catch {}
 
       this._config = cfg;
@@ -12879,6 +12978,7 @@ class ThermostatTimelineCard extends HTMLElement {
               try {
                 if (!this._settingsDraft?.away) return;
                 this._settingsDraft.away.persons = (this._settingsDraft.away.persons||[]).filter(x=>String(x)!==String(p));
+                this._awayTouched = true;
                 this._renderSettingsPopupAwayTab();
               } catch {}
             });
@@ -12920,6 +13020,7 @@ class ThermostatTimelineCard extends HTMLElement {
                 if (cb.checked) map[key] = { ...(map[key]||{}), enabled:true };
                 else delete map[key];
                 this._settingsDraft.away.combos = map;
+                this._awayTouched = true;
               } catch {}
             });
             const sp = document.createElement('span');
@@ -12941,18 +13042,42 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!page.dataset.bound) {
         page.dataset.bound = '1';
 
+        const _ttReadSwitchValue = (evt, el, fallback = false)=>{
+          try {
+            const d = evt?.detail;
+            if (d && typeof d === 'object' && typeof d.value === 'boolean') return !!d.value;
+          } catch {}
+          try {
+            const ct = evt?.currentTarget;
+            if (ct && typeof ct.checked === 'boolean') return !!ct.checked;
+          } catch {}
+          try {
+            if (el && typeof el.checked === 'boolean') return !!el.checked;
+          } catch {}
+          try {
+            const t = evt?.target;
+            if (t && typeof t.checked === 'boolean') return !!t.checked;
+          } catch {}
+          return !!fallback;
+        };
+        const _ttBindHaSwitch = (el, handler)=>{
+          try { if (!el || typeof handler !== 'function') return; } catch { return; }
+          try { el.addEventListener('change', handler); } catch {}
+          try { el.addEventListener('checked-changed', handler); } catch {}
+        };
+
         try {
           const sw = q('.overlay-settings .sp-away-enable');
-          if (sw) sw.addEventListener('change', (e)=>{
+          if (sw) _ttBindHaSwitch(sw, (e)=>{
             try {
               if (!this._settingsDraft?.away) return;
-              const enabled = !!e.target.checked;
+              const enabled = _ttReadSwitchValue(e, sw, !!this._settingsDraft.away.enabled);
               this._settingsDraft.away.enabled = enabled;
               // If Away is turned OFF, also disable Advanced Away and live presence chips
               if (!enabled) {
                 this._settingsDraft.away.advanced_enabled = false;
-                this._settingsDraft.presence_live_header = false;
               }
+              this._awayTouched = true;
               this._renderSettingsPopupAwayTab();
             } catch {}
           });
@@ -12973,6 +13098,7 @@ class ThermostatTimelineCard extends HTMLElement {
               const mx = Number.isFinite(Number(this._settingsDraft.max_temp)) ? Number(this._settingsDraft.max_temp) : 25;
               vC = Math.max(mn, Math.min(mx, vC));
               this._settingsDraft.away.target_c = vC;
+              this._awayTouched = true;
             } catch {}
           });
         } catch {}
@@ -12987,6 +13113,7 @@ class ThermostatTimelineCard extends HTMLElement {
               const set = new Set((this._settingsDraft.away.persons || []).map(String));
               set.add(String(val));
               this._settingsDraft.away.persons = Array.from(set);
+              this._awayTouched = true;
               this._renderSettingsPopupAwayTab();
             } catch {}
           });
@@ -12994,12 +13121,13 @@ class ThermostatTimelineCard extends HTMLElement {
 
         try {
           const adv = q('.overlay-settings .sp-away-adv-enable');
-          if (adv) adv.addEventListener('change', (e)=>{
+          if (adv) _ttBindHaSwitch(adv, (e)=>{
             try {
               if (!this._settingsDraft?.away) return;
-              this._settingsDraft.away.advanced_enabled = !!e.target.checked;
+              this._settingsDraft.away.advanced_enabled = _ttReadSwitchValue(e, adv, !!this._settingsDraft.away.advanced_enabled);
               // Do not force presence chips off when advanced is disabled;
               // availability is controlled by Away mode.
+              this._awayTouched = true;
               this._renderSettingsPopupAwayTab();
             } catch {}
           });
@@ -13007,15 +13135,15 @@ class ThermostatTimelineCard extends HTMLElement {
 
         try {
           const pl = q('.overlay-settings .sp-presence-live-enable');
-          if (pl) pl.addEventListener('change', (e)=>{
+          if (pl) _ttBindHaSwitch(pl, (e)=>{
             try {
               if (!this._settingsDraft?.away?.enabled) {
                 e.preventDefault?.();
-                pl.checked = false;
-                this._settingsDraft.presence_live_header = false;
+                pl.checked = !!(this._settingsDraft?.presence_live_header ?? true);
                 return;
               }
-              this._settingsDraft.presence_live_header = !!e.target.checked;
+              this._settingsDraft.presence_live_header = _ttReadSwitchValue(e, pl, !!(this._settingsDraft.presence_live_header ?? true));
+              this._awayTouched = true;
             } catch {}
           });
         } catch {}
@@ -13023,15 +13151,15 @@ class ThermostatTimelineCard extends HTMLElement {
         // Delay bindings
         try {
           const en = q('.overlay-settings .sp-away-delay-enable');
-          if (en) en.addEventListener('change', (e)=>{ try { this._settingsDraft.away_delay_enabled = !!e.target.checked; } catch {} });
+          if (en) _ttBindHaSwitch(en, (e)=>{ try { this._settingsDraft.away_delay_enabled = _ttReadSwitchValue(e, en, !!(this._settingsDraft.away_delay_enabled ?? false)); this._awayTouched = true; } catch {} });
         } catch {}
         try {
           const unit = q('.overlay-settings .sp-away-delay-unit');
-          if (unit) unit.addEventListener('change', (e)=>{ try { this._settingsDraft.away_delay_unit = String(e.target.value||'minutes'); } catch {} });
+          if (unit) unit.addEventListener('change', (e)=>{ try { this._settingsDraft.away_delay_unit = String(e.target.value||'minutes'); this._awayTouched = true; } catch {} });
         } catch {}
         try {
           const val = q('.overlay-settings .sp-away-delay-value');
-          if (val) val.addEventListener('change', (e)=>{ try { const n=Number(e.target.value); this._settingsDraft.away_delay_value = Number.isFinite(n)? Math.max(0,Math.round(n)) : 0; } catch {} });
+          if (val) val.addEventListener('change', (e)=>{ try { const n=Number(e.target.value); this._settingsDraft.away_delay_value = Number.isFinite(n)? Math.max(0,Math.round(n)) : 0; this._awayTouched = true; } catch {} });
         } catch {}
       }
     } catch {}
@@ -13503,6 +13631,7 @@ class ThermostatTimelineCard extends HTMLElement {
                 if (!this._settingsDraft) return;
                 const cur = Array.isArray(this._settingsDraft.holidays_dates) ? this._settingsDraft.holidays_dates : [];
                 this._settingsDraft.holidays_dates = cur.filter(x => String(x) !== dt);
+                this._holidaysDatesTouched = true;
                 renderChips();
               } catch {}
             });
@@ -13534,6 +13663,8 @@ class ThermostatTimelineCard extends HTMLElement {
                 for (const d of (g.dates||[])) { if (!othersDates.has(String(d))) cur.delete(String(d)); }
                 this._settingsDraft.holidays_groups = others;
                 this._settingsDraft.holidays_dates = Array.from(cur).sort();
+                this._holidaysGroupsTouched = true;
+                this._holidaysDatesTouched = true;
                 renderChips(); renderGrpChips();
               } catch {}
             });
@@ -13575,13 +13706,13 @@ class ThermostatTimelineCard extends HTMLElement {
         try {
           const bCal = q('.overlay-settings .sp-holidays-source-cal');
           const bMan = q('.overlay-settings .sp-holidays-source-man');
-          if (bCal) bCal.addEventListener('click', ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_source = 'calendar'; this._renderSettingsPopupHolidaysTab(); } catch {} });
-          if (bMan) bMan.addEventListener('click', ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_source = 'manual'; this._renderSettingsPopupHolidaysTab(); } catch {} });
+          if (bCal) bCal.addEventListener('click', ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_source = 'calendar'; this._holidaysSourceTouched = true; this._renderSettingsPopupHolidaysTab(); } catch {} });
+          if (bMan) bMan.addEventListener('click', ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_source = 'manual'; this._holidaysSourceTouched = true; this._renderSettingsPopupHolidaysTab(); } catch {} });
         } catch {}
 
         try {
           const p = q('.overlay-settings .sp-holidays-entity-picker');
-          if (p) p.addEventListener('value-changed', (e)=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_entity = e.detail?.value || ''; } catch {} });
+          if (p) p.addEventListener('value-changed', (e)=>{ try { if (!this._settingsDraft) return; this._settingsDraft.holidays_entity = e.detail?.value || ''; this._holidaysEntityTouched = true; } catch {} });
         } catch {}
 
         try {
@@ -13603,6 +13734,7 @@ class ThermostatTimelineCard extends HTMLElement {
               const cur = Array.isArray(this._settingsDraft.holidays_dates) ? this._settingsDraft.holidays_dates.filter(Boolean).map(String) : [];
               const next = Array.from(new Set(cur.concat([v]))).sort();
               this._settingsDraft.holidays_dates = next;
+              this._holidaysDatesTouched = true;
               try { inp.value = ''; if (msg) msg.textContent = ''; } catch {}
               renderChips();
             } catch {}
@@ -13638,6 +13770,8 @@ class ThermostatTimelineCard extends HTMLElement {
               const groups = Array.isArray(this._settingsDraft.holidays_groups) ? [...this._settingsDraft.holidays_groups] : [];
               groups.push({ id: gid, from: fmt(d1), to: fmt(d2), dates: grpDates });
               this._settingsDraft.holidays_groups = groups;
+              this._holidaysGroupsTouched = true;
+              this._holidaysDatesTouched = true;
               // Mirror into live config so the main card view updates as well
               try {
                 this._config.holidays_dates = Array.from(cur).sort();
@@ -14152,14 +14286,15 @@ class ThermostatTimelineCard extends HTMLElement {
       // Pickers
       try {
         const domSel = q('.overlay-settings .sp-boiler-switch-domain');
-        if (domSel) {
-          const raw = String(d.boiler_switch_domain || '').toLowerCase().trim();
-          domSel.value = (raw === 'input_boolean') ? 'input_boolean' : 'switch';
-        }
         const p = q('.overlay-settings .sp-boiler-switch-picker');
+        const swDom = String(d.boiler_switch || '').split('.')[0];
+        const raw = String(d.boiler_switch_domain || '').toLowerCase().trim();
+        const dom = (swDom === 'input_boolean' || swDom === 'switch')
+          ? swDom
+          : ((raw === 'input_boolean') ? 'input_boolean' : 'switch');
+        try { d.boiler_switch_domain = dom; } catch {}
+        if (domSel) domSel.value = dom;
         if (p) {
-          const raw = String(d.boiler_switch_domain || '').toLowerCase().trim();
-          const dom = (raw === 'input_boolean') ? 'input_boolean' : 'switch';
           try { p.setAttribute('include-domains', JSON.stringify([dom])); } catch {}
           p.hass = this._hass;
           p.value = String(d.boiler_switch || '');
@@ -15499,9 +15634,7 @@ class ThermostatTimelineCard extends HTMLElement {
         for (let i=0;i<dk.length;i++){ if (dk[i] !== ck[i]) return true; }
         const dlive = !!(d.presence_live_header ?? true);
         const clive = !!(c.presence_live_header ?? true);
-        const effD = da.advanced_enabled ? dlive : false;
-        const effC = ca.advanced_enabled ? clive : false;
-        if (effD !== effC) return true;
+        if (dlive !== clive) return true;
       } catch {}
 
       // Rooms
@@ -15683,6 +15816,77 @@ class ThermostatTimelineCard extends HTMLElement {
 
   async _saveSettingsPopup(){
     try {
+      // Robust fallback: sync Away controls directly from popup before applying draft
+      // in case component events were not emitted.
+      try {
+        const ov = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings');
+        const d = this._settingsDraft;
+        const _ttReadSwitchNow = (el)=>{
+          try { if (!el) return null; } catch { return null; }
+          try { if (typeof el.checked === 'boolean') return !!el.checked; } catch {}
+          try {
+            const inner = el.shadowRoot?.querySelector?.('input,button,[role="switch"]');
+            if (inner && typeof inner.checked === 'boolean') return !!inner.checked;
+          } catch {}
+          try {
+            const aria = String(el.getAttribute?.('aria-checked') || '').toLowerCase();
+            if (aria === 'true') return true;
+            if (aria === 'false') return false;
+          } catch {}
+          try {
+            const innerAria = String(el.shadowRoot?.querySelector?.('[aria-checked]')?.getAttribute?.('aria-checked') || '').toLowerCase();
+            if (innerAria === 'true') return true;
+            if (innerAria === 'false') return false;
+          } catch {}
+          try {
+            if (el.hasAttribute?.('checked')) return true;
+          } catch {}
+          return null;
+        };
+        if (ov && d && d.away && typeof d.away === 'object') {
+          const sw = ov.querySelector('.sp-away-enable');
+          const swV = _ttReadSwitchNow(sw);
+          if (typeof swV === 'boolean') {
+            const v = swV;
+            if (!!d.away.enabled !== v) this._awayTouched = true;
+            d.away.enabled = v;
+          }
+          const adv = ov.querySelector('.sp-away-adv-enable');
+          const advV = _ttReadSwitchNow(adv);
+          if (typeof advV === 'boolean') {
+            const v = advV;
+            if (!!d.away.advanced_enabled !== v) this._awayTouched = true;
+            d.away.advanced_enabled = v;
+          }
+          const pl = ov.querySelector('.sp-presence-live-enable');
+          const plV = _ttReadSwitchNow(pl);
+          if (typeof plV === 'boolean') {
+            const v = plV;
+            if (!!(d.presence_live_header ?? true) !== v) this._awayTouched = true;
+            d.presence_live_header = v;
+          }
+          const den = ov.querySelector('.sp-away-delay-enable');
+          const denV = _ttReadSwitchNow(den);
+          if (typeof denV === 'boolean') {
+            const v = denV;
+            if (!!(d.away_delay_enabled ?? false) !== v) this._awayTouched = true;
+            d.away_delay_enabled = v;
+          }
+          const dval = ov.querySelector('.sp-away-delay-value');
+          if (dval) {
+            const n = Number(dval.value);
+            const v = Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0;
+            if (Number(d.away_delay_value ?? 0) !== v) this._awayTouched = true;
+            d.away_delay_value = v;
+          }
+          const dunit = ov.querySelector('.sp-away-delay-unit');
+          if (dunit) {
+            const v = (String(dunit.value || 'minutes') === 'seconds') ? 'seconds' : 'minutes';
+            if (String(d.away_delay_unit || 'minutes') !== v) this._awayTouched = true;
+            d.away_delay_unit = v;
+          }
+        }
+      } catch {}
       // IMPORTANT: do not persist on toggle/input; only commit+save here.
       this._applySettingsPopupDraftToConfig();
       if (this._config?.storage_enabled && typeof this._saveStore === 'function') {
@@ -15696,6 +15900,13 @@ class ThermostatTimelineCard extends HTMLElement {
             if (typeof s.holidays_source === 'string') this._config.holidays_source = (s.holidays_source === 'manual') ? 'manual' : 'calendar';
             if (typeof s.holidays_entity === 'string') this._config.holidays_entity = String(s.holidays_entity || '');
             if (Array.isArray(s.holidays_dates)) this._config.holidays_dates = [...s.holidays_dates];
+            if (s.away && typeof s.away === 'object') {
+              try { this._config.away = JSON.parse(JSON.stringify(s.away)); } catch { this._config.away = { ...(s.away || {}) }; }
+            }
+            if (typeof s.presence_live_header === 'boolean') this._config.presence_live_header = !!s.presence_live_header;
+            if (typeof s.away_delay_enabled === 'boolean') this._config.away = { ...(this._config.away || {}), delay_enabled: !!s.away_delay_enabled };
+            if (Number.isFinite(Number(s.away_delay_value))) this._config.away = { ...(this._config.away || {}), delay_value: Number(s.away_delay_value) };
+            if (typeof s.away_delay_unit === 'string') this._config.away = { ...(this._config.away || {}), delay_unit: (String(s.away_delay_unit || 'minutes') === 'seconds') ? 'seconds' : 'minutes' };
             if (s.open_window && typeof s.open_window === 'object') this._config.open_window = { ...s.open_window };
           }
         } catch {}
