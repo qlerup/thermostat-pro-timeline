@@ -2698,9 +2698,21 @@ class AutoApplyManager:
             except Exception:
                 pass
 
-            # If in a mode that ignores temperature, try switching to a workable one
+            # If in a mode that ignores temperature, try switching to a workable one.
+            #
+            # BUGFIX: this used to run unconditionally whenever hvac_mode was
+            # off/dry/fan_only, forcing climate.set_hvac_mode to heat/cool even
+            # when the user had "Send turn_on command" (do_turn_on) disabled for
+            # this room. That silently turned entities back ON (e.g. Versatile
+            # Thermostat) after a manual OFF, even though set_temperature alone
+            # does not require a mode change on such integrations. It is now
+            # gated on do_turn_on, and only fires here when turn_on_order is
+            # "before" — the "after" case is handled once the setpoint has
+            # actually been sent, mirroring the existing turn_on/turn_off calls
+            # further down.
+            mode_ignores_setpoint = hvac_mode in ("off", "dry", "fan_only")
             try:
-                if hvac_mode in ("off", "dry", "fan_only"):
+                if mode_ignores_setpoint and do_turn_on and turn_on_order == "before":
                     new_mode = None
                     if "heat" in hvac_modes:
                         new_mode = "heat"
@@ -2713,6 +2725,22 @@ class AutoApplyManager:
                         hvac_mode = new_mode
             except Exception:
                 pass
+
+            async def _mode_after_if_needed() -> None:
+                if not (mode_ignores_setpoint and do_turn_on and turn_on_order == "after"):
+                    return
+                try:
+                    new_mode = None
+                    if "heat" in hvac_modes:
+                        new_mode = "heat"
+                    elif "cool" in hvac_modes:
+                        new_mode = "cool"
+                    if new_mode:
+                        await self.hass.services.async_call(
+                            "climate", "set_hvac_mode", {"entity_id": eid, "hvac_mode": new_mode}, blocking=False
+                        )
+                except Exception:
+                    pass
 
             # Decide whether to use range or single setpoint
             has_low = isinstance(attrs.get("target_temp_low"), (int, float)) or ("target_temp_low" in attrs)
@@ -2742,6 +2770,7 @@ class AutoApplyManager:
                 if turn_on_order == "before":
                     await _turn_on_and_delay()
                 await self.hass.services.async_call("climate", "set_temperature", data, blocking=False)
+                await _mode_after_if_needed()
                 if turn_on_order == "after":
                     # Delay should be between set_temp and turn_on
                     try:
@@ -2761,6 +2790,7 @@ class AutoApplyManager:
             if turn_on_order == "before":
                 await _turn_on_and_delay()
             await self.hass.services.async_call("climate", "set_temperature", data, blocking=False)
+            await _mode_after_if_needed()
             if turn_on_order == "after":
                 try:
                     if turn_on_delay_s:

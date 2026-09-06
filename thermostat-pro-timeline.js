@@ -6680,19 +6680,55 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
 
-      // If mode ignores setpoint, try switching to heat/cool
-      try {
-        if (['off','dry','fan_only'].includes(hvacMode)){
+      // Resolve the per-room "Send turn_on command" setting for this entity.
+      // Falls back to the group's primary entity id, since turn_on is keyed by
+      // primary_eid but _applySetpointForEntity can be called for merged members.
+      const turnOnCfg = (() => {
+        try {
+          const map = (this._config?.turn_on && typeof this._config.turn_on === 'object') ? this._config.turn_on : {};
+          if (map[eid]) return map[eid];
+          const primary = this._groupPrimaryOf ? this._groupPrimaryOf(eid) : null;
+          if (primary && map[primary]) return map[primary];
+        } catch {}
+        return null;
+      })();
+      const turnOnEnabled = !!(turnOnCfg && turnOnCfg.enabled);
+      const turnOnOrder = (turnOnCfg && turnOnCfg.order === 'after') ? 'after' : 'before';
+
+      // BUGFIX: previously this block ran unconditionally whenever the entity was
+      // off/dry/fan_only, forcing hvac_mode to heat/cool regardless of the
+      // "Send turn_on command" toggle. That silently turned entities back ON
+      // (e.g. Versatile Thermostat) even when the user explicitly left a room
+      // manually OFF and disabled this option. It is now gated on turnOnEnabled,
+      // and only fires here when order is "before" (the "after" case is handled
+      // further down, once the setpoint has actually been sent).
+      const modeIgnoresSetpoint = ['off','dry','fan_only'].includes(hvacMode);
+      if (modeIgnoresSetpoint && turnOnEnabled && turnOnOrder === 'before') {
+        try {
           let newMode = null;
           if (hvacModes.includes('heat')) newMode = 'heat'; else if (hvacModes.includes('cool')) newMode = 'cool';
           if (newMode){ await this._hass.callService('climate','set_hvac_mode',{ entity_id: eid, hvac_mode: newMode }); hvacMode = newMode; }
-        }
-      } catch {}
+        } catch {}
+      }
 
       // Decide between single setpoint vs range
       const hasLow = Object.prototype.hasOwnProperty.call(attrs, 'target_temp_low');
       const hasHigh = Object.prototype.hasOwnProperty.call(attrs, 'target_temp_high');
       const modeSuggestsRange = (hvacMode === 'heat_cool') || (hvacMode === 'auto' && hasLow && hasHigh);
+
+      // Shared "after" hook: fires set_hvac_mode only once the setpoint has
+      // actually been sent, and only when the user opted in via "Send turn_on
+      // command" with order = after. Mirrors the "before" gate above.
+      const applyTurnOnAfterIfNeeded = async () => {
+        if (modeIgnoresSetpoint && turnOnEnabled && turnOnOrder === 'after') {
+          try {
+            let newMode = null;
+            if (hvacModes.includes('heat')) newMode = 'heat'; else if (hvacModes.includes('cool')) newMode = 'cool';
+            if (newMode){ await this._hass.callService('climate','set_hvac_mode',{ entity_id: eid, hvac_mode: newMode }); }
+          } catch {}
+        }
+      };
+
       if (modeSuggestsRange && (hasLow || hasHigh)){
         let band = 1.0; // °C total band
         try { const b = Number(this._config?.range_band_c); if (Number.isFinite(b) && b > 0.2 && b <= 10) band = b; } catch {}
@@ -6701,9 +6737,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const highC = desiredC + half;
         const data = { entity_id: eid, target_temp_low: this._serviceTempFromC(lowC), target_temp_high: this._serviceTempFromC(highC) };
         await this._hass.callService('climate','set_temperature', data);
+        await applyTurnOnAfterIfNeeded();
         return;
       }
       await this._hass.callService('climate','set_temperature', { entity_id: eid, temperature: this._serviceTempFromC(desiredC) });
+      await applyTurnOnAfterIfNeeded();
     } catch {}
   }
   // Convert a schedules object between units (returns deep clone)
