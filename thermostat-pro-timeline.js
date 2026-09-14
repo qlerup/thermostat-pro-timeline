@@ -1,7 +1,11 @@
 // Note: avoid ESM imports so the card works when loaded as "javascript" resource in HA.
 // ---- thermostat-timeline i18n (namespaced) ----
+// Thermostat Pro Timeline
+// ...
 const TT_I18N = {
   en: {
+    'ui.on': 'ON',
+    'ui.off': 'OFF',
     // Card
     'card.title_default': 'Thermostat Timeline',
     'err.config_entities': "Config must have 'entities: [climate.xxx, ...]'.",
@@ -62,6 +66,9 @@ const TT_I18N = {
     'editor.turn_on.order': 'Order',
     'editor.turn_on.order.before': 'Before set_temperature',
     'editor.turn_on.order.after': 'After set_temperature',
+
+    'editor.apply_enabled.title': 'Apply schedule to this thermostat',
+    'editor.apply_enabled.desc': 'When disabled, the schedule is still tracked and shown, but temperature and mode changes are never sent to this entity. Useful to keep a schedule ready without touching a thermostat you turned off manually.',
 
     'editor.merge_label': 'Merge with (add extra thermostat)',
     'editor.display_name_optional': 'Room name (optional)',
@@ -311,6 +318,8 @@ const TT_I18N = {
   'onboard.reset_ok': 'The guide will show next time.',
 
   'pause.menu_title': 'Pause auto-apply',
+  'pause.menu_title_room': 'Pause auto-apply — {room}',
+  'pause.room_tooltip': 'Pause schedule for this room',
   'pause.off_1h': 'Pause for 1 hour',
   'pause.off_5h': 'Pause for 5 hours',
   'pause.off_custom': 'Custom duration…',
@@ -406,6 +415,10 @@ const TT_I18N = {
   'presence.who_away': 'Who is away'
   },
   da: {
+    'pause.menu_title_room': 'Pause automatisk anvendelse — {room}',
+    'pause.room_tooltip': 'Sæt tidsplanen på pause for dette rum',
+    'ui.on': 'TIL',
+    'ui.off': 'FRA',
     // Card
     'card.title_default': 'Thermostat Timeline',
     'err.config_entities': "Config skal have 'entities: [climate.xxx, ...]'.",
@@ -491,6 +504,7 @@ const TT_I18N = {
     'editor.turn_on.order': 'Rækkefølge',
     'editor.turn_on.order.before': 'Før set_temperature',
     'editor.turn_on.order.after': 'Efter set_temperature',
+    'editor.apply_enabled.title': 'Anvend tidsplanen på denne termostat',
     'editor.display_name_optional': 'Rum navn (valgfri)',
     'editor.merge_label': 'Flet med (tilføj ekstra termostat)',
     'editor.merged_with': 'Flettet med',
@@ -784,6 +798,11 @@ const TT_I18N = {
     'presence.who_away': 'Hvem er ikke hjemme'
   },
   sv: {
+    'editor.apply_enabled.title': 'Tillämpa schemat på denna termostat',
+    'pause.menu_title_room': 'Pausa automatisk tillämpning — {room}',
+    'pause.room_tooltip': 'Pausa schemat för detta rum',
+    'ui.on': 'PÅ',
+    'ui.off': 'AV',
     'card.title_default': 'Termostat-tidslinje',
     'ui.edit_block': 'Redigera block',
     'ui.add_block': 'Lägg till block',
@@ -1138,6 +1157,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Namnet finns redan'
   },
   nb: {
+    'editor.apply_enabled.title': 'Bruk tidsplanen på denne termostaten',
+    'pause.menu_title_room': 'Pause automatisk bruk — {room}',
+    'pause.room_tooltip': 'Sett tidsplanen på pause for dette rommet',
+    'ui.on': 'PÅ',
+    'ui.off': 'AV',
     'card.title_default': 'Termostat tidslinje',
     'ui.edit_block': 'Rediger blokk',
     'ui.add_block': 'Legg til blokk',
@@ -1490,6 +1514,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Navnet finnes allerede'
   },
   de: {
+    'editor.apply_enabled.title': 'Zeitplan auf diesen Thermostat anwenden',
+    'pause.menu_title_room': 'Automatische Anwendung pausieren — {room}',
+    'pause.room_tooltip': 'Zeitplan für diesen Raum pausieren',
+    'ui.on': 'EIN',
+    'ui.off': 'AUS',
     'card.title_default': 'Thermostat-Zeitlinie',
     'ui.edit_block': 'Block bearbeiten',
     'ui.add_block': 'Block hinzufügen',
@@ -1841,6 +1870,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Name existiert bereits'
   },
   es: {
+    'editor.apply_enabled.title': 'Aplicar la programación a este termostato',
+    'pause.menu_title_room': 'Pausar aplicación automática — {room}',
+    'pause.room_tooltip': 'Pausar la programación de esta habitación',
+    'ui.on': 'ON',
+    'ui.off': 'OFF',
     'card.title_default': 'Línea de tiempo del termostato',
     'ui.edit_block': 'Editar bloque',
     'ui.add_block': 'Agregar bloque',
@@ -2192,6 +2226,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'El nombre ya existe'
   },
   fr: {
+    'editor.apply_enabled.title': 'Appliquer le planning à ce thermostat',
+    'pause.menu_title_room': 'Suspendre l’application automatique — {room}',
+    'pause.room_tooltip': 'Suspendre l’application du planning pour cette pièce',
+    'ui.on': 'ACTIVÉ',
+    'ui.off': 'DÉSACTIVÉ',
     'card.title_default': 'Chronologie du thermostat',
     'ui.edit_block': 'Modifier le bloc',
     'ui.add_block': 'Ajouter un bloc',
@@ -2536,6 +2575,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Le nom existe déjà'
   },
   it: {
+    'editor.apply_enabled.title': 'Applica la programmazione a questo termostato',
+    'pause.menu_title_room': 'Metti in pausa l’applicazione automatica — {room}',
+    'pause.room_tooltip': 'Metti in pausa la programmazione per questa stanza',
+    'ui.on': 'ON',
+    'ui.off': 'OFF',
     'card.title_default': 'Cronologia del termostato',
     'ui.edit_block': 'Modifica blocco',
     'ui.add_block': 'Aggiungi blocco',
@@ -2885,6 +2929,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Il nome esiste già'
   },
   fi: {
+    'editor.apply_enabled.title': 'Käytä aikataulua tähän termostaattiin',
+    'pause.menu_title_room': 'Keskeytä automaattinen käyttö — {room}',
+    'pause.room_tooltip': 'Keskeytä tämän huoneen aikataulu',
+    'ui.on': 'PÄÄLLÄ',
+    'ui.off': 'POIS',
     'card.title_default': 'Termostaatin aikajana',
     'ui.edit_block': 'Muokkaa lohkoa',
     'ui.add_block': 'Lisää lohko',
@@ -3236,6 +3285,11 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Nimi on jo olemassa'
   },
   cs: {
+    'editor.apply_enabled.title': 'Použít plán pro tento termostat',
+    'pause.menu_title_room': 'Pozastavit automatické použití — {room}',
+    'pause.room_tooltip': 'Pozastavit plán pro tuto místnost',
+    'ui.on': 'ZAP',
+    'ui.off': 'VYP',
     // Karta
     'card.title_default': 'Časová osa termostatu',
     // Modal / editor (inline)
@@ -3610,6 +3664,11 @@ const TT_I18N = {
     , 'profiles.name_exists': 'Název již existuje'
   },
   sl: {
+    'editor.apply_enabled.title': 'Uporabi urnik za ta termostat',
+    'pause.menu_title_room': 'Začasno ustavi samodejno uporabo — {room}',
+    'pause.room_tooltip': 'Začasno ustavi urnik za ta prostor',
+    'ui.on': 'VKLOP',
+    'ui.off': 'IZKLOP',
     'card.title_default': 'Časovnica termostata',
     'ui.edit_block': 'Uredi blok',
     'ui.add_block': 'Dodaj blok',
@@ -3959,6 +4018,10 @@ const TT_I18N = {
   , 'profiles.name_exists': 'Ime že obstaja'
   },
   ro: {
+    'pause.menu_title_room': 'Întrerupe aplicarea automată — {room}',
+    'pause.room_tooltip': 'Întrerupe programul pentru această cameră',
+    'ui.on': 'PORNIT',
+    'ui.off': 'OPRIT',
     'card.title_default': 'Cronologia termostatului',
     'err.config_entities': "Configurația trebuie să conțină 'entities: [climate.xxx, ...]'.",
     'ui.edit_block': 'Editează blocul',
@@ -4018,6 +4081,7 @@ const TT_I18N = {
     'editor.turn_on.order.before': 'Înainte de set_temperature',
     'editor.turn_on.order.after': 'După set_temperature',
 
+    'editor.apply_enabled.title': 'Aplică programul acestui termostat',
     'editor.merge_label': 'Unește cu (adaugă termostat suplimentar)',
     'editor.display_name_optional': 'Nume cameră (opțional)',
     'editor.merged_with': 'Combinat cu',
@@ -4620,6 +4684,8 @@ class ThermostatTimelineCard extends HTMLElement {
       const hasAnyMerge = this._config.merges && typeof this._config.merges==='object' && Object.keys(this._config.merges).length>0;
       const hasAnySensors = this._config.temp_sensors && typeof this._config.temp_sensors==='object' && Object.keys(this._config.temp_sensors).length>0;
       const hasAnyTurnOn = this._config.turn_on && typeof this._config.turn_on==='object' && Object.keys(this._config.turn_on).length>0;
+      const hasAnyApplyEnabled = this._config.apply_enabled && typeof this._config.apply_enabled==='object' && Object.keys(this._config.apply_enabled).length>0;
+      const hasAnyRoomPause = this._config.room_pause && typeof this._config.room_pause==='object' && Object.keys(this._config.room_pause).length>0;
       if (hasAnyLabel && hasAnyMerge && hasAnySensors && hasAnyTurnOn) return;
       const api = await this._apiFetchState();
       const s = api?.settings || {};
@@ -4628,6 +4694,8 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!hasAnyMerge && s.merges && typeof s.merges==='object' && Object.keys(s.merges).length){ this._config.merges = { ...s.merges }; changed = true; }
       if (!hasAnySensors && s.temp_sensors && typeof s.temp_sensors==='object' && Object.keys(s.temp_sensors).length){ this._config.temp_sensors = { ...s.temp_sensors }; changed = true; }
       if (!hasAnyTurnOn && s.turn_on && typeof s.turn_on==='object' && Object.keys(s.turn_on).length){ this._config.turn_on = { ...s.turn_on }; changed = true; }
+      if (!hasAnyApplyEnabled && s.apply_enabled && typeof s.apply_enabled==='object' && Object.keys(s.apply_enabled).length){ this._config.apply_enabled = { ...s.apply_enabled }; changed = true; }
+      if (!hasAnyRoomPause && s.room_pause && typeof s.room_pause==='object' && Object.keys(s.room_pause).length){ this._config.room_pause = { ...s.room_pause }; changed = true; }
       if (changed){
         try { const payload = this._makeStoragePayload(true); localStorage.setItem(this._localStoreKey(), JSON.stringify(payload)); } catch {}
       }
@@ -4635,7 +4703,7 @@ class ThermostatTimelineCard extends HTMLElement {
   }
 
   // ---------- Config ----------
-  setConfig(config) {
+    setConfig(config) {
     if (!config || !Array.isArray(config.entities)) throw new Error(ttLocalize('err.config_entities', navigator.language || 'en'));
     const prevDefault = Number(this._config?.default_temp);
     const yamlSetsDefault = Object.prototype.hasOwnProperty.call(config, 'default_temp');
@@ -4796,6 +4864,8 @@ class ThermostatTimelineCard extends HTMLElement {
       merges: { ...(config.merges || {}) },
     temp_sensors: { ...(config.temp_sensors || {}) },
   turn_on: { ...(config.turn_on || {}) },
+  apply_enabled: { ...(config.apply_enabled || {}) },
+  room_pause: { ...(config.room_pause || {}) },
   boiler_enabled: !!(config.boiler_enabled ?? this._config?.boiler_enabled ?? false),
   boiler_switch: String(config.boiler_switch ?? this._config?.boiler_switch ?? ''),
   boiler_switch_domain: (()=>{
@@ -5129,6 +5199,12 @@ class ThermostatTimelineCard extends HTMLElement {
     this._pauseUntilMs = 0;          // epoch ms; > now => paused until time
     this._resumeTimer = null;        // timer to auto-resume
     this._countdownTimer = null;     // 1s updater for header countdown
+    // Per-room pause state: this._config.room_pause[primary_eid] = { indef, until_ms }.
+    // this._pauseRoomTargetEid tracks which room the shared pause modal is
+    // currently editing (null = the global pause, matching prior behavior).
+    this._pauseRoomTargetEid = null;
+    this._roomResumeTimers = {};     // { [primary_eid]: timeoutId }
+    this._roomCountdownTimers = {};  // { [primary_eid]: intervalId }
     // Sync countdown UI (for delayed sync)
     this._syncTimer = null;
     this._syncJustUntil = 0; // ms timestamp to show "done" message briefly
@@ -5648,6 +5724,8 @@ class ThermostatTimelineCard extends HTMLElement {
             if (s.labels && typeof s.labels === 'object' && !this._yamlProvided?.labels) this._config.labels = { ...s.labels };
             if (s.temp_sensors && typeof s.temp_sensors === 'object' && !this._yamlProvided?.temp_sensors) this._config.temp_sensors = { ...s.temp_sensors };
             if (s.turn_on && typeof s.turn_on === 'object' && !this._yamlProvided?.turn_on) this._config.turn_on = { ...s.turn_on };
+            if (s.apply_enabled && typeof s.apply_enabled === 'object' && !this._yamlProvided?.apply_enabled) this._config.apply_enabled = { ...s.apply_enabled };
+            if (s.room_pause && typeof s.room_pause === 'object' && !this._yamlProvided?.room_pause) this._config.room_pause = { ...s.room_pause };
             if (s.presence_sensors && typeof s.presence_sensors === 'object' && !this._yamlProvided?.presence_sensors) this._config.presence_sensors = { ...s.presence_sensors };
             try {
               if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
@@ -5720,6 +5798,16 @@ class ThermostatTimelineCard extends HTMLElement {
                 if (!this._yamlProvided?.turn_on && (!s.turn_on || typeof s.turn_on !== 'object' || isEmptyObj(s.turn_on))) {
                   if (ls.turn_on && typeof ls.turn_on === 'object') {
                     this._config.turn_on = { ...(this._config.turn_on || {}), ...ls.turn_on };
+                  }
+                }
+                if (!this._yamlProvided?.apply_enabled && (!s.apply_enabled || typeof s.apply_enabled !== 'object' || isEmptyObj(s.apply_enabled))) {
+                  if (ls.apply_enabled && typeof ls.apply_enabled === 'object') {
+                    this._config.apply_enabled = { ...(this._config.apply_enabled || {}), ...ls.apply_enabled };
+                  }
+                }
+                if (!this._yamlProvided?.room_pause && (!s.room_pause || typeof s.room_pause !== 'object' || isEmptyObj(s.room_pause))) {
+                  if (ls.room_pause && typeof ls.room_pause === 'object') {
+                    this._config.room_pause = { ...(this._config.room_pause || {}), ...ls.room_pause };
                   }
                 }
                 if (!this._yamlProvided?.presence_sensors && (!s.presence_sensors || typeof s.presence_sensors !== 'object' || isEmptyObj(s.presence_sensors))) {
@@ -6057,10 +6145,10 @@ class ThermostatTimelineCard extends HTMLElement {
             }
           }
         } catch {}
-  const s0 = parsed.settings || {}; 
+  const s0 = parsed.settings || {};
   // Convert numeric settings from °F to °C for internal use
-  let s = s0; 
-  try { 
+  let s = s0;
+  try {
     const unit = String(s0?.temp_unit||'C').toUpperCase();
     if (unit==='F') {
       const conv = (n)=>{ const v=Number(n); return Number.isFinite(v)? this._fToC(v): n; };
@@ -6297,14 +6385,14 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!this._config?.storage_enabled) {
         // When shared storage is turned off, still push a minimal settings payload to disable backend apply
         try {
-          const basePayload = { 
-            settings: { 
-              auto_apply_enabled: false, 
-              apply_on_edit: !!this._config.apply_on_edit, 
-              profiles_enabled: !!this._config.profiles_enabled, 
-              global_profile: this._globalProfile || null, 
+          const basePayload = {
+            settings: {
+              auto_apply_enabled: false,
+              apply_on_edit: !!this._config.apply_on_edit,
+              profiles_enabled: !!this._config.profiles_enabled,
+              global_profile: this._globalProfile || null,
               boiler_enabled: !!this._config.boiler_enabled,
-              boiler_switch: String(this._config.boiler_switch || ''), 
+              boiler_switch: String(this._config.boiler_switch || ''),
               boiler_switch_domain: String((this._config.boiler_switch_domain === 'input_boolean') ? 'input_boolean' : 'switch'),
               boiler_rooms: Array.isArray(this._config.boiler_rooms) ? this._config.boiler_rooms.filter(Boolean).map(String) : null,
               boiler_on_offset: (this._config.boiler_on_offset === null || this._config.boiler_on_offset === undefined) ? null : Number(this._config.boiler_on_offset),
@@ -6332,17 +6420,17 @@ class ThermostatTimelineCard extends HTMLElement {
                   return out;
                 } catch { return {}; }
               })(),
-              show_pause_button: !!(this._config.show_pause_button ?? true), 
+              show_pause_button: !!(this._config.show_pause_button ?? true),
               show_room_temp: !!(this._config.show_room_temp ?? true),
               pause_sensor_enabled: !!(this._config.pause_sensor_enabled ?? false),
               pause_sensor_entity: String(this._config.pause_sensor_entity || ''),
-              pause_indef: !!this._pauseIndef, 
-              pause_until_ms: Number(this._pauseUntilMs||0), 
+              pause_indef: !!this._pauseIndef,
+              pause_until_ms: Number(this._pauseUntilMs||0),
               open_window: this._config.open_window || { enabled:false, sensors:{}, open_delay_min:2, close_delay_min:5 },
-              holidays_enabled: !!this._config.holidays_enabled, 
-              holidays_source: this._config.holidays_source || 'calendar', 
-              holidays_entity: this._config.holidays_entity || '', 
-              holidays_dates: Array.isArray(this._config.holidays_dates) ? this._config.holidays_dates : [] 
+              holidays_enabled: !!this._config.holidays_enabled,
+              holidays_source: this._config.holidays_source || 'calendar',
+              holidays_entity: this._config.holidays_entity || '',
+              holidays_dates: Array.isArray(this._config.holidays_dates) ? this._config.holidays_dates : []
             },
             colors: { color_ranges: this._config.color_ranges, color_global: !!this._config.color_global }
           };
@@ -6433,7 +6521,7 @@ class ThermostatTimelineCard extends HTMLElement {
           };
           // If labels were explicitly edited in this session, allow an empty object to clear labels
           if (!this._labelsTouched) keepIfEmpty('labels');
-          keepIfEmpty('merges');
+          //keepIfEmpty('merges');
           keepIfEmpty('temp_sensors');
           payload = { ...payload, settings: merged };
         } catch {}
@@ -6540,7 +6628,7 @@ class ThermostatTimelineCard extends HTMLElement {
   }
   _clamp(v,a,b){ if (isNaN(v)) return a; return Math.min(Math.max(v,a),b); }
   _prettyName(eid){ const st=this._hass?.states?.[eid]; if (st?.attributes?.friendly_name) return st.attributes.friendly_name; const base=(eid||"").split(".")[1]||eid||""; return base.replace(/_/g," ").replace(/\b\w/g,(m)=>m.toUpperCase()); }
-  
+
   _isCompactScale(){
     // Compact = show every other hour on small or touch devices (incl. mobile portrait)
     try {
@@ -6657,6 +6745,27 @@ class ThermostatTimelineCard extends HTMLElement {
   }
   async _applySetpointForEntity(eid, desiredC){
     try {
+      // Per-room "Enable schedule updates" toggle: when disabled for this room,
+      // the timeline still tracks/stores the schedule and shows it in the UI,
+      // but never pushes anything to the actual entity (no set_temperature,
+      // no set_hvac_mode, no turn_on). Defaults to enabled when the key is
+      // absent, so existing configs keep working unchanged.
+      const applyEnabled = (() => {
+        try {
+          const map = (this._config?.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+          if (Object.prototype.hasOwnProperty.call(map, eid)) return !!map[eid];
+          const primary = this._groupPrimaryOf ? this._groupPrimaryOf(eid) : null;
+          if (primary && Object.prototype.hasOwnProperty.call(map, primary)) return !!map[primary];
+        } catch {}
+        return true;
+      })();
+      if (!applyEnabled) return;
+
+      // Per-room pause: temporary suppression, independent of the global
+      // pause button. Mirrors _isPaused()'s semantics but scoped to this
+      // room only, via this._config.room_pause[primary_eid].
+      if (this._isRoomPaused && this._isRoomPaused(eid)) return;
+
       const dom = String(eid||'').split('.')[0] || '';
       if (dom === 'input_number') {
         // Mirror climate behavior: send in configured display/service unit (°C or °F)
@@ -6680,19 +6789,55 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
 
-      // If mode ignores setpoint, try switching to heat/cool
-      try {
-        if (['off','dry','fan_only'].includes(hvacMode)){
+      // Resolve the per-room "Send turn_on command" setting for this entity.
+      // Falls back to the group's primary entity id, since turn_on is keyed by
+      // primary_eid but _applySetpointForEntity can be called for merged members.
+      const turnOnCfg = (() => {
+        try {
+          const map = (this._config?.turn_on && typeof this._config.turn_on === 'object') ? this._config.turn_on : {};
+          if (map[eid]) return map[eid];
+          const primary = this._groupPrimaryOf ? this._groupPrimaryOf(eid) : null;
+          if (primary && map[primary]) return map[primary];
+        } catch {}
+        return null;
+      })();
+      const turnOnEnabled = !!(turnOnCfg && turnOnCfg.enabled);
+      const turnOnOrder = (turnOnCfg && turnOnCfg.order === 'after') ? 'after' : 'before';
+
+      // BUGFIX: previously this block ran unconditionally whenever the entity was
+      // off/dry/fan_only, forcing hvac_mode to heat/cool regardless of the
+      // "Send turn_on command" toggle. That silently turned entities back ON
+      // (e.g. Versatile Thermostat) even when the user explicitly left a room
+      // manually OFF and disabled this option. It is now gated on turnOnEnabled,
+      // and only fires here when order is "before" (the "after" case is handled
+      // further down, once the setpoint has actually been sent).
+      const modeIgnoresSetpoint = ['off','dry','fan_only'].includes(hvacMode);
+      if (modeIgnoresSetpoint && turnOnEnabled && turnOnOrder === 'before') {
+        try {
           let newMode = null;
           if (hvacModes.includes('heat')) newMode = 'heat'; else if (hvacModes.includes('cool')) newMode = 'cool';
           if (newMode){ await this._hass.callService('climate','set_hvac_mode',{ entity_id: eid, hvac_mode: newMode }); hvacMode = newMode; }
-        }
-      } catch {}
+        } catch {}
+      }
 
       // Decide between single setpoint vs range
       const hasLow = Object.prototype.hasOwnProperty.call(attrs, 'target_temp_low');
       const hasHigh = Object.prototype.hasOwnProperty.call(attrs, 'target_temp_high');
       const modeSuggestsRange = (hvacMode === 'heat_cool') || (hvacMode === 'auto' && hasLow && hasHigh);
+
+      // Shared "after" hook: fires set_hvac_mode only once the setpoint has
+      // actually been sent, and only when the user opted in via "Send turn_on
+      // command" with order = after. Mirrors the "before" gate above.
+      const applyTurnOnAfterIfNeeded = async () => {
+        if (modeIgnoresSetpoint && turnOnEnabled && turnOnOrder === 'after') {
+          try {
+            let newMode = null;
+            if (hvacModes.includes('heat')) newMode = 'heat'; else if (hvacModes.includes('cool')) newMode = 'cool';
+            if (newMode){ await this._hass.callService('climate','set_hvac_mode',{ entity_id: eid, hvac_mode: newMode }); }
+          } catch {}
+        }
+      };
+
       if (modeSuggestsRange && (hasLow || hasHigh)){
         let band = 1.0; // °C total band
         try { const b = Number(this._config?.range_band_c); if (Number.isFinite(b) && b > 0.2 && b <= 10) band = b; } catch {}
@@ -6701,9 +6846,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const highC = desiredC + half;
         const data = { entity_id: eid, target_temp_low: this._serviceTempFromC(lowC), target_temp_high: this._serviceTempFromC(highC) };
         await this._hass.callService('climate','set_temperature', data);
+        await applyTurnOnAfterIfNeeded();
         return;
       }
       await this._hass.callService('climate','set_temperature', { entity_id: eid, temperature: this._serviceTempFromC(desiredC) });
+      await applyTurnOnAfterIfNeeded();
     } catch {}
   }
   // Convert a schedules object between units (returns deep clone)
@@ -6880,6 +7027,8 @@ class ThermostatTimelineCard extends HTMLElement {
         labels: this._config.labels,
         temp_sensors: this._config.temp_sensors,
         turn_on: this._config.turn_on,
+        apply_enabled: this._config.apply_enabled,
+        room_pause: this._config.room_pause,
 
         presence_sensor_enabled: !!(this._config.presence_sensor_enabled ?? false),
         presence_live_header: !!(this._config.presence_live_header ?? true),
@@ -7777,6 +7926,133 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
+  // --- Per-room pause (mirrors the global pause above, scoped to one room) ---
+  // Resolve the primary room key for room_pause, same convention as apply_enabled
+  // and turn_on: keyed by the room's primary entity id, merged entities inherit it.
+  _roomPauseKey(eid){
+    try {
+      const map = (this._config?.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      if (Object.prototype.hasOwnProperty.call(map, eid)) return eid;
+      const primary = this._groupPrimaryOf ? this._groupPrimaryOf(eid) : null;
+      if (primary && Object.prototype.hasOwnProperty.call(map, primary)) return primary;
+      return primary || eid;
+    } catch { return eid; }
+  }
+  _roomPauseInfo(eid){
+    try {
+      const key = this._roomPauseKey(eid);
+      const map = (this._config?.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      const entry = map[key];
+      if (!entry || typeof entry !== 'object') return { indef: false, until_ms: 0 };
+      return { indef: !!entry.indef, until_ms: Number(entry.until_ms || 0) };
+    } catch { return { indef: false, until_ms: 0 }; }
+  }
+  _isRoomPaused(eid){
+    try {
+      const { indef, until_ms } = this._roomPauseInfo(eid);
+      if (indef) return true;
+      if (Number.isFinite(until_ms) && until_ms > Date.now()) return true;
+    } catch {}
+    return false;
+  }
+  _roomResumeAtMs(eid){ const { until_ms } = this._roomPauseInfo(eid); return (Number.isFinite(until_ms) && until_ms>0) ? until_ms : null; }
+  _formatRoomPauseCountdown(eid){
+    try {
+      const until = this._roomResumeAtMs(eid);
+      const now = Date.now();
+      if (!until || until <= now) return '';
+      let ms = until - now;
+      const totalSec = Math.floor(ms/1000);
+      const h = Math.floor(totalSec/3600);
+      const m = Math.floor((totalSec%3600)/60);
+      const s = totalSec%60;
+      const pad = (n)=>String(n).padStart(2,'0');
+      if (h>0) return `${h}:${pad(m)}:${pad(s)}`;
+      return `${m}:${pad(s)}`;
+    } catch { return ''; }
+  }
+  async _applyRoomCurrentSetpoints(eid){
+    try {
+      const primary = this._groupPrimaryOf ? this._groupPrimaryOf(eid) : eid;
+      const merges = this._config?.merges || {};
+      const targets = [
+        primary,
+        ...((Array.isArray(merges[primary])) ? merges[primary] : [])
+      ];
+      const nowMin = this._getNowMin ? this._getNowMin() : 0;
+
+      for (const target of targets) {
+        const desired = this._desiredTempFor ? this._desiredTempFor(target, nowMin) : null;
+        if (desired != null) {
+          await this._applySetpointForEntity(target, Number(desired));
+        }
+      }
+    } catch {}
+  }
+
+  _scheduleRoomResumeTimer(eid){
+    try {
+      const key = this._roomPauseKey(eid);
+      if (this._roomResumeTimers[key]) clearTimeout(this._roomResumeTimers[key]);
+      const info = this._roomPauseInfo(key);
+      if (info.indef) return; // manual resume only
+      const when = this._roomResumeAtMs(key);
+      if (!when) return;
+      const delay = Math.max(500, when - Date.now());
+      this._roomResumeTimers[key] = setTimeout(async ()=>{
+        try { this._render(); } catch {}
+        try {
+          await this._applyRoomCurrentSetpoints(key);
+        } catch {}
+        this._scheduleNextApply();
+      }, delay);
+    } catch {}
+  }
+  _setRoomPauseForMinutes(eid, mins){
+    try {
+      const key = this._roomPauseKey(eid);
+      const ms = Math.max(1, Math.round(Number(mins)||0)) * 60000;
+      const prev = (this._config.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      this._config.room_pause = { ...prev, [key]: { indef: false, until_ms: Date.now() + ms } };
+      this._debouncedSaveStore();
+      this._render();
+      this._renderPauseStatus();
+      this._scheduleRoomResumeTimer(key);
+      try { if (this._config?.storage_enabled) this._saveStore(); } catch {}
+      try { this.shadowRoot.querySelector('.overlay-pause')?.classList.remove('open'); } catch {}
+    } catch {}
+  }
+  _setRoomPauseIndef(eid){
+    try {
+      const key = this._roomPauseKey(eid);
+      const prev = (this._config.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      this._config.room_pause = { ...prev, [key]: { indef: true, until_ms: 0 } };
+      this._debouncedSaveStore();
+      this._render();
+      this._renderPauseStatus();
+      try { if (this._roomResumeTimers[key]) clearTimeout(this._roomResumeTimers[key]); } catch {}
+      try { if (this._config?.storage_enabled) this._saveStore(); } catch {}
+      try { this.shadowRoot.querySelector('.overlay-pause')?.classList.remove('open'); } catch {}
+    } catch {}
+  }
+  _resumeRoomNow(eid){
+    try {
+      const key = this._roomPauseKey(eid);
+      const prev = (this._config.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      const next = { ...prev };
+      delete next[key];
+      this._config.room_pause = next;
+      this._debouncedSaveStore();
+      this._render();
+      try { if (this._roomResumeTimers[key]) clearTimeout(this._roomResumeTimers[key]); } catch {}
+      try {
+        this._applyRoomCurrentSetpoints(key).catch(()=>{});
+      } catch {}
+      try { if (this._config?.storage_enabled) this._saveStore(); } catch {}
+      try { this.shadowRoot.querySelector('.overlay-pause')?.classList.remove('open'); } catch {}
+    } catch {}
+  }
+
   _formatPauseCountdown(){
     try {
       const until = Number(this._pauseUntilMs||0);
@@ -7920,6 +8196,16 @@ class ThermostatTimelineCard extends HTMLElement {
     }, delay);
     // Also make sure we have a standalone resume timer if paused
     this._scheduleResumeTimer();
+    // Same for any room currently under a timed (non-indefinite) pause.
+    try {
+      const map = (this._config?.room_pause && typeof this._config.room_pause === 'object') ? this._config.room_pause : {};
+      for (const key of Object.keys(map)) {
+        const entry = map[key];
+        if (entry && !entry.indef && Number(entry.until_ms||0) > Date.now()) {
+          this._scheduleRoomResumeTimer(key);
+        }
+      }
+    } catch {}
   }
 
   _setupBoilerControl(){
@@ -8352,6 +8638,30 @@ class ThermostatTimelineCard extends HTMLElement {
   }
   /* Current temperature bubble */
   .sensor-bubble{ display:inline-flex; align-items:center; gap:6px; margin-left:8px; padding:2px 8px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, rgba(0,0,0,.05)); color: var(--primary-text-color); font-size:.78rem; }
+  /* Quick per-room schedule enable switch shown directly in the timeline header */
+  .row-apply-toggle{ display:inline-flex; align-items:center; gap:4px; margin-left:6px; }
+  .row-apply-toggle ha-switch{ transform:scale(.78); transform-origin:left center; margin-right:-8px; }
+  .row-apply-toggle .apply-state{ font-size:.72rem; color:var(--secondary-text-color); white-space:nowrap; }
+  .track.schedule-disabled{ filter:grayscale(1); opacity:.42; transition:filter .2s ease, opacity .2s ease; }
+
+.track.schedule-paused{
+  filter:grayscale(.7);
+  opacity:.55;
+  animation:timeline-pause-pulse 1.8s ease-in-out infinite;
+  transition:filter .2s ease, opacity .2s ease;
+}
+@keyframes timeline-pause-pulse{
+  0%,100% { opacity:.55; }
+  50% { opacity:.30; }
+}
+  /* Per-room pause icon shown directly in the timeline header, next to the
+     Apply-schedule quick toggle. Mirrors the global .pause-btn styling. */
+  .row-pause-toggle{ display:inline-flex; align-items:center; gap:4px; margin-left:6px; }
+  .row-pause-btn{ width:22px; height:22px; border-radius:999px; border:1px solid var(--divider-color); background: transparent; color: var(--secondary-text-color); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .row-pause-btn ha-icon{ --mdc-icon-size: 16px; }
+  .row-pause-btn.paused{ background: var(--error-color); border-color: var(--error-color); color: var(--text-primary-color, #fff); }
+  .row-pause-eta{ font-size:.7rem; color: var(--secondary-text-color); white-space:nowrap; padding:1px 6px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, rgba(0,0,0,.05)); }
+
     .btn{cursor:pointer;border:1px solid var(--divider-color);border-radius:10px;padding:6px 10px;font-size:.8rem;background:var(--card-background-color);color:var(--primary-text-color)}
   /* Make row toolbar buttons a bit lower than default */
   .row-head .btn{ padding:4px 10px; border-radius:8px; font-size:.78rem; }
@@ -8427,14 +8737,14 @@ class ThermostatTimelineCard extends HTMLElement {
   .grid>div.time-right{justify-content:flex-start;padding-right:0}
   /* Temperature input: compact and rounded */
   .grid .rowfull .ed-temp { width: 140px; height:28px; padding:2px 6px; box-sizing:border-box; border:1px solid var(--divider-color); border-radius:8px; background: var(--card-background-color); color: var(--primary-text-color); }
-      
+
         /* remove button */
   .remove-btn { flex-shrink: 0; padding:4px 8px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--error-color); display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
   /* Make disabled state clearly visible on remove-style buttons */
   .remove-btn[disabled] { opacity: .55; cursor: not-allowed; filter: grayscale(60%); color: var(--disabled-text-color, var(--secondary-text-color)) !important; border-color: var(--divider-color) !important; pointer-events: none; }
   .remove-btn[disabled] ha-icon { filter: grayscale(100%); opacity: .7; }
   .remove-btn[disabled] span { color: var(--disabled-text-color, var(--secondary-text-color)); }
-        
+
   .actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; }
   /* Give modal action buttons some space from inputs */
   .modal .actions { margin-top: 10px; }
@@ -8446,7 +8756,7 @@ class ThermostatTimelineCard extends HTMLElement {
           cursor:pointer; user-select:none;
         }
         .order-btn[disabled] { opacity: .5; cursor: not-allowed; }
-        
+
         /* Drag & drop */
         .drag-handle {
           display:inline-flex; align-items:center; justify-content:center;
@@ -8457,7 +8767,7 @@ class ThermostatTimelineCard extends HTMLElement {
         }
         .drag-handle:active { cursor: grabbing; }
         .inline.drag-over { outline: 2px dashed var(--primary-color); outline-offset: 2px; }
-        
+
         /* Pointer-driven drag */
         .drag-ghost {
           position: fixed;
@@ -8466,7 +8776,7 @@ class ThermostatTimelineCard extends HTMLElement {
           z-index: 9999;
         }
         .placeholder { border:2px dashed var(--primary-color); border-radius:10px; margin:6px 0; }
-        
+
         /* Merge chips */
         .linked-chips { display:flex; flex-wrap:wrap; gap:6px; }
         .pill-chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, transparent); color: var(--primary-text-color); }
@@ -8788,7 +9098,7 @@ class ThermostatTimelineCard extends HTMLElement {
             </div>
           </div>
         </div>
-        
+
         <!-- Presence (advanced away) -->
         <div class="overlay overlay-presence" part="overlay">
           <div class="modal modal-profiles" role="dialog" aria-modal="true">
@@ -9129,28 +9439,65 @@ class ThermostatTimelineCard extends HTMLElement {
       const bi = this.shadowRoot.querySelector('.pause-indef');
       const br = this.shadowRoot.querySelector('.pause-resume');
       const bx = this.shadowRoot.querySelector('.pause-close');
-      b1?.addEventListener('click', ()=>{ this._setPauseForMinutes(60); });
-      b5?.addEventListener('click', ()=>{ this._setPauseForMinutes(300); });
+      // Each handler checks this._pauseRoomTargetEid at click time (not at
+      // wiring time) so the SAME modal/buttons work for both the global
+      // pause (target = null, opened from the header button) and a
+      // room-scoped pause (target = a primary entity id, opened from that
+      // room's own pause icon).
+      b1?.addEventListener('click', ()=>{
+        const t = this._pauseRoomTargetEid;
+        if (t) this._setRoomPauseForMinutes(t, 60); else this._setPauseForMinutes(60);
+      });
+      b5?.addEventListener('click', ()=>{
+        const t = this._pauseRoomTargetEid;
+        if (t) this._setRoomPauseForMinutes(t, 300); else this._setPauseForMinutes(300);
+      });
       bc?.addEventListener('click', ()=>{
         try {
           const txt = prompt(this._t('pause.prompt_minutes') || 'Enter duration (minutes):', '60');
           const m = Number(txt);
-          if (Number.isFinite(m) && m > 0) this._setPauseForMinutes(m);
+          if (Number.isFinite(m) && m > 0) {
+            const t = this._pauseRoomTargetEid;
+            if (t) this._setRoomPauseForMinutes(t, m); else this._setPauseForMinutes(m);
+          }
         } catch {}
       });
-      bi?.addEventListener('click', ()=>{ this._setPauseIndef(); });
-      br?.addEventListener('click', ()=>{ this._resumeNow(); });
-      bx?.addEventListener('click', ()=>{ try { ov?.classList.remove('open'); } catch {} });
+      bi?.addEventListener('click', ()=>{
+        const t = this._pauseRoomTargetEid;
+        if (t) this._setRoomPauseIndef(t); else this._setPauseIndef();
+      });
+      br?.addEventListener('click', ()=>{
+        const t = this._pauseRoomTargetEid;
+        if (t) this._resumeRoomNow(t); else this._resumeNow();
+      });
+      bx?.addEventListener('click', ()=>{ try { ov?.classList.remove('open'); this._pauseRoomTargetEid = null; } catch {} });
     } catch {}
   }
 
   _renderPauseStatus(){
     try {
       const st = this.shadowRoot && this.shadowRoot.querySelector('.pause-status');
+      const titleEl = this.shadowRoot && this.shadowRoot.querySelector('.pause-title');
+      const target = this._pauseRoomTargetEid;
+
+      // Adjust the modal title: room name when scoped, generic title otherwise.
+      if (titleEl) {
+        if (target) {
+          const label = (this._config.labels && this._config.labels[target]) || (String(target).split('.')[1] || target);
+          const tmpl = this._t('pause.menu_title_room') || (this._t('pause.menu_title') + ' — {room}');
+          titleEl.textContent = tmpl.includes('{room}') ? tmpl.replace('{room}', label) : `${this._t('pause.menu_title')} — ${label}`;
+        } else {
+          titleEl.textContent = this._t('pause.menu_title');
+        }
+      }
+
       if (!st) return;
-      if (!this._isPaused()) { st.textContent = ''; return; }
-      if (this._pauseIndef) { st.textContent = this._t('pause.active_indef'); return; }
-      const until = new Date(Number(this._pauseUntilMs||0));
+      const isPaused = target ? this._isRoomPaused(target) : this._isPaused();
+      if (!isPaused) { st.textContent = ''; return; }
+      const indef = target ? this._roomPauseInfo(target).indef : this._pauseIndef;
+      if (indef) { st.textContent = this._t('pause.active_indef'); return; }
+      const untilMs = target ? this._roomPauseInfo(target).until_ms : this._pauseUntilMs;
+      const until = new Date(Number(untilMs||0));
       // Format time according to card preference
       const hh = until.getHours(), mm = until.getMinutes();
       let label;
@@ -9432,7 +9779,7 @@ class ThermostatTimelineCard extends HTMLElement {
         };
         // Respect explicit label edits: allow an empty object to clear labels when touched
         if (!this._labelsTouched) keepIfEmpty('labels');
-        keepIfEmpty('merges');
+        //keepIfEmpty('merges');
         keepIfEmpty('temp_sensors');
         payload = { ...payload, settings: merged };
       } catch {}
@@ -9859,7 +10206,7 @@ class ThermostatTimelineCard extends HTMLElement {
           if (rightNavBtn) centerWrap.appendChild(rightNavBtn);
 
           dayFull.append(leftWrap, centerWrap, rightWrap);
-          
+
           dayFull.style.display = '';
         } else {
           dayFull.textContent = '';
@@ -9939,7 +10286,7 @@ class ThermostatTimelineCard extends HTMLElement {
             wrap.append(sb);
           }
         } catch {}
-        
+
         if (this._config?.show_pause_button ?? true) {
           const btn = document.createElement('button');
           btn.className = 'pause-btn' + (this._isPaused() ? ' paused' : '');
@@ -10162,14 +10509,14 @@ class ThermostatTimelineCard extends HTMLElement {
             const head = document.createElement('div'); head.className='row-head';
             const meta = document.createElement('div'); meta.className='meta';
             const name = document.createElement('span'); name.textContent = labelFor(gk); meta.append(name); head.append(meta);
-            
+
             // Add toolbar with Add and Copy buttons for weekday view
-            const toolbar = document.createElement('div'); 
+            const toolbar = document.createElement('div');
             toolbar.className = 'toolbar' + (this._toolsOpen[roomEid + ':' + effKey(gk)] ? ' open' : '');
             toolbar.style.minHeight = '32px';
-            const toolsWrap = document.createElement('div'); 
+            const toolsWrap = document.createElement('div');
             toolsWrap.className = 'tools-wrap';
-            
+
             // Toggle button for collapsible toolbar
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'tools-toggle';
@@ -10194,7 +10541,7 @@ class ThermostatTimelineCard extends HTMLElement {
                 requestAnimationFrame(() => { try { toolsWrap.style.maxWidth = '0px'; } catch {} });
               }
             });
-            
+
             // Add block button
             const addBtn = document.createElement('button');
             addBtn.className = 'btn primary';
@@ -10224,7 +10571,7 @@ class ThermostatTimelineCard extends HTMLElement {
               this._openWeeklyBlockEditor(null, 0);
             });
             toolsWrap.append(addBtn);
-            
+
             // Copy/Paste button
             const copyBtn = document.createElement('button');
             copyBtn.className = 'btn ghost';
@@ -10237,21 +10584,21 @@ class ThermostatTimelineCard extends HTMLElement {
             copyBtn.addEventListener('click', async () => {
               const dayKey = effKey(gk);
               const eid_day = roomEid + ':' + dayKey;
-              
+
               if (this._copyFrom && this._copyFrom === eid_day) {
                 this._copyFrom = null; this._copyPayload = null; this._render(); return;
               }
-              
+
               if (this._copyFrom && this._copyPayload) {
                 try {
                   const src = this._copyPayload;
                   this._ensureWeeklyStruct(row);
                   // Generate new IDs for copied blocks and paste them
-                  const pastedBlocks = src.map(b=>({ 
-                    ...b, 
+                  const pastedBlocks = src.map(b=>({
+                    ...b,
                     id: Math.random().toString(36).slice(2,9)
                   }));
-                  
+
                   // Paste to the same location where blocks come from
                   // Check if blocks come from weekly_modes (first priority in getBlocks)
                   const srcModes = row.weekly_modes?.[mode]?.days || {};
@@ -10263,13 +10610,13 @@ class ThermostatTimelineCard extends HTMLElement {
                     // Blocks are in weekly or new, paste to weekly
                     row.weekly.days[dayKey] = pastedBlocks;
                   }
-                  
+
                   await this._saveStore();
                   this._render();
                 } catch(e){}
                 return;
               }
-              
+
               try {
                 const dayBlocks = getBlocks(dayKey);
                 const payload = dayBlocks.map(b=>({ startMin:b.startMin, endMin:b.endMin, temp:b.temp }));
@@ -10279,37 +10626,37 @@ class ThermostatTimelineCard extends HTMLElement {
               } catch(e){}
             });
             toolsWrap.append(copyBtn);
-            
+
             toolbar.append(toggleBtn);
             toolbar.append(toolsWrap);
             head.append(toolbar);
-            
+
             rowEl.append(head);
             const track = document.createElement('div'); track.className='track'; track.style.setProperty('--row-height', `${this._config.row_height}px`);
             const dkey = effKey(gk);
             const blocks = getBlocks(dkey);
             for (const b of blocks){
-              const pctStart = (b.startMin / 1440) * 100; 
+              const pctStart = (b.startMin / 1440) * 100;
               const pctWidth = ((b.endMin - b.startMin) / 1440) * 100;
-              const bl = document.createElement('div'); 
-              bl.className='block'; 
-              bl.style.left=`${pctStart}%`; 
+              const bl = document.createElement('div');
+              bl.className='block';
+              bl.style.left=`${pctStart}%`;
               bl.style.width=`${pctWidth}%`;
-              try { 
-                const clr = this._colorFor(roomEid, b.temp); 
-                if (clr){ 
-                  bl.style.background = clr; 
-                  bl.style.borderColor = clr; 
-                  const txt=this._contrastTextColor(clr); 
-                  if (txt) bl.style.color = txt; 
-                } 
+              try {
+                const clr = this._colorFor(roomEid, b.temp);
+                if (clr){
+                  bl.style.background = clr;
+                  bl.style.borderColor = clr;
+                  const txt=this._contrastTextColor(clr);
+                  if (txt) bl.style.color = txt;
+                }
               } catch {}
               UiHelper.genBlockPill(
-                this, 
+                this,
                 bl,
                 `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
               );
-              
+
               // Add double-click to edit block
               bl.addEventListener('dblclick', (e) => {
                 try { e.preventDefault(); e.stopPropagation(); } catch {}
@@ -10333,7 +10680,7 @@ class ThermostatTimelineCard extends HTMLElement {
                 this._autoSaveWeeklyFromTimeline = true;
                 this._openWeeklyBlockEditor(b.id);
               });
-              
+
               // Touch/iPad: detect double-tap
               bl.addEventListener('touchend', (e) => {
                 const now = Date.now();
@@ -10364,7 +10711,7 @@ class ThermostatTimelineCard extends HTMLElement {
                   setTimeout(() => { if (this._lastWeeklyTap?.target === bl) this._lastWeeklyTap = { t: 0, target: null }; }, 350);
                 }
               });
-              
+
               track.append(bl);
             }
             rowEl.append(track); rowsEl.append(rowEl);
@@ -10430,6 +10777,75 @@ class ThermostatTimelineCard extends HTMLElement {
           }
         }
       } catch {}
+
+      // Quick per-room Apply schedule toggle. This controls the exact same
+      // apply_enabled setting as the Rooms settings popup.
+      try {
+        const applyMap = (this._config?.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+        const isApplyEnabled = Object.prototype.hasOwnProperty.call(applyMap, eid) ? !!applyMap[eid] : true;
+        const quickWrap = document.createElement('span');
+        quickWrap.className = 'row-apply-toggle';
+        quickWrap.title = this._t('editor.apply_enabled.title') || 'Apply schedule to this thermostat';
+        const quickSwitch = document.createElement('ha-switch');
+        quickSwitch.checked = isApplyEnabled;
+        quickSwitch.setAttribute('aria-label', quickWrap.title);
+        const quickState = document.createElement('span');
+        quickState.className = 'apply-state';
+        quickState.textContent = isApplyEnabled ? (this._t('ui.on') || 'ON') : (this._t('ui.off') || 'OFF');
+        quickWrap.append(quickSwitch, quickState);
+        meta.append(quickWrap);
+
+        quickSwitch.addEventListener('change', async (e) => {
+          try {
+            const enabled = !!e.target.checked;
+            const prev = (this._config.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+            this._config.apply_enabled = { ...prev, [eid]: enabled };
+
+            // Stage this change exactly like a normal timeline edit.
+            // The existing Save button will persist the complete payload.
+            this._markPendingSave();
+
+            // Immediate visual feedback (the next full refresh will rebuild it too).
+            quickState.textContent = enabled ? (this._t('ui.on') || 'ON') : (this._t('ui.off') || 'OFF');
+            const tr = rowEl.querySelector('.track');
+            if (tr) tr.classList.toggle('schedule-disabled', !enabled);
+          } catch {}
+        });
+      } catch {}
+
+      // Per-room pause button: opens the same pause modal used by the global
+      // header button, but scoped to this room (this._pauseRoomTargetEid).
+      try {
+        const roomPaused = this._isRoomPaused ? this._isRoomPaused(eid) : false;
+        const pauseWrap = document.createElement('span');
+        pauseWrap.className = 'row-pause-toggle';
+        const pauseIconBtn = document.createElement('button');
+        pauseIconBtn.type = 'button';
+        pauseIconBtn.className = 'row-pause-btn' + (roomPaused ? ' paused' : '');
+        pauseIconBtn.title = roomPaused
+          ? (this._t('pause.active_indef') || 'Paused')
+          : (this._t('pause.room_tooltip') || 'Pause schedule for this room');
+        pauseIconBtn.innerHTML = '<ha-icon icon="mdi:pause-circle-outline"></ha-icon>';
+        if (roomPaused) {
+          const eta = document.createElement('span');
+          eta.className = 'row-pause-eta';
+          const info = this._roomPauseInfo(eid);
+          eta.textContent = info.indef ? (this._t('pause.off_indef') || '') : this._formatRoomPauseCountdown(eid);
+          pauseWrap.append(eta);
+        }
+        pauseIconBtn.addEventListener('click', (ev) => {
+          try {
+            ev.stopPropagation();
+            this._pauseRoomTargetEid = eid;
+            const ov = this.shadowRoot && this.shadowRoot.querySelector('.overlay-pause');
+            if (ov) ov.classList.add('open');
+            this._renderPauseStatus();
+          } catch {}
+        });
+        pauseWrap.append(pauseIconBtn);
+        meta.append(pauseWrap);
+      } catch {}
+
       // (Global Away bypass button moved to header; no per-room button)
       // (manual indicator removed)
       head.append(meta);
@@ -10578,6 +10994,12 @@ class ThermostatTimelineCard extends HTMLElement {
       rowEl.append(head);
       const track = document.createElement('div');
       track.className = 'track';
+      try {
+        const applyMap = (this._config?.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+        const enabled = Object.prototype.hasOwnProperty.call(applyMap, eid) ? !!applyMap[eid] : true;
+        if (!enabled) track.classList.add('schedule-disabled');
+        if (this._isRoomPaused && this._isRoomPaused(eid)) track.classList.add('schedule-paused');
+      } catch {}
       track.style.setProperty('--row-height', `${this._config.row_height}px`);
   // Use browsed day in weekdays view (all rooms • one day)
   const displayDayKey = this._timelineDisplayDayKey();
@@ -10641,8 +11063,8 @@ class ThermostatTimelineCard extends HTMLElement {
         if (this._active?.entity === eid && this._active?.id === b.id) bl.classList.add('active');
   // Time will be shown in a hover tooltip (like the weekdays popup). Do not render time pill here.
         UiHelper.genBlockPill(
-          this, 
-          bl, 
+          this,
+          bl,
           `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
         );
         track.append(bl);
@@ -10689,7 +11111,7 @@ class ThermostatTimelineCard extends HTMLElement {
           bl.addEventListener('mouseenter', showTip);
           bl.addEventListener('mouseleave', hideTip);
         } catch (e) { /* ignore tooltip errors */ }
-        
+
         // Open editor only on double interaction:
         // - Desktop: double-click
         // - Touch/iPad: double-tap within 350ms on the same block
@@ -11441,6 +11863,7 @@ class ThermostatTimelineCard extends HTMLElement {
         })(),
         temp_sensors: (()=>{ try { return (cfg.temp_sensors && typeof cfg.temp_sensors === 'object') ? JSON.parse(JSON.stringify(cfg.temp_sensors)) : {}; } catch { return {}; } })(),
         turn_on: (()=>{ try { return (cfg.turn_on && typeof cfg.turn_on === 'object') ? JSON.parse(JSON.stringify(cfg.turn_on)) : {}; } catch { return {}; } })(),
+        apply_enabled: (()=>{ try { return (cfg.apply_enabled && typeof cfg.apply_enabled === 'object') ? JSON.parse(JSON.stringify(cfg.apply_enabled)) : {}; } catch { return {}; } })(),
 
         default_temp: this._ttCoerceNum(cfg.default_temp, 20),
         row_height: this._ttCoerceNum(cfg.row_height, 64),
@@ -11618,6 +12041,7 @@ class ThermostatTimelineCard extends HTMLElement {
             if (cleaned.length) out[primary] = cleaned;
           }
           cfg.merges = out;
+
         } catch {}
 
         // Temp sensors: keep only for active rooms
@@ -11646,6 +12070,21 @@ class ThermostatTimelineCard extends HTMLElement {
             out[primary] = { enabled, order };
           }
           cfg.turn_on = out;
+        } catch {}
+
+        // Per-room "Enable schedule updates" toggle: keep only for active rooms.
+        // Defaults to enabled (true) when the user never touched the toggle,
+        // so absence of a key means "apply as before" for backward compat.
+        try {
+          const src = (d.apply_enabled && typeof d.apply_enabled === 'object') ? d.apply_enabled : {};
+          const out = {};
+          for (let i=0;i<ents.length;i++) {
+            const primary = ents[i];
+            if (Object.prototype.hasOwnProperty.call(src, primary)) {
+              out[primary] = !!src[primary];
+            }
+          }
+          cfg.apply_enabled = out;
         } catch {}
       } catch {}
 
@@ -12220,6 +12659,7 @@ class ThermostatTimelineCard extends HTMLElement {
               } catch {}
               try { if (this._settingsDraft.temp_sensors && this._settingsDraft.temp_sensors[oldEid]) { const next = { ...(this._settingsDraft.temp_sensors||{}) }; delete next[oldEid]; this._settingsDraft.temp_sensors = next; } } catch {}
               try { if (this._settingsDraft.turn_on && this._settingsDraft.turn_on[oldEid]) { const next = { ...(this._settingsDraft.turn_on||{}) }; delete next[oldEid]; this._settingsDraft.turn_on = next; } } catch {}
+              try { if (this._settingsDraft.apply_enabled && Object.prototype.hasOwnProperty.call(this._settingsDraft.apply_enabled, oldEid)) { const next = { ...(this._settingsDraft.apply_enabled||{}) }; delete next[oldEid]; this._settingsDraft.apply_enabled = next; } } catch {}
               try { if (this._settingsDraft.presence_sensors && this._settingsDraft.presence_sensors[oldEid]) { const next = { ...(this._settingsDraft.presence_sensors||{}) }; delete next[oldEid]; this._settingsDraft.presence_sensors = next; } } catch {}
               this._settingsDraft.entities[idx] = '';
             }
@@ -12385,6 +12825,61 @@ class ThermostatTimelineCard extends HTMLElement {
         turnOnWrap.append(turnOnRow, turnOnOrderRow);
         try { if (useInput) turnOnWrap.style.display = 'none'; } catch {}
 
+        // Per-room: enable/disable applying the schedule to the actual entity.
+        // Mirrors the turn_on toggle's structure but is a single switch (no
+        // order option): defaults to enabled when the key is absent.
+        const applyWrap = document.createElement('div');
+        applyWrap.style.display = 'grid';
+        applyWrap.style.gap = '6px';
+        const applyRow = document.createElement('div');
+        applyRow.style.display = 'flex';
+        applyRow.style.alignItems = 'center';
+        applyRow.style.justifyContent = 'space-between';
+        applyRow.style.gap = '10px';
+        const applyText = document.createElement('div');
+        applyText.style.display = 'grid';
+        applyText.style.gap = '2px';
+        const applyTitle = document.createElement('div');
+        applyTitle.style.fontWeight = '600';
+        applyTitle.textContent = this._t('editor.apply_enabled.title') || 'Apply schedule to this thermostat';
+        const applyDesc = document.createElement('div');
+        applyDesc.style.fontSize = '.85rem';
+        applyDesc.style.color = 'var(--secondary-text-color)';
+        applyDesc.textContent = this._t('editor.apply_enabled.desc') || '';
+        applyText.append(applyTitle, applyDesc);
+        const applySwitch = document.createElement('ha-switch');
+        applySwitch.className = 'apply-enabled-switch';
+
+        const readApplyEnabled = ()=>{
+          try {
+            const eid = String(this._settingsDraft?.entities?.[idx] || '').trim();
+            const map = (this._settingsDraft?.apply_enabled && typeof this._settingsDraft.apply_enabled === 'object') ? this._settingsDraft.apply_enabled : {};
+            const enabled = Object.prototype.hasOwnProperty.call(map, eid) ? !!map[eid] : true;
+            return { eid, enabled };
+          } catch { return { eid: String(this._settingsDraft?.entities?.[idx] || '').trim(), enabled: true }; }
+        };
+        const writeApplyEnabled = (eid, enabled)=>{
+          try {
+            if (!eid) return;
+            const prev = (this._settingsDraft.apply_enabled && typeof this._settingsDraft.apply_enabled === 'object') ? this._settingsDraft.apply_enabled : {};
+            this._settingsDraft.apply_enabled = { ...prev, [eid]: !!enabled };
+          } catch {}
+        };
+        const applyApplyEnabledUi = ()=>{
+          const { enabled } = readApplyEnabled();
+          try { applySwitch.checked = !!enabled; } catch {}
+        };
+        applySwitch.addEventListener('change', (e)=>{
+          try {
+            const { eid } = readApplyEnabled();
+            writeApplyEnabled(eid, !!e.target.checked);
+            applyApplyEnabledUi();
+          } catch {}
+        });
+        applyApplyEnabledUi();
+        applyRow.append(applyText, applySwitch);
+        applyWrap.append(applyRow);
+
         // Per-room: temperature sensor override (for display + boiler)
         const tempWrap = document.createElement('div');
         tempWrap.style.display = 'grid';
@@ -12547,7 +13042,7 @@ class ThermostatTimelineCard extends HTMLElement {
           } catch {}
         });
 
-        left.append(modeRow, pick, nameLabel, nameInp, tempWrap, turnOnWrap, linkWrap, chips);
+        left.append(modeRow, pick, nameLabel, nameInp, tempWrap, turnOnWrap, applyWrap, linkWrap, chips);
         try { linkWrap.append(linkLabel, linkPicker); } catch {}
         details.append(left);
 
@@ -12608,6 +13103,12 @@ class ThermostatTimelineCard extends HTMLElement {
               this._settingsDraft.turn_on = t;
             } catch {}
 
+                        // Clean schedule
+            try {
+              if (primary) {
+                delete this._schedules[primary];
+              }
+            } catch {}
             this._settingsDraft.entities = arr;
             this._settingsDraft.room_use_input_number = modes;
             this._settingsDraft.room_use_temp_sensor = tmodes;
@@ -16312,7 +16813,7 @@ class ThermostatTimelineCard extends HTMLElement {
   async _deleteFromEditor(){ if (!this._editing) return; const { entity, blockId, weeklyDay, profileName }=this._editing; if (!blockId) { this._closeEditor(); return; }
     if (weeklyDay && this._weeklyDraft) {
       // Delete from both _weeklyDraft.days AND _weeklyDraft._weeklyModes to ensure complete removal
-      
+
       // First, try to delete from _weeklyDraft.days
       let foundInDays = false;
       if (this._weeklyDraft.days?.[weeklyDay]) {
@@ -16323,7 +16824,7 @@ class ThermostatTimelineCard extends HTMLElement {
           foundInDays = true;
         }
       }
-      
+
       // Also delete from _weeklyDraft._weeklyModes if it exists (should delete from ALL modes to be safe)
       let foundInModes = false;
       if (this._weeklyDraft?._weeklyModes) {
@@ -16338,7 +16839,7 @@ class ThermostatTimelineCard extends HTMLElement {
           }
         }
       }
-      
+
       // If the weekly editor was opened implicitly from the main timeline,
       // save directly without applying group sync (which would re-copy deleted blocks)
       if (this._autoSaveWeeklyFromTimeline) {
@@ -16626,7 +17127,7 @@ class ThermostatTimelineCard extends HTMLElement {
           roomTabs.innerHTML = '';
           const ents = this._config?.entities || [];
           if (!this._weeklyEntity || !ents.includes(this._weeklyEntity)) this._weeklyEntity = ents[0] || null;
-          
+
           for (const eid of ents){
             const btn = document.createElement('button');
             btn.type='button';
@@ -16637,7 +17138,7 @@ class ThermostatTimelineCard extends HTMLElement {
             btn.addEventListener('click', ()=>{ if (eid!==this._weeklyEntity) this._openWeeklyEditor(eid); });
             roomTabs.append(btn);
           }
-          
+
           // Hide tabs if only one room
           roomTabs.style.display = (ents.length>1) ? 'flex' : 'none';
         }
@@ -17411,7 +17912,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { requestAnimationFrame(()=> requestAnimationFrame(()=> { overlay.classList.add('open'); })); } catch { overlay.classList.add('open'); }
     } else {
   let b = arr.find(x=>x.id===blockId);
-      
+
       // If not found in weekly.days, try searching in _weeklyModes
       if (!b && this._weeklyDraft?._weeklyModes) {
         for (const modeName in this._weeklyDraft._weeklyModes) {
@@ -17422,7 +17923,7 @@ class ThermostatTimelineCard extends HTMLElement {
           }
         }
       }
-      
+
       if (!b) return;
   const edTemp = this.shadowRoot.querySelector('.ed-temp'); const edFrom = this.shadowRoot.querySelector('.ed-from'); const edTo = this.shadowRoot.querySelector('.ed-to'); const overlay = this.shadowRoot.querySelector('.overlay'); const title = this.shadowRoot.querySelector('.modal h3'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); const err = this.shadowRoot.querySelector('.ed-error'); const fromMer = this.shadowRoot.querySelector('.ed-from-mer'); const toMer = this.shadowRoot.querySelector('.ed-to-mer');
       this._editing = { entity: this._weeklyEntity, blockId, weeklyDay: day };
@@ -17691,57 +18192,57 @@ class ThermostatTimelineCard extends HTMLElement {
       const arr = (this._presenceDraft && this._presenceDraft.rooms) ? (this._presenceDraft.rooms[room] || []) : [];
       // Tooltip reuse
       let tooltip = this.shadowRoot.querySelector('.wk-tooltip.presence'); if (!tooltip) { tooltip = document.createElement('div'); tooltip.className='wk-tooltip presence'; tooltip.style.display='none'; (modalHost||document.body).append(tooltip); }
-      for (const b of arr){ 
-        const pctStart=(b.startMin/1440)*100, pctW=((b.endMin-b.startMin)/1440)*100; 
-        const bl=document.createElement('div'); 
-        bl.className='block'; bl.style.left=pctStart+'%'; 
-        bl.style.width=pctW+'%'; 
-        try { 
-          const clr=this._colorFor(room, b.temp); 
-          if (clr){ 
-            bl.style.background=clr; 
-            bl.style.borderColor=clr; 
-            const txt=this._contrastTextColor(clr); 
-            if (txt) bl.style.color=txt; 
-          } 
-        } catch {} 
+      for (const b of arr){
+        const pctStart=(b.startMin/1440)*100, pctW=((b.endMin-b.startMin)/1440)*100;
+        const bl=document.createElement('div');
+        bl.className='block'; bl.style.left=pctStart+'%';
+        bl.style.width=pctW+'%';
+        try {
+          const clr=this._colorFor(room, b.temp);
+          if (clr){
+            bl.style.background=clr;
+            bl.style.borderColor=clr;
+            const txt=this._contrastTextColor(clr);
+            if (txt) bl.style.color=txt;
+          }
+        } catch {}
         UiHelper.genBlockPill(
           this, bl,
           `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
         );
-        bl.addEventListener('dblclick', ()=> this._openPresenceBlockEditor(b.id)); 
-        const showTip = ()=>{ const txt=`${this._label(b.startMin)} - ${this._label(b.endMin)} • ${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`; 
+        bl.addEventListener('dblclick', ()=> this._openPresenceBlockEditor(b.id));
+        const showTip = ()=>{ const txt=`${this._label(b.startMin)} - ${this._label(b.endMin)} • ${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`;
         if (!tooltip) return;
-        try { 
-          if (tooltip._hideTimer) clearTimeout(tooltip._hideTimer); 
-          tooltip._hideTimer=null; 
-        } catch {} 
-        const box=bl.getBoundingClientRect(); 
-        const cont=modalHost?.getBoundingClientRect(); 
-        const left=box.left+box.width/2-(cont?.left||0); 
-        const top=(box.top-(cont?.top||0))-8; 
-        tooltip.textContent=txt; 
-        tooltip.style.left=left+'px'; 
-        tooltip.style.top=top+'px'; 
-        tooltip.style.transform='translate(-50%,-100%)'; 
-        tooltip.style.display=''; }; 
-        const hideTip = ()=>{ 
-          if (!tooltip) return; 
-          const delay=(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)?3000:120; 
-          try{ 
+        try {
+          if (tooltip._hideTimer) clearTimeout(tooltip._hideTimer);
+          tooltip._hideTimer=null;
+        } catch {}
+        const box=bl.getBoundingClientRect();
+        const cont=modalHost?.getBoundingClientRect();
+        const left=box.left+box.width/2-(cont?.left||0);
+        const top=(box.top-(cont?.top||0))-8;
+        tooltip.textContent=txt;
+        tooltip.style.left=left+'px';
+        tooltip.style.top=top+'px';
+        tooltip.style.transform='translate(-50%,-100%)';
+        tooltip.style.display=''; };
+        const hideTip = ()=>{
+          if (!tooltip) return;
+          const delay=(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)?3000:120;
+          try{
             if(tooltip._hideTimer) clearTimeout(tooltip._hideTimer);
-          }catch{} 
+          }catch{}
           tooltip._hideTimer=setTimeout(
-            ()=>{ 
-              try{ 
-                tooltip.style.display='none'; 
-                tooltip._hideTimer=null; 
-              } catch{} 
+            ()=>{
+              try{
+                tooltip.style.display='none';
+                tooltip._hideTimer=null;
+              } catch{}
             }, delay
-          ); 
-        }; 
-        bl.addEventListener('mouseenter', showTip); 
-        bl.addEventListener('mouseleave', hideTip); 
+          );
+        };
+        bl.addEventListener('mouseenter', showTip);
+        bl.addEventListener('mouseleave', hideTip);
         track.append(bl); }
       // dblclick to add
       track.addEventListener('dblclick', (e)=>{ try { if (e.target && (e.target.closest && e.target.closest('.block'))) return; const box=track.getBoundingClientRect(); const rel=(e.clientX-box.left)/box.width; const min=this._clamp(Math.round(rel*1440),0,1439); this._openPresenceBlockEditor(null, min); } catch { this._openPresenceBlockEditor(null); } });
@@ -18450,16 +18951,16 @@ class ThermostatTimelineCard extends HTMLElement {
         const save = modal.querySelector('.ed-save');
         if (save) save.textContent = t('ui.save');
       }
-      
+
       // Week modal
       try {
-        const wt = this.shadowRoot && this.shadowRoot.querySelector('.week-title'); 
+        const wt = this.shadowRoot && this.shadowRoot.querySelector('.week-title');
         if (wt) wt.textContent = t('week.editor.title');
-        const wml = this.shadowRoot && this.shadowRoot.querySelector('.week-mode-label'); 
+        const wml = this.shadowRoot && this.shadowRoot.querySelector('.week-mode-label');
         if (wml) wml.textContent = t('week.mode');
-        const wnote = this.shadowRoot && this.shadowRoot.querySelector('.week-note'); 
+        const wnote = this.shadowRoot && this.shadowRoot.querySelector('.week-note');
         if (wnote) wnote.textContent = t('week.editor.preview_note');
-        const wsel = this.shadowRoot && this.shadowRoot.querySelector('.week-mode'); 
+        const wsel = this.shadowRoot && this.shadowRoot.querySelector('.week-mode');
         if (wsel) {
           const opt1 = wsel.querySelector('.opt-weekday-weekend');
           if (opt1) opt1.textContent = t('week.mode.weekday_weekend');
@@ -18473,7 +18974,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const wsaveBtn = this.shadowRoot && this.shadowRoot.querySelector('.wk-save');
         if (wsaveBtn) wsaveBtn.textContent = t('ui.save');
       } catch {}
-      
+
       // Profiles modal
       try {
         const proftitle = this.shadowRoot && this.shadowRoot.querySelector('.prof-title');
@@ -18489,7 +18990,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const pc = this.shadowRoot && this.shadowRoot.querySelector('.prof-close');
         if (pc) pc.textContent = t('ui.close');
       } catch {}
-      
+
       // Holiday modal
       try {
         const ht = this.shadowRoot && this.shadowRoot.querySelector('.holiday-title');
@@ -18499,7 +19000,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const hc = this.shadowRoot && this.shadowRoot.querySelector('.holiday-close');
         if (hc) hc.textContent = t('ui.close');
       } catch {}
-      
+
       // Presence modal
       try {
         const pttl = this.shadowRoot && this.shadowRoot.querySelector('.presence-title');
@@ -18511,7 +19012,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const pcl = this.shadowRoot && this.shadowRoot.querySelector('.presence-close');
         if (pcl) pcl.textContent = t('ui.close');
       } catch {}
-      
+
       // Copy to rooms modal
       try {
         const crt = this.shadowRoot && this.shadowRoot.querySelector('.copyrooms-title');
@@ -18523,7 +19024,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const cra = this.shadowRoot && this.shadowRoot.querySelector('.copyrooms-apply');
         if (cra) cra.textContent = t('week.copy_to_rooms.apply');
       } catch {}
-      
+
       // Onboarding modal
       try {
         const ttl = this.shadowRoot && this.shadowRoot.querySelector('.onb-title');
@@ -18539,7 +19040,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const hideLbl = this.shadowRoot && this.shadowRoot.querySelector('.onb-hide-lbl');
         if (hideLbl) hideLbl.textContent = t('onboard.dont_show');
       } catch {}
-      
+
       // Pause modal
       try {
         const pt = this.shadowRoot && this.shadowRoot.querySelector('.pause-title');
@@ -18557,7 +19058,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const px = this.shadowRoot && this.shadowRoot.querySelector('.pause-close');
         if (px) px.textContent = t('pause.close');
       } catch {}
-      
+
       // Test modal
       try {
         const testtitle = this.shadowRoot && this.shadowRoot.querySelector('.test-title');
@@ -18884,7 +19385,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const pcT = this.shadowRoot && this.shadowRoot.querySelector('.overlay-settings .sp-presence-combos-title');
         if (pcT) pcT.textContent = t('presence.combos');
       } catch {}
-      
+
     } catch (e) { /* ignore */ }
   }
 
@@ -19291,10 +19792,10 @@ class ThermostatTimelineCardEditor extends HTMLElement {
   max-width: 480px;
 }
 .add-entity-btn:focus { outline: 2px solid var(--primary-color); outline-offset: 2px; }
-      
+
         /* remove button */
         .remove-btn { flex-shrink: 0; padding:4px 8px; border-radius:8px; border:1px solid var(--divider-color); background: var(--card-background-color); color: var(--error-color); display:inline-flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
-        
+
         .actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; }
         .order-btn {
           display:inline-flex; align-items:center; justify-content:center;
@@ -19304,7 +19805,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
           cursor:pointer; user-select:none;
         }
         .order-btn[disabled] { opacity: .5; cursor: not-allowed; }
-        
+
         /* Drag & drop */
         .drag-handle {
           display:inline-flex; align-items:center; justify-content:center;
@@ -19315,7 +19816,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
         }
         .drag-handle:active { cursor: grabbing; }
         .inline.drag-over { outline: 2px dashed var(--primary-color); outline-offset: 2px; }
-        
+
         /* Pointer-driven drag */
         .drag-ghost {
           position: fixed;
@@ -19324,7 +19825,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
           z-index: 9999;
         }
         .placeholder { border:2px dashed var(--primary-color); border-radius:10px; margin:6px 0; }
-        
+
         /* Merge chips */
         .linked-chips { display:flex; flex-wrap:wrap; gap:6px; }
         .pill-chip { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border:1px solid var(--divider-color); border-radius:999px; background: var(--secondary-background-color, transparent); color: var(--primary-text-color); }
@@ -19412,9 +19913,9 @@ class ThermostatTimelineCardEditor extends HTMLElement {
   <div class="tabs" role="tablist"><button type="button" class="tab-btn tab-settings-btn active" role="tab" aria-selected="true">Settings</button><button type="button" class="tab-btn tab-backup-btn" role="tab" aria-selected="false">Backup</button></div>
       <div class="wrap tab-settings">
         <div class="row"><div class="label">Titel</div><ha-textfield class="title" label="Titel"></ha-textfield></div>
-        
-        
-        
+
+
+
 <style>
 /* Settings (grouped card with separators) */
 .settings-card {
@@ -19461,7 +19962,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
               </div>
               <ha-switch class="store-enable"></ha-switch>
             </div>
-            
+
             <div class="store-controls" style="display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin-top:6px;">
               <!-- Note: Entity pickers removed - file-based storage is always used -->
               <div class="store-btns">
@@ -19763,7 +20264,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
   }
   _fromDisplayTemp(v){ try { return this._isF() ? ((Number(v)-32)*5/9) : Number(v); } catch { return Number(v); } }
 
-  
+
 
   // Force re-hydration of entity pickers on the Rooms tab with the latest hass
   // reference. This helps cases where the tab was hidden during first render
@@ -19873,6 +20374,8 @@ class ThermostatTimelineCardEditor extends HTMLElement {
         labels: this._config.labels,
         temp_sensors: this._config.temp_sensors,
         turn_on: this._config.turn_on,
+        apply_enabled: this._config.apply_enabled,
+        room_pause: this._config.room_pause,
 
         backup_auto_enabled: !!this._config.backup_auto_enabled,
         backup_interval_min: Number(this._config.backup_interval_min||1440),
@@ -20585,37 +21088,37 @@ class ThermostatTimelineCardEditor extends HTMLElement {
               f.min = String(minDisp); t.min = String(minDisp);
               f.max = String(maxDisp); t.max = String(maxDisp);
               const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'remove-btn'; rm.innerHTML = '<ha-icon icon="mdi:close"></ha-icon><span>' + (this._t('editor.remove') || 'Remove') + '</span>';
-              
+
               const repaint = ()=>{ this._emit(true); try { window.dispatchEvent(new CustomEvent('thermostat-timeline-refresh')); } catch {} try { document.querySelectorAll('thermostat-timeline-card').forEach(el=>el?.devRefreshFromEditor?.()); } catch {} };
-              
+
               // --- SAFE IMMUTABLE UPDATES ---
-              f.onchange = () => { 
-                let v=parseFloat(f.value); if (isNaN(v)) v=minDisp; v=Math.max(minDisp, Math.min(maxDisp, v)); f.value=String(v); 
+              f.onchange = () => {
+                let v=parseFloat(f.value); if (isNaN(v)) v=minDisp; v=Math.max(minDisp, Math.min(maxDisp, v)); f.value=String(v);
                 // Copy array
                 const copied_config = [...(this._config.color_ranges?.[eid] || [])];
                 // Copy object and update
                 if(copied_config[ri]) copied_config[ri] = { ...copied_config[ri], from: this._fromDisplayTemp(v) };
-                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config }; 
-                repaint(); 
+                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
+                repaint();
               };
-              t.onchange = () => { 
-                let v=parseFloat(t.value); if (isNaN(v)) v=minDisp; v=Math.max(minDisp, Math.min(maxDisp, v)); t.value=String(v); 
+              t.onchange = () => {
+                let v=parseFloat(t.value); if (isNaN(v)) v=minDisp; v=Math.max(minDisp, Math.min(maxDisp, v)); t.value=String(v);
                 const copied_config = [...(this._config.color_ranges?.[eid] || [])];
                 if(copied_config[ri]) copied_config[ri] = { ...copied_config[ri], to: this._fromDisplayTemp(v) };
-                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config }; 
-                repaint(); 
+                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
+                repaint();
               };
-              c.onchange = () => { 
+              c.onchange = () => {
                 const copied_config = [...(this._config.color_ranges?.[eid] || [])];
                 if(copied_config[ri]) copied_config[ri] = { ...copied_config[ri], color: c.value };
-                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config }; 
-                repaint(); 
+                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
+                repaint();
               };
-              rm.onclick = () => { 
+              rm.onclick = () => {
                 const copied_config = [...(this._config.color_ranges?.[eid] || [])];
                 copied_config.splice(ri, 1);
-                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config }; 
-                this._emit(true); renderRanges(); 
+                this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
+                this._emit(true); renderRanges();
               };
               // -----------------------------
 
@@ -20667,7 +21170,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
               f.min = String(minDisp); t.min = String(minDisp);
               f.max = String(maxDisp); t.max = String(maxDisp);
               const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'remove-btn'; rm.innerHTML = '<ha-icon icon="mdi:close"></ha-icon><span>' + (this._t('editor.remove') || 'Remove') + '</span>';
-              
+
               const repaint = ()=>{
                 this._emit(true);
                 try { window.dispatchEvent(new CustomEvent('thermostat-timeline-refresh')); } catch {}
@@ -20695,11 +21198,11 @@ class ThermostatTimelineCardEditor extends HTMLElement {
                 this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
                 repaint();
               };
-              rm.onclick = () => { 
+              rm.onclick = () => {
                 const copied_config = [...(this._config.color_ranges?.[eid] || [])];
                 copied_config.splice(ri, 1);
                 this._config.color_ranges = { ...(this._config.color_ranges||{}), [eid]: copied_config };
-                this._emit(true); renderRanges(); 
+                this._emit(true); renderRanges();
               };
               // -----------------------------
 
@@ -21556,6 +22059,72 @@ class ThermostatTimelineCardEditor extends HTMLElement {
     turnOnOrderRow.append(orderLbl, orderSel);
     turnOnWrap.append(turnOnRow, turnOnOrderRow);
 
+    // Per-room: enable/disable applying the schedule to the actual entity.
+    const applyWrap = document.createElement('div');
+    applyWrap.style.display = 'grid';
+    applyWrap.style.gap = '6px';
+    const applyRow = document.createElement('div');
+    applyRow.style.display = 'flex';
+    applyRow.style.alignItems = 'center';
+    applyRow.style.justifyContent = 'space-between';
+    applyRow.style.gap = '10px';
+    const applyText = document.createElement('div');
+    applyText.style.display = 'grid';
+    applyText.style.gap = '2px';
+    const applyTitle = document.createElement('div');
+    applyTitle.style.fontWeight = '600';
+    applyTitle.textContent = this._t('editor.apply_enabled.title') || 'Apply schedule to this thermostat';
+    const applyDesc = document.createElement('div');
+    applyDesc.style.fontSize = '.85rem';
+    applyDesc.style.color = 'var(--secondary-text-color)';
+    applyDesc.textContent = this._t('editor.apply_enabled.desc') || '';
+    applyText.append(applyTitle, applyDesc);
+    const applySwitch = document.createElement('ha-switch');
+    applySwitch.className = 'apply-enabled-switch';
+
+    const readApplyEnabled = ()=>{
+      try {
+        const eid = this._config.entities[idx];
+        const map = (this._config.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+        const enabled = (eid && Object.prototype.hasOwnProperty.call(map, eid)) ? !!map[eid] : true;
+        return { eid, enabled };
+      } catch { return { eid: this._config.entities[idx], enabled: true }; }
+    };
+    const writeApplyEnabled = (eid, enabled)=>{
+      try {
+        if (!eid) return;
+        const prev = (this._config.apply_enabled && typeof this._config.apply_enabled === 'object') ? this._config.apply_enabled : {};
+        this._config.apply_enabled = { ...prev, [eid]: !!enabled };
+      } catch {}
+      try {
+        const raw = localStorage.getItem(this._localStoreKey()) || '';
+        let parsed = {};
+        try { parsed = JSON.parse(raw || '{}'); } catch { parsed = {}; }
+        const schedules = parsed.schedules || {};
+        const prevSettings = parsed.settings || {};
+        const settings = { ...prevSettings, apply_enabled: { ...(prevSettings.apply_enabled||{}), ...(this._config.apply_enabled||{}) } };
+        localStorage.setItem(this._localStoreKey(), JSON.stringify({ schedules, settings }));
+      } catch {}
+      try { this._pushSettingsToStoreDebounced(); } catch {}
+      try { window.dispatchEvent(new CustomEvent('thermostat-timeline-refresh')); } catch {}
+      try { document.querySelectorAll('thermostat-timeline-card').forEach(el=>el?.devRefreshFromEditor?.()); } catch {}
+    };
+    const applyApplyEnabledUi = ()=>{
+      const { enabled } = readApplyEnabled();
+      try { applySwitch.checked = !!enabled; } catch {}
+    };
+    applySwitch.addEventListener('change', (e)=>{
+      try {
+        const { eid } = readApplyEnabled();
+        writeApplyEnabled(eid, !!e.target.checked);
+        applyApplyEnabledUi();
+        this._emit(true);
+      } catch {}
+    });
+    applyApplyEnabledUi();
+    applyRow.append(applyText, applySwitch);
+    applyWrap.append(applyRow);
+
     // Merge/Link section
   const linkWrap = document.createElement('div');
   linkWrap.style.display = 'grid';
@@ -21599,7 +22168,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
     const chips = document.createElement('div');
     chips.className = 'linked-chips';
 
-  left.append(pick, nameInp, turnOnWrap, linkWrap, chips);
+  left.append(pick, nameInp, turnOnWrap, applyWrap, linkWrap, chips);
   // Insert mode toggle at the top
   try { left.insertBefore(modeRow, left.firstChild); } catch { left.prepend(modeRow); }
   // Hide merge UI when controlling input_number
@@ -21792,7 +22361,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
   // (Removed unused pointer-driven drag & drop prototype)
 
   _addEntity(){
-    this._config.entities = [...(this._config.entities||[]), ""]; 
+    this._config.entities = [...(this._config.entities||[]), ""];
     try {
       const modes = Array.isArray(this._config.room_use_input_number) ? [...this._config.room_use_input_number] : [];
       modes.push(false);
@@ -21829,7 +22398,7 @@ class ThermostatTimelineCardEditor extends HTMLElement {
 
   _applyEditorI18n(){
     try {
-      
+
       const t = (k)=> this._t(k);
       const root = this.shadowRoot;
       if (!root) return;
@@ -22092,11 +22661,11 @@ class UiHelper {
   /**
    * Generate a pill element inside a parent block
    * @param {ThermostatTimelineCard} ttcInst Current `ThermostatTimelineCard` instance
-   * @param {HTMLDivElement} parentBlock 
+   * @param {HTMLDivElement} parentBlock
    * @param {string} content The string content
    * @returns {HTMLSpanElement} The generated pill
    */
-  static genBlockPill(ttcInst, parentBlock, content) { 
+  static genBlockPill(ttcInst, parentBlock, content) {
     // Pill creation
     const pill = document.createElement('span');
     pill.className = 'pill';

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import time
 import traceback
 
 from homeassistant.core import HomeAssistant, ServiceCall, callback  # type: ignore[reportMissingImports]
@@ -10,7 +11,12 @@ from homeassistant.config_entries import ConfigEntry  # type: ignore[reportMissi
 from homeassistant.helpers import config_validation as cv  # type: ignore[reportMissingImports]
 from homeassistant.helpers.storage import Store  # type: ignore[reportMissingImports]
 from homeassistant.helpers.dispatcher import async_dispatcher_send, async_dispatcher_connect  # type: ignore[reportMissingImports]
-from homeassistant.helpers.event import async_track_point_in_utc_time, async_track_state_change_event, async_track_time_interval  # type: ignore[reportMissingImports]
+from homeassistant.helpers.event import (
+    async_track_point_in_utc_time,
+    async_track_state_change_event,
+    async_track_time_interval,
+    async_call_later,
+) # type: ignore[reportMissingImports]
 from homeassistant.util import dt as dt_util  # type: ignore[reportMissingImports]
 from datetime import timedelta
 from homeassistant.components.http import HomeAssistantView  # type: ignore[reportMissingImports]
@@ -21,9 +27,7 @@ from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, SIGNAL_UPDATED, BACKUP_
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-
 _LOGGER = logging.getLogger(__name__)
-
 
 def _norm_instance_id(raw: Any) -> str:
     """Normalize an instance id used to namespace schedules/settings.
@@ -398,7 +402,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _ensure_instances_loaded(hass)
         instances = hass.data[DOMAIN].setdefault("instances", {})
         iid_in_call = "instance_id" in call.data
-        iid = _norm_instance_id(call.data.get("instance_id")) if iid_in_call else _norm_instance_id(hass.data[DOMAIN].get("active_instance_id") or "default")
+        iid = _norm_instance_id(call.data.get("instance_id")) if iid_in_call else _norm_instance_id(
+            hass.data[DOMAIN].get("active_instance_id") or "default"
+        )
+
+        # DEBUG temporaire : vérifier ce que le frontend envoie réellement
+        try:
+            dbg_settings = call.data.get("settings") or {}
+            dbg_apply = dbg_settings.get("apply_enabled") or {}
+
+            dbg_schedules = call.data.get("schedules") or {}
+
+            def _temps(eid):
+                row = dbg_schedules.get(eid) or {}
+                blocks = row.get("blocks") or []
+                return [
+                    {
+                        "start": b.get("startMin"),
+                        "end": b.get("endMin"),
+                        "temp": b.get("temp"),
+                    }
+                    for b in blocks
+                    if isinstance(b, dict)
+                ]
+
+        except Exception as err:
+            _LOGGER.warning("ThermostatTimeline set_store DEBUG failed: %s", err)
 
         inst = instances.get(iid)
         if not isinstance(inst, dict):
@@ -406,10 +435,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             instances[iid] = inst
 
         cur_sched = inst.get("schedules", {}) if isinstance(inst.get("schedules"), dict) else {}
+        try:
+            dbg_sched = call.data.get("schedules")
+
+        except Exception as err:
+            _LOGGER.warning(
+                "ThermostatTimeline set_store DEBUG schedules failed: %s",
+                err,
+            )
         cur_set = inst.get("settings", {}) if isinstance(inst.get("settings"), dict) else {}
         cur_colors = inst.get("colors", {}) if isinstance(inst.get("colors"), dict) else {}
         cur_week = inst.get("weekdays", {}) if isinstance(inst.get("weekdays"), dict) else {}
         cur_prof = inst.get("profiles", {}) if isinstance(inst.get("profiles"), dict) else {}
+
+        # DEBUG temporaire : suivre précisément "merges" pour traquer le bug
+        # "Florence revient sous Cuisine après un Ctrl+F5". On loggue à la fois
+        # ce que le frontend vient d'envoyer et ce qui était déjà stocké, pour
+        # voir si la clé "merges" est bien présente/vide dans la requête reçue,
+        # ou si elle est absente (ce qui laisserait l'ancien merges inchangé).
+        try:
+            settings_in_call = ("settings" in call.data)
+            dbg_settings2 = call.data.get("settings") or {}
+            merges_key_present = isinstance(dbg_settings2, dict) and ("merges" in dbg_settings2)
+
+        except Exception as err:
+            _LOGGER.warning("ThermostatTimeline set_store DEBUG merges failed: %s", err)
+
         changed = False
         sched_changed = False
         settings_changed = False
@@ -594,7 +645,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Switching active instance should also trigger a refresh.
         if activate and prev_active != iid:
             hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN]["version"]) + 1
-        _LOGGER.info("set_store: version=%s, sched_changed=%s, settings_changed=%s", 
+        _LOGGER.info("set_store: version=%s, sched_changed=%s, settings_changed=%s",
                      hass.data[DOMAIN]["version"], sched_changed, settings_changed)
         await _save_and_broadcast()
 
@@ -1215,6 +1266,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN]["schedules"] = {}
         hass.data[DOMAIN]["version"] = int(hass.data[DOMAIN]["version"]) + 1
         await _save_and_broadcast()
+    async def reload_frontend(call):
+        """Redeploy Timeline JS and refresh Lovelace cache-buster."""
+        try:
+            from .frontend import ensure_frontend
+
+            await ensure_frontend(hass)
+
+            _LOGGER.info(
+                "ThermostatTimeline frontend reloaded and Lovelace resource refreshed"
+            )
+
+        except Exception:
+            _LOGGER.exception(
+                "ThermostatTimeline frontend reload failed"
+            )
 
     hass.services.async_register(DOMAIN, "set_store", set_store)
     hass.services.async_register(DOMAIN, "clear_store", clear_store)
@@ -1227,6 +1293,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, "restore_now", restore_now)
     hass.services.async_register(DOMAIN, "patch_entity", patch_entity)
     hass.services.async_register(DOMAIN, "clear", clear)
+    
+    hass.services.async_register(
+        DOMAIN,
+        "reload_frontend",
+        reload_frontend,
+    )
     # no apply_now service (removed)
 
     # Expose lightweight HTTP views for clients (works over HA Cloud)
@@ -1268,25 +1340,42 @@ class AutoApplyManager:
         self._unsub_boiler = None
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
+        self._unsub_targets = None
         self._last_pause_sensor_on: bool | None = None
         self._last_applied = {}  # eid -> {"min": int, "temp": float}
         self._next_is_resume = False
+        self._next_room_resume = None
 
     async def async_start(self):
-        # Apply once on startup and schedule next if enabled
+    # Apply once on startup and schedule next if enabled
         await self._maybe_apply_now(force=True)
         await self._maybe_control_boiler(force=True)
         await self._schedule_next()
+
+        # Reconcile once more after startup, when climate entities
+        # such as Versatile Thermostat have had time to become available.
+        @callback
+        def _startup_reconcile(_now):
+            _LOGGER.debug("ThermostatTimeline STARTUP RECONCILE +30s")
+            self.hass.async_create_task(
+                self._maybe_apply_now(force=True, reconcile=True)
+            )
+
+        async_call_later(self.hass, 30, _startup_reconcile)
+
         # Re-apply on store updates
         @callback
         def _on_store_update():
             self.hass.async_create_task(self._on_store_changed())
+
         async_dispatcher_connect(self.hass, SIGNAL_UPDATED, _on_store_update)
+
         # Watch person.* states if away mode is used
         self._reset_person_watch()
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        self._reset_target_recovery_watch()
 
     async def _on_store_changed(self):
         # Respect apply_on_edit toggle: only apply immediately on store changes when enabled
@@ -1299,6 +1388,7 @@ class AutoApplyManager:
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        self._reset_target_recovery_watch()
 
     def _pause_sensor_on(self, settings: dict) -> bool:
         """Return True when pause is requested via binary sensor."""
@@ -1524,16 +1614,18 @@ class AutoApplyManager:
                         return blk
         except Exception:
             pass
-        # If row has weekly structure, use today's day list, otherwise default blocks
+        # Use weekday schedule only when weekday scheduling is actually enabled.
         try:
-            wk = row.get("weekly")
-            if wk and isinstance(wk, dict):
-                days = wk.get("days") or {}
-                arr = days.get(self._today_key())
-                if isinstance(arr, list):
-                    return arr
+            if bool(settings.get("weekdays_enabled")):
+                wk = row.get("weekly")
+                if wk and isinstance(wk, dict):
+                    days = wk.get("days") or {}
+                    arr = days.get(self._today_key())
+                    if isinstance(arr, list):
+                        return arr
         except Exception:
             pass
+
         return row.get("blocks") or []
 
     def _presence_persons(self, settings: dict) -> list[str]:
@@ -1863,6 +1955,10 @@ class AutoApplyManager:
             ok = await self._apply_setpoint(eid, float(desired))
             if ok:
                 self._last_applied[eid] = {"min": now_min, "temp": float(desired)}
+            elif getattr(self, "_last_apply_skipped_voluntarily", False):
+                # Not a real failure: the room has "Apply schedule to this
+                # thermostat" disabled. Nothing to warn about here.
+                pass
             else:
                 _LOGGER.warning("Auto-apply failed for %s", eid)
 
@@ -1940,62 +2036,158 @@ class AutoApplyManager:
         # build dt in UTC
         return dt_util.as_utc(now + timedelta(minutes=best_delta or 1))
 
+    def _next_room_pause_dt(self):
+        """Return (datetime_utc, primary_eid) for the next timed room-pause expiry."""
+        try:
+            _schedules, settings = self._get_data()
+            room_pause = settings.get("room_pause") or {}
+            if not isinstance(room_pause, dict):
+                return None, None
+
+            now_ms = dt_util.utcnow().timestamp() * 1000.0
+            best_ms = None
+            best_eid = None
+
+            for eid, entry in room_pause.items():
+                if not isinstance(entry, dict):
+                    continue
+                if bool(entry.get("indef")):
+                    continue
+
+                try:
+                    until_ms = float(entry.get("until_ms") or 0)
+                except (TypeError, ValueError):
+                    continue
+
+                # Ignore expired/stale values.
+                if until_ms <= (now_ms + 250.0):
+                    continue
+
+                if best_ms is None or until_ms < best_ms:
+                    best_ms = until_ms
+                    best_eid = str(eid)
+
+            if best_ms is None:
+                return None, None
+
+            return dt_util.utc_from_timestamp(best_ms / 1000.0), best_eid
+
+        except Exception:
+            return None, None
+
+    async def _apply_room_now(self, primary_eid: str) -> None:
+        """Reconcile one room, including its merged thermostat entities."""
+        try:
+            _schedules, settings = self._get_data()
+            targets = [primary_eid]
+
+            merges = settings.get("merges") or {}
+            if isinstance(merges, dict):
+                for eid in merges.get(primary_eid, []) or []:
+                    if eid not in targets:
+                        targets.append(eid)
+
+            for eid in targets:
+                await self.async_apply_entity_now(eid, reconcile=True)
+
+        except Exception:
+            _LOGGER.warning(
+                "ThermostatTimeline room pause resume failed for %s",
+                primary_eid,
+                exc_info=True,
+            )
+
     async def _schedule_next(self):
-        # cancel previous
+        # Cancel the previous timer.
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None
+
+        self._next_is_resume = False
+        self._next_room_resume = None
+
+        room_wake, room_eid = self._next_room_pause_dt()
+
         if not self._auto_apply_enabled():
-            # If paused indefinitely, do not schedule anything
+            # Do not schedule normal boundaries while auto-apply is paused.
+            # A timed global or per-room pause can still provide a wake-up.
             _s, settings = self._get_data()
             if bool(settings.get("pause_indef")):
-                return
-            # If paused until a time, schedule wake-up then
-            wake = self._paused_until_dt()
-            if not wake:
-                return
-            boundary = None
+                wake = None
+                boundary = None
+            else:
+                wake = self._paused_until_dt()
+                boundary = None
         else:
             wake = self._paused_until_dt()
             boundary = self._next_boundary_dt()
-        # choose earliest available
-        if wake and boundary:
-            self._next_is_resume = wake <= boundary
-            when = wake if self._next_is_resume else boundary
-        elif wake:
-            self._next_is_resume = True
-            when = wake
-        else:
-            self._next_is_resume = False
-            when = boundary
 
-        if not when:
+        candidates = []
+
+        if boundary:
+            candidates.append(("boundary", boundary, None))
+        if wake:
+            candidates.append(("global_resume", wake, None))
+        if room_wake and room_eid:
+            candidates.append(("room_resume", room_wake, room_eid))
+
+        if not candidates:
             return
 
-        # Never schedule in the past (HA will execute immediately), which can
-        # otherwise turn stale timestamps into a hot loop. Timers are minute-
-        # granularity here, so clamp to at least +1 minute.
+        kind, when, room_eid = min(candidates, key=lambda item: item[1])
+
+        self._next_is_resume = kind == "global_resume"
+        self._next_room_resume = room_eid if kind == "room_resume" else None
+
         try:
             when = dt_util.as_utc(when)
         except Exception:
             pass
+
+        # Never schedule in the past. A one-second clamp is enough here because
+        # room-pause expiry timestamps have sub-minute precision.
         try:
             now_utc = dt_util.utcnow()
             if when <= now_utc:
-                when = now_utc + timedelta(minutes=1)
+                when = now_utc + timedelta(seconds=1)
         except Exception:
             pass
+
         @callback
         def _cb(_now):
             self.hass.async_create_task(self._timer_fire())
+
         self._unsub_timer = async_track_point_in_utc_time(self.hass, _cb, when)
 
     async def _timer_fire(self):
-        # If this wake was caused by pause expiry, reconcile immediately across all entities.
-        resume = bool(self._next_is_resume)
-        await self._maybe_apply_now(force=True, boundary_only=(not resume), reconcile=resume)
-        await self._maybe_control_boiler(force=True)
+        room_resume = self._next_room_resume
+        global_resume = bool(self._next_is_resume)
+
+        self._next_room_resume = None
         self._next_is_resume = False
+
+        if room_resume:
+            _LOGGER.warning(
+                "ThermostatTimeline ROOM PAUSE RESUME: %s",
+                room_resume,
+            )
+            await self._apply_room_now(room_resume)
+
+        elif global_resume:
+            await self._maybe_apply_now(
+                force=True,
+                boundary_only=False,
+                reconcile=True,
+            )
+
+        else:
+            await self._maybe_apply_now(
+                force=True,
+                boundary_only=True,
+                reconcile=False,
+            )
+
+        await self._maybe_control_boiler(force=True)
         await self._schedule_next()
 
     def _reset_boiler_watch(self):
@@ -2104,7 +2296,86 @@ class AutoApplyManager:
             self._unsub_boiler_interval = async_track_time_interval(self.hass, _tick, timedelta(minutes=10))
         except Exception:
             self._unsub_boiler_interval = None
-
+    
+    def _reset_target_recovery_watch(self):
+        """Reconcile a scheduled entity when its target temperature becomes available."""
+    
+        if self._unsub_targets is not None:
+            try:
+                self._unsub_targets()
+            except Exception:
+                pass
+            self._unsub_targets = None
+    
+        try:
+            schedules, settings = self._get_data()
+            merges = settings.get("merges") or {}
+            targets = list(self._all_targets(schedules, merges))
+        except Exception:
+            return
+    
+        targets = [
+            eid for eid in targets
+            if isinstance(eid, str)
+            and (eid.startswith("climate.") or eid.startswith("input_number."))
+        ]
+    
+        if not targets:
+            return
+    
+        @callback
+        def _target_state_changed(event):
+            eid = event.data.get("entity_id")
+            old_state = event.data.get("old_state")
+            new_state = event.data.get("new_state")
+    
+            if not eid or new_state is None:
+                return
+    
+            def _target_temp(st):
+                if st is None:
+                    return None
+    
+                if eid.startswith("input_number."):
+                    try:
+                        return float(st.state)
+                    except (TypeError, ValueError):
+                        return None
+    
+                for attr in ("temperature", "target_temperature", "target_temp"):
+                    try:
+                        value = st.attributes.get(attr)
+                        if isinstance(value, (int, float)):
+                            return float(value)
+                    except Exception:
+                        pass
+    
+                return None
+    
+            old_temp = _target_temp(old_state)
+            new_temp = _target_temp(new_state)
+    
+            if new_temp is None:
+                return
+    
+            if old_temp is not None:
+                return
+    
+            _LOGGER.info(
+                "ThermostatTimeline TARGET READY: %s target=%s -> reconcile",
+                eid,
+                new_temp,
+            )
+    
+            self.hass.async_create_task(
+                self.async_apply_entity_now(eid, reconcile=True)
+            )
+    
+        self._unsub_targets = async_track_state_change_event(
+            self.hass,
+            targets,
+            _target_state_changed,
+        )
     def _reset_pause_sensor_watch(self) -> None:
         if self._unsub_pause_sensor:
             try:
@@ -2540,6 +2811,9 @@ class AutoApplyManager:
         - If current mode is off/dry/fan_only, try switching to heat, else cool.
         - Fallback to single temperature set.
         """
+        # Reset per-call so a previous voluntary skip doesn't leak into an
+        # unrelated later call (e.g. for a different entity or a genuine retry).
+        self._last_apply_skipped_voluntarily = False
         try:
             # Store contract: temperatures are canonical °C.
             # Backwards compat: older clients may have stored °F when temp_unit == 'F'.
@@ -2548,6 +2822,80 @@ class AutoApplyManager:
             except Exception:
                 settings = {}
                 schedules = {}
+
+            # Per-room "Enable schedule updates" toggle: when disabled for this
+            # room, the schedule keeps being tracked/stored but nothing is ever
+            # pushed to the actual entity (no set_temperature, set_hvac_mode,
+            # turn_on, or input_number.set_value). Applies to both climate and
+            # input_number rooms. Defaults to enabled when the key is absent,
+            # so existing configs keep behaving exactly as before this change.
+            try:
+                apply_map = settings.get("apply_enabled") or {}
+                primary_for_apply = eid
+                if isinstance(apply_map, dict) and eid not in apply_map:
+                    merges = settings.get("merges") or {}
+                    if isinstance(merges, dict):
+                        for p, lst in merges.items():
+                            try:
+                                if eid in (lst or []):
+                                    primary_for_apply = p
+                                    break
+                            except Exception:
+                                continue
+                apply_enabled = True
+                if isinstance(apply_map, dict) and primary_for_apply in apply_map:
+                    apply_enabled = bool(apply_map.get(primary_for_apply))
+                # DIAGNOSTIC LOGGING (temporary): traces every call into this
+                # function, regardless of outcome, so we can confirm in
+                # Settings > System > Logs whether the background component
+                # is the one pushing a given setpoint, and what it resolved
+                # apply_enabled to for this room. Safe to remove once the
+                # intermittent "OFF room still gets a new setpoint" issue is
+                # confirmed fixed.
+                _LOGGER.warning(
+                    "ThermostatTimeline apply_setpoint: eid=%s desired=%.2f primary=%s apply_enabled=%s",
+                    eid, desired, primary_for_apply, apply_enabled,
+                )
+                if not apply_enabled:
+                    _LOGGER.warning("ThermostatTimeline apply_setpoint: SKIPPED (apply_enabled=False) for %s", eid)
+                    # Mark this as a voluntary skip (not a real failure) so callers
+                    # like _maybe_apply_now can avoid logging a misleading
+                    # "Auto-apply failed" warning for something that worked exactly
+                    # as configured.
+                    self._last_apply_skipped_voluntarily = True
+                    return False
+            except Exception:
+                # Never let this optional gate block a legitimate apply on error.
+                pass
+
+            # Per-room pause: temporary suppression independent of the global
+            # pause_indef/pause_until_ms fields. Mirrors the same semantics
+            # (indefinite, or a timed until_ms in the future) but scoped to a
+            # single room via settings["room_pause"][primary_eid]. Uses the
+            # same primary-entity resolution as apply_enabled above so a
+            # merged/secondary entity correctly inherits its room's pause.
+            try:
+                room_pause_map = settings.get("room_pause") or {}
+                entry = room_pause_map.get(primary_for_apply) if isinstance(room_pause_map, dict) else None
+                if isinstance(entry, dict):
+                    is_indef = bool(entry.get("indef"))
+                    until_ms = entry.get("until_ms")
+                    now_ms = time.time() * 1000.0
+                    is_timed_active = False
+                    try:
+                        is_timed_active = float(until_ms) > now_ms
+                    except (TypeError, ValueError):
+                        is_timed_active = False
+                    if is_indef or is_timed_active:
+                        _LOGGER.warning(
+                            "ThermostatTimeline apply_setpoint: SKIPPED (room_pause active) for %s (primary=%s)",
+                            eid, primary_for_apply,
+                        )
+                        self._last_apply_skipped_voluntarily = True
+                        return False
+            except Exception:
+                # Never let this optional gate block a legitimate apply on error.
+                pass
 
             # Optional: for some thermostats we need to send a climate.turn_on command as well.
             # This is configured per primary room entity (merged entities inherit the primary room setting).
@@ -2698,9 +3046,21 @@ class AutoApplyManager:
             except Exception:
                 pass
 
-            # If in a mode that ignores temperature, try switching to a workable one
+            # If in a mode that ignores temperature, try switching to a workable one.
+            #
+            # BUGFIX: this used to run unconditionally whenever hvac_mode was
+            # off/dry/fan_only, forcing climate.set_hvac_mode to heat/cool even
+            # when the user had "Send turn_on command" (do_turn_on) disabled for
+            # this room. That silently turned entities back ON (e.g. Versatile
+            # Thermostat) after a manual OFF, even though set_temperature alone
+            # does not require a mode change on such integrations. It is now
+            # gated on do_turn_on, and only fires here when turn_on_order is
+            # "before" — the "after" case is handled once the setpoint has
+            # actually been sent, mirroring the existing turn_on/turn_off calls
+            # further down.
+            mode_ignores_setpoint = hvac_mode in ("off", "dry", "fan_only")
             try:
-                if hvac_mode in ("off", "dry", "fan_only"):
+                if mode_ignores_setpoint and do_turn_on and turn_on_order == "before":
                     new_mode = None
                     if "heat" in hvac_modes:
                         new_mode = "heat"
@@ -2713,6 +3073,22 @@ class AutoApplyManager:
                         hvac_mode = new_mode
             except Exception:
                 pass
+
+            async def _mode_after_if_needed() -> None:
+                if not (mode_ignores_setpoint and do_turn_on and turn_on_order == "after"):
+                    return
+                try:
+                    new_mode = None
+                    if "heat" in hvac_modes:
+                        new_mode = "heat"
+                    elif "cool" in hvac_modes:
+                        new_mode = "cool"
+                    if new_mode:
+                        await self.hass.services.async_call(
+                            "climate", "set_hvac_mode", {"entity_id": eid, "hvac_mode": new_mode}, blocking=False
+                        )
+                except Exception:
+                    pass
 
             # Decide whether to use range or single setpoint
             has_low = isinstance(attrs.get("target_temp_low"), (int, float)) or ("target_temp_low" in attrs)
@@ -2742,6 +3118,7 @@ class AutoApplyManager:
                 if turn_on_order == "before":
                     await _turn_on_and_delay()
                 await self.hass.services.async_call("climate", "set_temperature", data, blocking=False)
+                await _mode_after_if_needed()
                 if turn_on_order == "after":
                     # Delay should be between set_temp and turn_on
                     try:
@@ -2761,6 +3138,8 @@ class AutoApplyManager:
             if turn_on_order == "before":
                 await _turn_on_and_delay()
             await self.hass.services.async_call("climate", "set_temperature", data, blocking=False)
+            _LOGGER.warning("ThermostatTimeline apply_setpoint: SENT set_temperature=%s to %s", data.get("temperature"), eid)
+            await _mode_after_if_needed()
             if turn_on_order == "after":
                 try:
                     if turn_on_delay_s:
@@ -2810,19 +3189,39 @@ class MultiInstanceAutoApplyManager:
             _ensure_instances_loaded(self.hass)
             d = self.hass.data.get(DOMAIN, {})
             instances = d.get("instances") if isinstance(d.get("instances"), dict) else {}
+            active_iid = _norm_instance_id(
+                d.get("active_instance_id") or "default"
+            )
+            _LOGGER.warning(
+                "ThermostatTimeline MULTI SYNC DATA: active=%s instances=%s",
+                d.get("active_instance_id"),
+                list(instances.keys()),
+            )
             for iid in (instances.keys() if isinstance(instances, dict) else []):
                 try:
                     iidn = _norm_instance_id(iid)
+
+                    # Only the active Timeline instance is allowed to drive thermostats.
+                    if iidn != active_iid:
+                        continue
+
                     if iidn in self._managers:
                         continue
+
                     mgr = AutoApplyManager(self.hass, instance_id=iidn)
                     self._managers[iidn] = mgr
                     await mgr.async_start()
+
                 except Exception:
+                    _LOGGER.exception(
+                        "ThermostatTimeline MULTI SYNC manager failed for iid=%s",
+                        iid if 'iid' in locals() else '?',
+                    )
                     continue
             # Expose for other components
             d["instance_managers"] = self._managers
         except Exception:
+            _LOGGER.exception("ThermostatTimeline MULTI SYNC FAILED")
             return
 
 
