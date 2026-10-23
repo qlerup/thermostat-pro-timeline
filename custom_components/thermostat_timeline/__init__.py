@@ -1345,6 +1345,8 @@ class AutoApplyManager:
         self._last_applied = {}  # eid -> {"min": int, "temp": float}
         self._next_is_resume = False
         self._next_room_resume = None
+        self._next_room_resume_at = None
+        self._timer_generation = 0
 
     async def async_start(self):
     # Apply once on startup and schedule next if enabled
@@ -2098,16 +2100,20 @@ class AutoApplyManager:
             )
 
     async def _schedule_next(self):
+        self._timer_generation += 1
+        generation = self._timer_generation
+
         # Cancel the previous timer.
         if self._unsub_timer:
             self._unsub_timer()
             self._unsub_timer = None
 
+        # Reset previous scheduled event.
         self._next_is_resume = False
         self._next_room_resume = None
+        self._next_room_resume_at = None
 
         room_wake, room_eid = self._next_room_pause_dt()
-
         if not self._auto_apply_enabled():
             # Do not schedule normal boundaries while auto-apply is paused.
             # A timed global or per-room pause can still provide a wake-up.
@@ -2138,6 +2144,7 @@ class AutoApplyManager:
 
         self._next_is_resume = kind == "global_resume"
         self._next_room_resume = room_eid if kind == "room_resume" else None
+        self._next_room_resume_at = when if kind == "room_resume" else None
 
         try:
             when = dt_util.as_utc(when)
@@ -2155,23 +2162,61 @@ class AutoApplyManager:
 
         @callback
         def _cb(_now):
-            self.hass.async_create_task(self._timer_fire())
+            if generation != self._timer_generation:
+                return
+            self.hass.async_create_task(
+                self._timer_fire(generation=generation)
+            )
 
         self._unsub_timer = async_track_point_in_utc_time(self.hass, _cb, when)
 
-    async def _timer_fire(self):
+    async def _timer_fire(self, generation=None):
+        if generation is not None:
+            if generation != self._timer_generation:
+                return
+
         room_resume = self._next_room_resume
+        room_resume_at = self._next_room_resume_at
         global_resume = bool(self._next_is_resume)
 
         self._next_room_resume = None
+        self._next_room_resume_at = None
         self._next_is_resume = False
 
         if room_resume:
-            _LOGGER.warning(
-                "ThermostatTimeline ROOM PAUSE RESUME: %s",
-                room_resume,
-            )
-            await self._apply_room_now(room_resume)
+            # Reconcile all rooms sharing the scheduled expiry.
+            _schedules, settings = self._get_data()
+            room_pauses = settings.get("room_pause") or {}
+
+            if isinstance(room_pauses, dict) and room_resume_at:
+                expiry_ms = room_resume_at.timestamp() * 1000.0
+                now_ms = dt_util.utcnow().timestamp() * 1000.0
+
+                for eid, entry in room_pauses.items():
+                    if not isinstance(entry, dict):
+                        continue
+                    if bool(entry.get("indef")):
+                        continue
+
+                    try:
+                        until_ms = float(entry.get("until_ms") or 0)
+                    except (TypeError, ValueError):
+                        continue
+
+                    # Only pauses matching the scheduled expiry.
+                    # Never resume a pause extended in the meantime.
+                    if until_ms <= 0:
+                        continue
+                    if abs(until_ms - expiry_ms) > 250.0:
+                        continue
+                    if until_ms > now_ms:
+                        continue
+
+                    _LOGGER.debug(
+                        "ThermostatTimeline ROOM PAUSE RESUME: %s",
+                        eid,
+                    )
+                    await self._apply_room_now(str(eid))
 
         elif global_resume:
             await self._maybe_apply_now(
