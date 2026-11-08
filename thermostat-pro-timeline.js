@@ -4655,6 +4655,7 @@ class ThermostatTimelineCard extends HTMLElement {
         try { await this._hydrateUiNamesFromBackend(); } catch {}
         // Restore delayed sync countdown if previously scheduled
         try { this._restoreSyncDue(); } catch {}
+        this._hassRenderChanged();
         this._render();
         // Open deferred Holiday editor right after first render if flagged by editor
         try { this._maybeOpenDeferredHoliday && this._maybeOpenDeferredHoliday(); } catch {}
@@ -4672,8 +4673,36 @@ class ThermostatTimelineCard extends HTMLElement {
   // (Removed polling safety net)
       });
     } else {
-      if (!this._inlineEditing && !this._editing) this._render();
+      if (!this._inlineEditing && !this._editing && this._hassRenderChanged()) this._render();
     }
+  }
+
+  _hassRenderChanged() {
+    // HA replaces changed state objects. Unrelated state updates must not
+    // replace block elements between the two clicks of a double-click/tap.
+    const config = this._config || {};
+    const ids = new Set();
+    const collect = (value) => {
+      if (typeof value === 'string') {
+        if (/^[a-z_]+\.[a-z0-9_]+$/.test(value)) ids.add(value);
+      } else if (value && typeof value === 'object') {
+        for (const [key, child] of Object.entries(value)) {
+          collect(key);
+          collect(child);
+        }
+      }
+    };
+    // Include entity IDs used as mapping keys and currently unavailable IDs,
+    // so merged rooms and sensors appearing later also refresh the card.
+    collect(config);
+    const key = JSON.stringify([config, this._lang, this._hass?.locale,
+      this._hass?.config?.time_zone, this._hass?.config?.unit_system,
+      this._hass?.user?.id, this._hass?.user?.is_admin]);
+    const states = Array.from(ids, id => this._hass?.states?.[id]);
+    const previous = this._hassRenderSnapshot;
+    this._hassRenderSnapshot = { key, states };
+    return !previous || previous.key !== key || previous.states.length !== states.length
+      || states.some((state, index) => state !== previous.states[index]);
   }
 
   // Ensure UI-friendly names (labels) are hydrated from backend if missing locally

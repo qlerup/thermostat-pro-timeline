@@ -59,3 +59,63 @@ for (const enabled of [false,true]) {
   }
 }
 
+
+test('HA updates preserve block DOM unless a configured entity or display setting changes',()=>{
+  const c=card(); c._initialized=true;
+  c._startStoreWatchTimer=()=>{}; c._setupBoilerControl=()=>{};
+  let renders=0; c._render=()=>renders++;
+  const room={state:'heat',attributes:{temperature:21}};
+  const hass={states:{'climate.room':room,'sensor.unrelated':{state:'1'}},locale:{language:'en'}};
+  c.hass=hass;
+  assert.equal(renders,1);
+  for(let i=0;i<20;i++) c.hass={...hass,states:{...hass.states,'sensor.unrelated':{state:String(i)}}};
+  assert.equal(renders,1);
+  c.hass={...hass,states:{...hass.states,'climate.room':{...room,state:'off'}}};
+  assert.equal(renders,2);
+  c.hass={...c._hass,locale:{language:'de'}};
+  assert.equal(renders,3);
+});
+
+test('render watch includes nested mapping entities and sensors not present on first load',()=>{
+  const c=card(); c._config.merges={'climate.room':['climate.child']};
+  c._config.temp_sensors={'climate.room':'sensor.missing'};
+  c._config.boiler_room_settings={'climate.room':{switch:'switch.boiler'}};
+  c._hass={states:{}};
+  assert.equal(c._hassRenderChanged(),true);
+  assert.equal(c._hassRenderChanged(),false);
+  for(const id of ['climate.child','sensor.missing','switch.boiler']) {
+    c._hass={states:{...c._hass.states,[id]:{state:'on'}}};
+    assert.equal(c._hassRenderChanged(),true,id);
+    assert.equal(c._hassRenderChanged(),false,id);
+  }
+  delete c._hass.states['sensor.missing'];
+  assert.equal(c._hassRenderChanged(),true);
+  c._config.labels={'climate.room':'New label'};
+  assert.equal(c._hassRenderChanged(),true);
+});
+
+test('editing defers relevant HA refresh without forgetting the pending change',()=>{
+  const c=card(); c._initialized=true;
+  c._startStoreWatchTimer=()=>{}; c._setupBoilerControl=()=>{};
+  let renders=0; c._render=()=>renders++;
+  c.hass={states:{'climate.room':{state:'heat'}}};
+  c._editing=true;
+  c.hass={states:{'climate.room':{state:'off'}}};
+  assert.equal(renders,1);
+  c._editing=false;
+  c.hass=c._hass;
+  assert.equal(renders,2);
+});
+
+test('shared storage card initialization does not send climate temperature commands',async()=>{
+  const c=card(); c._config.storage_enabled=true;
+  const calls=[];
+  c._init=()=>{}; c._loadStore=async()=>{}; c._ensureSchedules=()=>{};
+  c._hydrateUiNamesFromBackend=async()=>{}; c._hydrateInstanceCfgFromLocal=()=>{};
+  c._restoreSyncDue=()=>{}; c._render=()=>{}; c._scheduleNextApply=()=>{};
+  c._debouncedSaveStore=()=>{}; c._startStoreWatchTimer=()=>{}; c._setupBoilerControl=()=>{};
+  c.hass={states:{'climate.room':{state:'heat',attributes:{temperature:22.5}}},
+    callService:async(...args)=>calls.push(args)};
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.filter(args=>args[0]==='climate').length,0);
+});

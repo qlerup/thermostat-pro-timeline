@@ -54,5 +54,36 @@ class AutoApplyTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await mgr._apply_setpoint("climate.room",20))
         self.assertEqual(self.call.await_args_list[0].args[2]["preset_mode"],"manual")
 
-if __name__ == "__main__":
+
+class ManualOverrideTests(unittest.IsolatedAsyncioTestCase):
+    make = AutoApplyTests.make
+
+    async def test_store_refresh_preserves_manual_override_until_desired_temperature_changes(self):
+        mgr = self.make({'auto_apply_enabled': True, 'apply_on_edit': True}, state='heat')
+        entity = mgr.hass.states.get('climate.room')
+        entity.attributes['temperature'] = 21
+        mgr._now_min = lambda: 14 * 60
+        desired = {'value': 21}
+        mgr._desired_for = lambda *args: desired['value']
+        await mgr._maybe_apply_now(force=True)
+        self.call.assert_not_awaited()
+        self.assertEqual(mgr._last_applied['climate.room']['temp'], 21)
+        entity.attributes['temperature'] = 22.5
+        mgr._maybe_control_boiler = AsyncMock()
+        mgr._schedule_next = AsyncMock()
+        for method in ('_reset_person_watch','_reset_boiler_watch','_reset_boiler_interval','_reset_pause_sensor_watch','_reset_target_recovery_watch'):
+            setattr(mgr, method, lambda: None)
+        await mgr._on_store_changed()
+        self.call.assert_not_awaited()
+        desired['value'] = 20
+        await mgr._on_store_changed()
+        self.call.assert_awaited()
+        self.assertEqual(self.call.await_args.args[2]['temperature'], 20)
+
+    async def test_normal_application_does_not_log_warning(self):
+        mgr = self.make({}, state='heat')
+        with self.assertNoLogs(namespace['_LOGGER'], level='WARNING'):
+            self.assertTrue(await mgr._apply_setpoint('climate.room', 20))
+
+if __name__ == '__main__':
     unittest.main()

@@ -2890,19 +2890,13 @@ class AutoApplyManager:
                 apply_enabled = True
                 if isinstance(apply_map, dict) and primary_for_apply in apply_map:
                     apply_enabled = bool(apply_map.get(primary_for_apply))
-                # DIAGNOSTIC LOGGING (temporary): traces every call into this
-                # function, regardless of outcome, so we can confirm in
-                # Settings > System > Logs whether the background component
-                # is the one pushing a given setpoint, and what it resolved
-                # apply_enabled to for this room. Safe to remove once the
-                # intermittent "OFF room still gets a new setpoint" issue is
-                # confirmed fixed.
-                _LOGGER.warning(
+                # Normal schedule application is diagnostic, not a warning.
+                _LOGGER.debug(
                     "ThermostatTimeline apply_setpoint: eid=%s desired=%.2f primary=%s apply_enabled=%s",
                     eid, desired, primary_for_apply, apply_enabled,
                 )
                 if not apply_enabled:
-                    _LOGGER.warning("ThermostatTimeline apply_setpoint: SKIPPED (apply_enabled=False) for %s", eid)
+                    _LOGGER.debug("ThermostatTimeline apply_setpoint: SKIPPED (apply_enabled=False) for %s", eid)
                     # Mark this as a voluntary skip (not a real failure) so callers
                     # like _maybe_apply_now can avoid logging a misleading
                     # "Auto-apply failed" warning for something that worked exactly
@@ -2932,7 +2926,7 @@ class AutoApplyManager:
                     except (TypeError, ValueError):
                         is_timed_active = False
                     if is_indef or is_timed_active:
-                        _LOGGER.warning(
+                        _LOGGER.debug(
                             "ThermostatTimeline apply_setpoint: SKIPPED (room_pause active) for %s (primary=%s)",
                             eid, primary_for_apply,
                         )
@@ -3236,7 +3230,7 @@ class MultiInstanceAutoApplyManager:
             active_iid = _norm_instance_id(
                 d.get("active_instance_id") or "default"
             )
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "ThermostatTimeline MULTI SYNC DATA: active=%s instances=%s",
                 d.get("active_instance_id"),
                 list(instances.keys()),
