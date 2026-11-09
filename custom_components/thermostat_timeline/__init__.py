@@ -1341,8 +1341,10 @@ class AutoApplyManager:
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
         self._unsub_targets = None
+        self._watched_targets = ()
         self._last_pause_sensor_on: bool | None = None
         self._last_applied = {}  # eid -> {"min": int, "temp": float}
+        self._manual_target_lock = asyncio.Lock()
         self._next_is_resume = False
         self._next_room_resume = None
         self._next_room_resume_at = None
@@ -2342,15 +2344,88 @@ class AutoApplyManager:
         except Exception:
             self._unsub_boiler_interval = None
     
+    def _manual_target_expiry(self, row, settings):
+        """Expire a manual target at this room's next boundary or midnight."""
+        now = dt_util.now()
+        minute = now.hour * 60 + now.minute
+        boundaries = [1440]
+        for block in self._effective_blocks_today(row, settings):
+            for key in ("startMin", "endMin"):
+                try:
+                    boundary = int(block.get(key, -1))
+                except (TypeError, ValueError):
+                    continue
+                if minute < boundary <= 1440:
+                    boundaries.append(boundary)
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return (midnight + timedelta(minutes=min(boundaries))).timestamp() * 1000.0
+
+    async def _remember_manual_target(self, eid, temperature):
+        """Persist manual target holds using Timeline's native timed room pause.
+
+        VTherm restores the target itself. The saved pause prevents startup and
+        availability reconciliation from replacing it before the next boundary.
+        Normal schedule writes equal the desired value and cannot create holds.
+        """
+        async with self._manual_target_lock:
+            try:
+                if not self._auto_apply_enabled():
+                    return
+                schedules, settings = self._get_data()
+                primary = eid
+                if primary not in schedules:
+                    for candidate, members in (settings.get("merges") or {}).items():
+                        if eid in (members or []):
+                            primary = candidate
+                            break
+                row = schedules.get(primary)
+                if not isinstance(row, dict):
+                    return
+                if not (settings.get("apply_enabled") or {}).get(primary, True):
+                    return
+                state = self.hass.states.get(eid)
+                if state is None or state.state in ("off", "unknown", "unavailable"):
+                    return
+                current = state.attributes.get("temperature")
+                if not isinstance(current, (int, float)) or abs(current - temperature) >= 0.05:
+                    return  # A newer target superseded this queued event.
+                desired = self._desired_for(eid, schedules, settings, self._now_min())
+                if desired is None:
+                    return
+                target_c = float(temperature)
+                unit = self.hass.config.units.temperature_unit
+                if unit == UnitOfTemperature.FAHRENHEIT or "F" in str(unit).upper():
+                    target_c = _f_to_c(target_c)
+                pauses = dict(settings.get("room_pause") or {})
+                existing = pauses.get(primary) or {}
+                owned = existing.get("source") == "manual_target"
+                active = bool(existing.get("indef")) or float(existing.get("until_ms") or 0) > time.time() * 1000.0
+                if active and not owned:
+                    return  # Preserve pauses explicitly chosen by the user.
+                if abs(target_c - float(desired)) < 0.05:
+                    if not owned:
+                        return
+                    pauses.pop(primary, None)
+                else:
+                    pauses[primary] = {
+                        "indef": False,
+                        "until_ms": self._manual_target_expiry(row, settings),
+                        "source": "manual_target",
+                        "target_c": target_c,
+                    }
+                await self.hass.services.async_call(
+                    DOMAIN, "set_store",
+                    {"instance_id": self._instance_id, "activate": False,
+                     "settings": {"room_pause": pauses}},
+                    blocking=True,
+                )
+                _LOGGER.info("ThermostatTimeline manual target hold: %s target=%s pause=%s",
+                             primary, target_c, pauses.get(primary))
+            except Exception:
+                _LOGGER.exception("ThermostatTimeline failed to preserve manual target for %s", eid)
+
     def _reset_target_recovery_watch(self):
         """Reconcile a scheduled entity when its target temperature becomes available."""
-    
-        if self._unsub_targets is not None:
-            try:
-                self._unsub_targets()
-            except Exception:
-                pass
-            self._unsub_targets = None
     
         try:
             schedules, settings = self._get_data()
@@ -2364,6 +2439,17 @@ class AutoApplyManager:
             if isinstance(eid, str)
             and (eid.startswith("climate.") or eid.startswith("input_number."))
         ]
+
+        watched_targets = tuple(sorted(set(targets)))
+        if self._unsub_targets is not None and watched_targets == self._watched_targets:
+            return  # Settings saves must not interrupt manual-target detection.
+        if self._unsub_targets is not None:
+            try:
+                self._unsub_targets()
+            except Exception:
+                pass
+            self._unsub_targets = None
+        self._watched_targets = watched_targets
     
         if not targets:
             return
@@ -2404,6 +2490,8 @@ class AutoApplyManager:
                 return
     
             if old_temp is not None:
+                if eid.startswith("climate.") and abs(new_temp - old_temp) >= 0.05:
+                    self.hass.async_create_task(self._remember_manual_target(eid, new_temp))
                 return
     
             _LOGGER.info(
