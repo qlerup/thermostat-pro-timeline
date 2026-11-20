@@ -22,6 +22,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/edit-block.gif) | [Full-size GIF](../../images/edit-block.gif)
 
+-   **[Choose the HVAC mode for a block](rooms.md#choose-the-hvac-mode-for-a-block)**
+
+    Leave power control to another automation, switch a thermostat off, or schedule a heating or cooling mode.
+
+    [![Set an HVAC mode on the Office timeline](../../images/block-hvac-result.png)](../../images/block-hvac.gif)
+
+    [Play walkthrough](../../images/block-hvac.gif) | [Full-size GIF](../../images/block-hvac.gif)
+
 -   **[Delete a block](../../getting-started/quick-start.md#remove-a-block)**
 
     The recording removes the morning block and saves the remaining evening period..

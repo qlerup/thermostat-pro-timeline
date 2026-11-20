@@ -1932,6 +1932,28 @@ class AutoApplyManager:
         person = (settings.get("room_persons") or {}).get(primary)
         return person if isinstance(person, str) and person.startswith("person.") else None
 
+    def _block_mode(self, eid, schedules, settings, minute):
+        enabled = settings.get("block_mode_rooms") or {}
+        if not enabled or not eid.startswith("climate."):
+            return None
+        primary = eid if eid in schedules else next(
+            (room for room, members in (settings.get("merges") or {}).items() if eid in members), eid)
+        if not enabled.get(primary):
+            return None
+        person = self._room_person(settings, primary)
+        state = self.hass.states.get(person) if person else None
+        if state and state.state not in ("home", "unknown", "unavailable", ""):
+            return None
+        for block in self._effective_blocks_today(schedules.get(primary) or {}, settings, primary):
+            try:
+                active = int(block["startMin"]) <= minute < int(block["endMin"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            if active:
+                mode = block.get("hvac_mode")
+                return mode if isinstance(mode, str) and mode else None
+        return None
+
     def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int) -> Optional[float]:
         # Resolve primary (merged)
         merges = settings.get("merges") or {}
@@ -2127,6 +2149,7 @@ class AutoApplyManager:
                     # if in doubt, skip to avoid overriding manual changes unnecessarily
                     continue
             desired = self._desired_for(eid, schedules, settings, now_min)
+            mode = self._block_mode(eid, schedules, settings, now_min)
             if desired is None:
                 continue
             # Only apply when desired setpoint changes for this entity.
@@ -2143,7 +2166,7 @@ class AutoApplyManager:
             except Exception:
                 last_temp = None
             schedule_unchanged = (last_temp is not None) and abs(last_temp - float(desired)) < 0.05
-            if (not reconcile) and schedule_unchanged:
+            if (not reconcile) and schedule_unchanged and last.get("mode") == mode:
                 continue
             # Manual override guard: only relevant when OUR desired value for this
             # entity hasn't changed (schedule_unchanged) - i.e. someone turned the
@@ -2157,7 +2180,7 @@ class AutoApplyManager:
             # manual override and gets silently dropped.
             # Guard window is 5 min after block start until 5 min before block end.
             # (Boundary ticks and resume reconciles are allowed to bypass it.)
-            if not boundary_only and not reconcile and schedule_unchanged:
+            if not boundary_only and not reconcile and schedule_unchanged and last.get("mode") == mode:
                 try:
                     guard_active = False
                     try:
@@ -2243,12 +2266,14 @@ class AutoApplyManager:
                     if isinstance(v, (int, float)):
                         cur = float(v)
                         break
-            if cur is not None and abs(cur - float(desired)) < 0.05:
+            if not mode and not last.get("mode") and cur is not None and abs(cur - float(desired)) < 0.05:
                 self._last_applied[eid] = {"min": now_min, "temp": float(desired)}
                 continue
-            ok = await self._apply_setpoint(eid, float(desired))
+            ok = await self._apply_setpoint(eid, float(desired), mode)
             if ok:
                 self._last_applied[eid] = {"min": now_min, "temp": float(desired)}
+                if mode:
+                    self._last_applied[eid]["mode"] = mode
             elif getattr(self, "_last_apply_skipped_voluntarily", False):
                 # Not a real failure: the room has "Apply schedule to this
                 # thermostat" disabled. Nothing to warn about here.
@@ -2284,6 +2309,7 @@ class AutoApplyManager:
                 return
             now_min = self._now_min()
             desired = self._desired_for(eid, schedules, settings, now_min)
+            mode = self._block_mode(eid, schedules, settings, now_min)
             if desired is None:
                 return
 
@@ -2294,12 +2320,14 @@ class AutoApplyManager:
                     last_temp = float(lt) if isinstance(lt, (int, float, str)) else None
                 except Exception:
                     last_temp = None
-                if (last_temp is not None) and abs(last_temp - float(desired)) < 0.05:
+                if last.get("mode") == mode and (last_temp is not None) and abs(last_temp - float(desired)) < 0.05:
                     return
 
-            ok = await self._apply_setpoint(eid, float(desired))
+            ok = await self._apply_setpoint(eid, float(desired), mode)
             if ok:
                 self._last_applied[eid] = {"min": now_min, "temp": float(desired)}
+                if mode:
+                    self._last_applied[eid]["mode"] = mode
         except Exception:
             return
 
@@ -3109,7 +3137,7 @@ class AutoApplyManager:
 
                             for r in rooms:
                                 try:
-                                    if self._summer_off(r["eid"], settings):
+                                    if self._summer_off(r["eid"], settings) or self._block_mode(r["eid"], schedules, settings, now_min) in ("off", "cool", "fan_only", "dry"):
                                         any_seen = True
                                         continue
                                     desired_c = self._boiler_target_c(r["eid"], schedules, settings, now_min)
@@ -3205,7 +3233,7 @@ class AutoApplyManager:
                             missing += 1
                             continue
 
-                        if self._summer_off(eid, settings):
+                        if self._summer_off(eid, settings) or self._block_mode(eid, schedules, settings, now_min) in ("off", "cool", "fan_only", "dry"):
                             compared += 1
                             continue
                         desired_c = self._boiler_target_c(eid, schedules, settings, now_min)
@@ -3381,7 +3409,7 @@ class AutoApplyManager:
             pass
         return False
 
-    async def _apply_setpoint(self, eid: str, desired: float) -> bool:
+    async def _apply_setpoint(self, eid: str, desired: float, block_mode=None) -> bool:
         """Apply desired setpoint robustly across HVAC modes.
 
         Strategy:
@@ -3564,6 +3592,19 @@ class AutoApplyManager:
             def _clamp_c(val_c: float) -> float:
                 return self._clamp_climate_setpoint_c(val_c, attrs, ha_is_f)
 
+            if block_mode:
+                do_turn_on = False
+                if block_mode != "temperature_only":
+                    if block_mode not in hvac_modes:
+                        self._last_apply_skipped_voluntarily = True
+                        return False
+                    if hvac_mode != block_mode:
+                        await self.hass.services.async_call("climate", "set_hvac_mode",
+                            {"entity_id": eid, "hvac_mode": block_mode}, blocking=True)
+                    hvac_mode = block_mode
+                    if block_mode in ("off", "fan_only", "dry"):
+                        return True
+
             # If preset has a manual/hold and not active, switch to it
             try:
                 want_preset = None
@@ -3571,7 +3612,7 @@ class AutoApplyManager:
                     if cand in preset_modes:
                         want_preset = cand
                         break
-                if want_preset and preset_mode != want_preset:
+                if not block_mode and want_preset and preset_mode != want_preset:
                     await self.hass.services.async_call(
                         "climate", "set_preset_mode", {"entity_id": eid, "preset_mode": want_preset}, blocking=False
                     )

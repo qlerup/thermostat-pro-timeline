@@ -67,3 +67,27 @@ Expand the source row actions and choose **Copy plan**. Open the destination row
 [![Copy a plan between rooms](../../images/copy-plan-result.png)](../../images/copy-plan.gif)
 
 [Play walkthrough](../../images/copy-plan.gif) | [Full-size GIF](../../images/copy-plan.gif)
+
+## Choose the HVAC mode for a block
+
+1. Open **Settings > Rooms**, expand the thermostat, enable **Choose HVAC mode per block**, and save. The option is off by default for every room.
+2. Double-click a timeline block (or add one). Under **HVAC mode**, choose what the thermostat should do while this block is active.
+3. Save the block, then use **Save** in the card header if it appears. With automatic application enabled, check the thermostat's **mode** as well as its **target temperature**.
+
+| Block setting | What Timeline sends |
+| --- | --- |
+| Follow room settings (default) | Uses the existing temperature and optional turn-on behavior. Existing blocks and gaps follow the room settings. |
+| Temperature only | Sends the scheduled temperature without a power, preset or mode command, even if the room normally sends a turn-on command. Use this when another automation controls when the heater may start. How an off thermostat handles a temperature command depends on the device. |
+| Off | Switches the thermostat off. The block sends no temperature command. |
+| Heat, Cool, Auto or Heat/Cool | Selects the mode and applies the target. A transition from Off to Heat works even when both blocks have the same temperature. |
+| Fan only or Dry | Selects the mode without sending a heating target. |
+
+The mode list comes from the primary thermostat. Linked thermostats skip a block command if they do not support its selected mode. Pauses and summer shutoff still apply. After an Off block, use a Heat block when you want heating to restart explicitly. Turning the room option off makes its blocks follow the room settings again.
+
+[![Office switched off by its active block while Hall continues its schedule](../../images/block-hvac-off.png)](../../images/block-hvac.gif)
+
+[![Office stays off as its target changes to 23 degrees in Temperature only mode](../../images/block-hvac-temperature-only.png)](../../images/block-hvac.gif)
+
+[![Office heating again after saving Heat for its block](../../images/block-hvac-result.png)](../../images/block-hvac.gif)
+
+[Play walkthrough](../../images/block-hvac.gif) | [Full-size GIF](../../images/block-hvac.gif)

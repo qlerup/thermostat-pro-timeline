@@ -176,6 +176,10 @@ const TT_I18N = {
   'pause.notify_resumed': 'Notify when resumed',
   'pause.destination': 'Send to',
   'pause.panel': 'Home Assistant notifications',
+  'block.mode_enable': 'Choose HVAC mode per block',
+  'block.mode': 'HVAC mode',
+  'block.inherit': 'Follow room settings',
+  'block.temperature_only': 'Temperature only',
   'away.room_target': 'Use a room-specific Away target',
   'presence.vacancy': 'Use an economy temperature when empty',
   'presence.relative': 'Increase the scheduled target when occupied',
@@ -433,6 +437,10 @@ const TT_I18N = {
   'presence.who_away': 'Who is away'
   },
   da: {
+  'block.mode_enable': 'Vælg driftstilstand pr. blok',
+  'block.mode': 'Driftstilstand',
+  'block.inherit': 'Følg rummets indstillinger',
+  'block.temperature_only': 'Kun temperatur',
   'pause.panel': 'Beskeder i Home Assistant',
   'pause.destination': 'Send til',
   'pause.notify_resumed': 'Giv besked ved genoptagelse',
@@ -4877,6 +4885,7 @@ class ThermostatTimelineCard extends HTMLElement {
       vacancy_offsets_c: Object.hasOwn(config, 'vacancy_offsets_c'),
       away_room_targets_c: Object.hasOwn(config, 'away_room_targets_c'),
       room_persons: Object.hasOwn(config, 'room_persons'),
+      block_mode_rooms: Object.hasOwn(config, 'block_mode_rooms'),
       room_pause_controls: Object.hasOwn(config, 'room_pause_controls'),
       pause_notifications: Object.hasOwn(config, 'pause_notifications'),
       presence_sensor_temps: false,
@@ -4932,6 +4941,7 @@ class ThermostatTimelineCard extends HTMLElement {
   vacancy_offsets_c: { ...(config.vacancy_offsets_c || {}) },
   away_room_targets_c: { ...(config.away_room_targets_c || {}) },
   room_persons: { ...(config.room_persons || {}) },
+  block_mode_rooms: { ...(config.block_mode_rooms || {}) },
   room_pause_controls: { ...(config.room_pause_controls || {}) },
   pause_notifications: { ...(config.pause_notifications || {}) },
   presence_sensor_temps: (()=>{
@@ -5868,6 +5878,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
               if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
               if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
+              if (!this._yamlProvided?.block_mode_rooms && s.block_mode_rooms) this._config.block_mode_rooms = { ...s.block_mode_rooms };
               if (!this._yamlProvided?.room_pause_controls && s.room_pause_controls) this._config.room_pause_controls = { ...s.room_pause_controls };
               if (!this._yamlProvided?.pause_notifications && s.pause_notifications) this._config.pause_notifications = { ...s.pause_notifications };
               if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
@@ -6356,6 +6367,7 @@ class ThermostatTimelineCard extends HTMLElement {
     if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
     if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
     if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
+    if (!this._yamlProvided?.block_mode_rooms && s.block_mode_rooms) this._config.block_mode_rooms = { ...s.block_mode_rooms };
     if (!this._yamlProvided?.room_pause_controls && s.room_pause_controls) this._config.room_pause_controls = { ...s.room_pause_controls };
     if (!this._yamlProvided?.pause_notifications && s.pause_notifications) this._config.pause_notifications = { ...s.pause_notifications };
     if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
@@ -6978,10 +6990,19 @@ class ThermostatTimelineCard extends HTMLElement {
       const presetMode = String(attrs.preset_mode || '').toLowerCase();
       const presetModes = Array.isArray(attrs.preset_modes) ? attrs.preset_modes.map(x=>String(x).toLowerCase()) : [];
 
+      const blockMode = this._blockMode(eid, this._getNowMin());
+      if (blockMode && blockMode !== 'temperature_only') {
+        if (!hvacModes.includes(blockMode)) return false;
+        if (hvacMode !== blockMode) {
+          await this._hass.callService('climate', 'set_hvac_mode', {entity_id: eid, hvac_mode: blockMode});
+        }
+        hvacMode = blockMode;
+        if (['off', 'fan_only', 'dry'].includes(blockMode)) return;
+      }
       // Optional: enable manual/hold preset to avoid schedule overrides
       try {
         const want = presetModes.includes('manual') ? 'manual' : (presetModes.includes('hold') ? 'hold' : null);
-        if (want && presetMode !== want){
+        if (!blockMode && want && presetMode !== want){
           await this._hass.callService('climate','set_preset_mode',{ entity_id: eid, preset_mode: want });
         }
       } catch {}
@@ -6998,7 +7019,7 @@ class ThermostatTimelineCard extends HTMLElement {
         } catch {}
         return null;
       })();
-      const turnOnEnabled = !!(turnOnCfg && turnOnCfg.enabled);
+      const turnOnEnabled = !blockMode && !!(turnOnCfg && turnOnCfg.enabled);
       const turnOnOrder = (turnOnCfg && turnOnCfg.order === 'after') ? 'after' : 'before';
 
       // BUGFIX: previously this block ran unconditionally whenever the entity was
@@ -7048,7 +7069,7 @@ class ThermostatTimelineCard extends HTMLElement {
       }
       await this._hass.callService('climate','set_temperature', { entity_id: eid, temperature: this._serviceTempFromC(desiredC) });
       await applyTurnOnAfterIfNeeded();
-    } catch {}
+    } catch { return false; }
   }
   // Convert a schedules object between units (returns deep clone)
   _convertSchedulesTemps(schedules, toUnit){
@@ -7240,6 +7261,7 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
         room_persons: { ...this._config.room_persons },
+        block_mode_rooms: { ...this._config.block_mode_rooms },
         room_pause_controls: { ...this._config.room_pause_controls },
         pause_notifications: { ...this._config.pause_notifications },
         presence_sensor_temps: (this._config.presence_sensor_temps && typeof this._config.presence_sensor_temps === 'object') ? this._config.presence_sensor_temps : {},
@@ -7282,6 +7304,7 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
         room_persons: { ...this._config.room_persons },
+        block_mode_rooms: { ...this._config.block_mode_rooms },
         room_pause_controls: { ...this._config.room_pause_controls },
         pause_notifications: { ...this._config.pause_notifications },
         presence_sensor_temps: (()=>{
@@ -7640,7 +7663,7 @@ class ThermostatTimelineCard extends HTMLElement {
   _copyMainToWeekdays(mode, target){
     try {
       const m = (mode === 'weekday_sat_sun' || mode === 'all_7') ? mode : 'weekday_weekend';
-      const makeBlocks = (arr)=> (Array.isArray(arr) ? arr.map(b=>({ id: Math.random().toString(36).slice(2,9), startMin: b.startMin, endMin: b.endMin, temp: b.temp })) : []);
+      const makeBlocks = (arr)=> (Array.isArray(arr) ? arr.map(b=>({ ...b, id: Math.random().toString(36).slice(2,9) })) : []);
       const names = this._weekdayNames();
       const t = String(target || '').toLowerCase().trim();
       for (const eid of (this._config?.entities || [])) {
@@ -7917,18 +7940,23 @@ class ThermostatTimelineCard extends HTMLElement {
     return Array.from(out);
   }
 
+  _blockMode(eid, minute){
+    if (!eid.startsWith('climate.') || !this._config?.block_mode_rooms?.[this._groupPrimaryOf(eid)]) return null;
+    return this._desiredTempFor(eid, minute, true);
+  }
+
   _roomPerson(primary){
     const id = this._config?.room_persons?.[primary];
     return typeof id === 'string' && id.startsWith('person.') ? id : null;
   }
 
-  _desiredTempFor(eid, nowMin){ const primary = this._groupPrimaryOf(eid); const row = this._schedules[primary]; if (!row) return null; this._ensureHolidayStruct(row); this._ensurePresenceStruct(row); let blocks = row.blocks||[]; let usedPresence = false; let usedHoliday = false; let presenceKeyActive = null; let presenceHasBlocksForRoom = false;
+  _roomSchedule(primary, row){
+    this._ensureHolidayStruct(row);
+    this._ensurePresenceStruct(row);
+    let blocks = row.blocks || [];
+    let usedPresence = false;
+    let usedHoliday = false;
     const person = this._roomPerson(primary);
-    const location = person && this._hass?.states?.[person]?.state;
-    if (location && !['home', 'unknown', 'unavailable'].includes(location)) {
-      return this._clamp(Number(this._config.away_room_targets_c?.[primary] ?? this._config.away?.target_c ?? 17),
-        this._config.min_temp ?? 5, this._config.max_temp ?? 25);
-    }
     // Holidays override take highest precedence when enabled
     try {
       if (this._isHolidayActive() && row.holiday && Array.isArray(row.holiday.blocks) && row.holiday.blocks.length) {
@@ -7940,26 +7968,24 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
     // Advanced presence overrides (if enabled and a combo is active) — below holidays, above profiles/weekdays
     try {
-      presenceKeyActive = !person && this._activePresenceComboKey && this._activePresenceComboKey();
+      const presenceKeyActive = !(usedHoliday && this._config.block_mode_rooms?.[primary]) && !person && this._activePresenceComboKey && this._activePresenceComboKey();
       if (presenceKeyActive) {
         const roomBlocks = row.presence && row.presence[presenceKeyActive] && Array.isArray(row.presence[presenceKeyActive].blocks)
           ? row.presence[presenceKeyActive].blocks : [];
         if (roomBlocks.length) {
           blocks = roomBlocks;
           usedPresence = true;
-          presenceHasBlocksForRoom = true;
         } else {
           // Presence combo is active but this room has no presence schedule -> use a virtual all‑day Away block
           const awayC = Number(this._config?.away?.target_c ?? 17);
           const fallback = Number.isFinite(awayC) ? awayC : this._rowDefaultTemp(row);
           blocks = [{ id: '__presence_away__', startMin: 0, endMin: 1440, temp: fallback }];
           usedPresence = true; // treat as presence so simple away clamp won't run later
-          presenceHasBlocksForRoom = false;
         }
       }
     } catch {}
     // Profiles/Weekdays fallback if presence not used
-    if (!usedPresence && !(person && usedHoliday)) {
+    if (!usedPresence && !(usedHoliday && (person || this._config.block_mode_rooms?.[primary]))) {
       try {
         if (this._config?.profiles_enabled && !(this._isHolidayActive() && row?.holiday?.blocks?.length)) {
           this._ensureProfilesStruct(row);
@@ -7974,7 +8000,23 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch { /* fall back to default blocks */ }
     }
+    return {blocks, usedPresence};
+  }
+
+  _desiredTempFor(eid, nowMin, modeOnly=false){
+    const primary = this._groupPrimaryOf(eid);
+    const row = this._schedules[primary];
+    if (!row) return null;
+    const person = this._roomPerson(primary);
+    const location = person && this._hass?.states?.[person]?.state;
+    if (location && !['home', 'unknown', 'unavailable'].includes(location)) {
+      if (modeOnly) return null;
+      return this._clamp(Number(this._config.away_room_targets_c?.[primary] ?? this._config.away?.target_c ?? 17),
+        this._config.min_temp ?? 5, this._config.max_temp ?? 25);
+    }
+    const {blocks, usedPresence} = this._roomSchedule(primary, row);
     const hit = (blocks||[]).find(b => nowMin >= b.startMin && nowMin < b.endMin);
+    if (modeOnly) return hit?.hvac_mode || null;
     let want = Number(hit ? hit.temp : this._rowDefaultTemp(row));
     let awayLimit = Infinity;
     // Apply away override if active
@@ -8411,29 +8453,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const nowMin = this._getNowMin(); let bestT = null; let bestDelta = Infinity;
       for (const eid of (this._config.entities || [])){
         const row = this._schedules[eid]; if (!row) continue; const times = [];
-        // Prefer presence schedule when enabled and active; then profiles/weekdays
-        let blocks = row.blocks||[]; let usedPresence=false;
-        try {
-          const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
-          if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
-            blocks = row.presence[key].blocks || []; usedPresence=true;
-          }
-        } catch {}
-        if (!usedPresence) {
-          try {
-            if (this._config?.profiles_enabled) {
-              this._ensureProfilesStruct(row);
-              const ap = row.activeProfile;
-              if (ap && row.profiles && Array.isArray(row.profiles[ap]?.blocks) && (row.profiles[ap].blocks||[]).length) {
-                blocks = row.profiles[ap].blocks || [];
-              } else if (this._config?.weekdays_enabled && row.weekly) {
-                blocks = this._activeWeekdayBlocks(row) || [];
-              }
-            } else if (this._config?.weekdays_enabled && row.weekly) {
-              blocks = this._activeWeekdayBlocks(row) || [];
-            }
-          } catch {}
-        }
+        const {blocks} = this._roomSchedule(eid, row);
         for (const b of blocks) { times.push(b.startMin, b.endMin); }
         for (const t of times){ let delta = (t - nowMin + 1440) % 1440; if (delta === 0) delta = 1; if (delta < bestDelta){ bestDelta = delta; bestT = t; } }
       }
@@ -8454,29 +8474,7 @@ class ThermostatTimelineCard extends HTMLElement {
     // Browser/local timezone mode (existing behavior)
     const now = new Date(); const nowMin = this._getNowMin(); let bestT = null; let bestDelta = Infinity; for (const eid of (this._config.entities || [])){
       const row = this._schedules[eid]; if (!row) continue; const times = [];
-      // Prefer presence schedule when enabled and active; then profiles/weekdays
-      let blocks = row.blocks||[]; let usedPresence=false;
-      try {
-        const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
-        if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
-          blocks = row.presence[key].blocks || []; usedPresence=true;
-        }
-      } catch {}
-      if (!usedPresence) {
-        try {
-          if (this._config?.profiles_enabled) {
-            this._ensureProfilesStruct(row);
-            const ap = row.activeProfile;
-            if (ap && row.profiles && Array.isArray(row.profiles[ap]?.blocks) && (row.profiles[ap].blocks||[]).length) {
-              blocks = row.profiles[ap].blocks || [];
-            } else if (this._config?.weekdays_enabled && row.weekly) {
-              blocks = this._activeWeekdayBlocks(row) || [];
-            }
-          } else if (this._config?.weekdays_enabled && row.weekly) {
-            blocks = this._activeWeekdayBlocks(row) || [];
-          }
-        } catch {}
-      }
+      const {blocks} = this._roomSchedule(eid, row);
       for (const b of blocks) { times.push(b.startMin, b.endMin); }
       for (const t of times){ let delta = (t - nowMin + 1440) % 1440; if (delta === 0) delta = 1; if (delta < bestDelta){ bestDelta = delta; bestT = t; } }
     }
@@ -8623,7 +8621,7 @@ class ThermostatTimelineCard extends HTMLElement {
           let allOkForOff = true;
 
           for (const r of rooms) {
-            if (this._summerOff(r.eid)) { anySeen = true; continue; }
+            if (this._summerOff(r.eid) || ['off', 'cool', 'fan_only', 'dry'].includes(this._blockMode(r.eid, nowMin))) { anySeen = true; continue; }
             const desiredC = Number(this._desiredTempFor ? this._desiredTempFor(r.eid, nowMin) : null);
             const curC = Number(this._roomCurrentTemperatureC ? this._roomCurrentTemperatureC(r.eid) : NaN);
             if (!Number.isFinite(desiredC) || !Number.isFinite(curC)) { anyUnknown = true; continue; }
@@ -8678,7 +8676,7 @@ class ThermostatTimelineCard extends HTMLElement {
       let allOkForOff = true;
 
       for (const eid of roomEntities) {
-        if (this._summerOff(eid)) { anySeen = true; continue; }
+        if (this._summerOff(eid) || ['off', 'cool', 'fan_only', 'dry'].includes(this._blockMode(eid, nowMin))) { anySeen = true; continue; }
         const desiredC = Number(this._desiredTempFor ? this._desiredTempFor(eid, nowMin) : null);
         const curC = Number(this._roomCurrentTemperatureC ? this._roomCurrentTemperatureC(eid) : NaN);
 
@@ -8720,13 +8718,14 @@ class ThermostatTimelineCard extends HTMLElement {
       const row = this._schedules[primary];
       if (!row || !this._entityHasBoundaryNow(row, nowMin, primary)) { continue; }
     }
+    const mode = this._blockMode(eid, nowMin);
     let desired = this._desiredTempFor(eid, nowMin);
     const mx = this._config?.max_temp ?? 25; const mn = this._config?.min_temp ?? 5; if (Number.isFinite(mx)) desired = Math.min(desired, mx); if (Number.isFinite(mn)) desired = Math.max(desired, mn);
       if (desired == null || Number.isNaN(desired)) continue;
       const last = this._lastApplied[eid] || {};
       // Only send when desired setpoint changes for this entity.
       // Prevents overriding manual changes in other rooms.
-      if (!reconcile && Number.isFinite(last.temp) && Math.abs(Number(last.temp) - desired) < 0.05) continue;
+      if (!reconcile && (last.mode || null) === mode && Number.isFinite(last.temp) && Math.abs(Number(last.temp) - desired) < 0.05) continue;
       const st = this._hass.states?.[eid];
       const cur = Number(st?.attributes?.temperature ?? st?.attributes?.target_temperature ?? st?.attributes?.target_temp);
       const willSendF = this._isF(); const haIsF = this._haIsF();
@@ -8736,16 +8735,30 @@ class ThermostatTimelineCard extends HTMLElement {
         else if (!willSendF && haIsF) curU = this._fToC(curU);
       }
       const sendTemp = this._serviceTempFromC(desired);
-      if (Number.isFinite(curU) && Math.abs(curU - sendTemp) < 0.05){ this._lastApplied[eid] = { min: nowMin, temp: desired }; continue; }
-      try { await this._applySetpointForEntity(eid, desired); this._lastApplied[eid] = { min: nowMin, temp: desired }; }
+      if (!mode && !last.mode && Number.isFinite(curU) && Math.abs(curU - sendTemp) < 0.05){ this._lastApplied[eid] = { min: nowMin, temp: desired, mode }; continue; }
+      try { if (await this._applySetpointForEntity(eid, desired) !== false) this._lastApplied[eid] = { min: nowMin, temp: desired, mode }; }
       catch (e) {}
     } }
 
   // ---------- "Apply on change" helper ----------
-  _desiredNowSnapshot(){ const nowMin = this._getNowMin(); const snap = {}; for (const eid of this._allTargetEntities()) snap[eid] = this._desiredTempFor(eid, nowMin); return snap; }
-  async _applyIfDesiredChanged(beforeSnap){ if (!this._config?.auto_apply) return; if (this._isPaused()) return; const after = this._desiredNowSnapshot(); const nowMin = this._getNowMin();
-    if (this._config?.storage_enabled) { return; }
-  for (const eid of Object.keys(after)){ let a = after[eid]; const b = beforeSnap[eid]; if (a == null) continue; const mx=this._config?.max_temp ?? 25; const mn=this._config?.min_temp ?? 5; if (Number.isFinite(mx)) a = Math.min(a, mx); if (Number.isFinite(mn)) a = Math.max(a, mn); if (b == null || Math.abs(a - b) > 0.049){ try { await this._applySetpointForEntity(eid, a); this._lastApplied[eid] = { min: nowMin, temp: a }; } catch(e){} } }
+  _desiredNowSnapshot(){
+    const minute = this._getNowMin();
+    return Object.fromEntries(this._allTargetEntities().map(eid => [eid, {
+      temp: this._desiredTempFor(eid, minute), mode: this._blockMode(eid, minute)
+    }]));
+  }
+  async _applyIfDesiredChanged(before){
+    if (!this._config?.auto_apply || this._config.storage_enabled || this._isPaused()) return;
+    const minute = this._getNowMin();
+    for (const [eid, {temp, mode}] of Object.entries(this._desiredNowSnapshot())) {
+      if (temp == null) continue;
+      const desired = this._clamp(temp, this._config.min_temp ?? 5, this._config.max_temp ?? 25);
+      const previous = before[eid];
+      if (previous && previous.mode === mode && Math.abs(previous.temp - desired) <= 0.049) continue;
+      if (await this._applySetpointForEntity(eid, desired) !== false) {
+        this._lastApplied[eid] = {min: minute, temp: desired, mode};
+      }
+    }
   }
 
   // Ping backend to apply now without waiting for delayed sync
@@ -8817,9 +8830,10 @@ class ThermostatTimelineCard extends HTMLElement {
             }
           } catch {}
           const sendTemp = this._serviceTempFromC(desired);
-          if (Number.isFinite(curU) && Math.abs(curU - sendTemp) < 0.049) { this._lastApplied[__eid] = { min: nowMin, temp: desired }; continue; }
-          await this._applySetpointForEntity(__eid, desired);
-          this._lastApplied[__eid] = { min: nowMin, temp: desired };
+          if (!this._blockMode(__eid, nowMin) && Number.isFinite(curU) && Math.abs(curU - sendTemp) < 0.049) { this._lastApplied[__eid] = { min: nowMin, temp: desired }; continue; }
+          if (await this._applySetpointForEntity(__eid, desired) !== false) {
+            this._lastApplied[__eid] = {min: nowMin, temp: desired, mode: this._blockMode(__eid, nowMin)};
+          }
         } catch {}
       }
     } catch {}
@@ -8827,16 +8841,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
   _entityHasBoundaryNow(row, nowMin, eid){
     try {
-      let blocks = row.blocks||[];
-      // Prefer presence schedule when enabled and active
-      try {
-        const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
-        if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
-          blocks = row.presence[key].blocks || [];
-        } else if (this._config?.weekdays_enabled && row.weekly) {
-          blocks = this._activeWeekdayBlocks(row) || [];
-        }
-      } catch { if (this._config?.weekdays_enabled && row.weekly){ blocks = this._activeWeekdayBlocks(row) || []; } }
+      const {blocks} = this._roomSchedule(eid, row);
       // Allow a 1-minute grace window because we intentionally schedule the
       // timer a tiny bit after the exact boundary to avoid races. Otherwise we
       // might miss the equality check and skip applying at the boundary.
@@ -9326,6 +9331,7 @@ class ThermostatTimelineCard extends HTMLElement {
             <div class="grid">
               <div class="time-inline"><label class="ed-from-label"></label><input class="ed-from" type="time" step="60" /><select class="mer-select ed-from-mer" style="display:none;"><option>AM</option><option>PM</option></select></div>
               <div class="time-inline time-right"><label class="ed-to-label"></label><input class="ed-to" type="time" step="60" /><select class="mer-select ed-to-mer" style="display:none;"><option>AM</option><option>PM</option></select></div>
+              <label class="rowfull ed-mode-row" style="display:none"><span>${this._t('block.mode')}</span><select class="settings-input ed-mode"></select></label>
               <div class="rowfull"><label class="ed-temp-label"></label><input class="ed-temp" type="number" step="0.5" min="0" max="120" /></div>
             </div>
             <div class="ed-error" role="alert" aria-live="assertive" style="color:var(--error-color); display:none; margin-top:8px; font-size:.95rem;"></div>
@@ -11003,7 +11009,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
               try {
                 const dayBlocks = getBlocks(dayKey);
-                const payload = dayBlocks.map(b=>({ startMin:b.startMin, endMin:b.endMin, temp:b.temp }));
+                const payload = dayBlocks.map(b=>({ ...b }));
                 this._copyFrom = eid_day;
                 this._copyPayload = payload;
                 this._render();
@@ -11351,7 +11357,7 @@ class ThermostatTimelineCard extends HTMLElement {
         // Start copy from this row
         try {
           const row = this._schedules[eid] || { defaultTemp: this._config.default_temp, blocks: [] };
-          const payload = { defaultTemp: row.defaultTemp, blocks: (row.blocks||[]).map(b=>({ startMin:b.startMin, endMin:b.endMin, temp:b.temp })), weekly: row.weekly ? JSON.parse(JSON.stringify(row.weekly)) : undefined, weekly_modes: row.weekly_modes ? JSON.parse(JSON.stringify(row.weekly_modes)) : undefined };
+          const payload = { defaultTemp: row.defaultTemp, blocks: (row.blocks||[]).map(b=>({ ...b })), weekly: row.weekly ? JSON.parse(JSON.stringify(row.weekly)) : undefined, weekly_modes: row.weekly_modes ? JSON.parse(JSON.stringify(row.weekly_modes)) : undefined };
           this._copyFrom = eid; this._copyPayload = payload;
           this._render();
         } catch(e){}
@@ -11446,11 +11452,12 @@ class ThermostatTimelineCard extends HTMLElement {
         } catch {}
         if (this._active?.entity === eid && this._active?.id === b.id) bl.classList.add('active');
   // Time will be shown in a hover tooltip (like the weekdays popup). Do not render time pill here.
-        UiHelper.genBlockPill(
-          this,
-          bl,
-          `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
-        );
+        const mode = this._config.block_mode_rooms?.[eid] && b.hvac_mode;
+        const temperature = `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`;
+        const modeText = mode === 'temperature_only' ? this._t('block.temperature_only') : mode;
+        const blockLabel = ['off', 'dry', 'fan_only'].includes(mode) ? modeText :
+          modeText ? `${temperature} (${modeText})` : temperature;
+        UiHelper.genBlockPill(this, bl, blockLabel);
         track.append(bl);
 
         // Ensure a tooltip element exists for main timeline (reuse weekly style)
@@ -11466,7 +11473,7 @@ class ThermostatTimelineCard extends HTMLElement {
             if (modalHost) modalHost.append(tooltip);
           }
           const showTip = () => {
-            const txt = `${this._label(b.startMin)} - ${this._label(b.endMin)} • ${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`;
+            const txt = `${this._label(b.startMin)} - ${this._label(b.endMin)} • ${blockLabel}`;
             if (!tooltip) return;
             // Cancel any pending hide
             try { if (tooltip._hideTimer) { clearTimeout(tooltip._hideTimer); tooltip._hideTimer = null; } } catch {}
@@ -12274,6 +12281,7 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...cfg.vacancy_offsets_c },
         away_room_targets_c: { ...cfg.away_room_targets_c },
         room_persons: { ...cfg.room_persons },
+        block_mode_rooms: { ...cfg.block_mode_rooms },
         room_pause_controls: { ...cfg.room_pause_controls },
         pause_notifications: { ...cfg.pause_notifications },
         presence_sensor_temps: (()=>{ try { return (cfg.presence_sensor_temps && typeof cfg.presence_sensor_temps === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_temps)) : {}; } catch { return {}; } })(),
@@ -12539,6 +12547,7 @@ class ThermostatTimelineCard extends HTMLElement {
         cfg.vacancy_offsets_c = { ...d.vacancy_offsets_c };
         cfg.away_room_targets_c = { ...d.away_room_targets_c };
         cfg.room_persons = { ...d.room_persons };
+        cfg.block_mode_rooms = { ...d.block_mode_rooms };
         cfg.room_pause_controls = { ...d.room_pause_controls };
         cfg.pause_notifications = { ...d.pause_notifications };
         const src = (d.presence_sensor_temps && typeof d.presence_sensor_temps === 'object') ? d.presence_sensor_temps : {};
@@ -13452,6 +13461,19 @@ class ThermostatTimelineCard extends HTMLElement {
 
         const room = ents[idx];
         if (room) {
+          if (room.startsWith('climate.')) {
+            const label = document.createElement('label');
+            const toggle = document.createElement('input');
+            toggle.type = 'checkbox';
+            toggle.className = 'enable-block-mode';
+            toggle.checked = !!d.block_mode_rooms[room];
+            toggle.onchange = () => {
+              if (toggle.checked) d.block_mode_rooms[room] = true;
+              else delete d.block_mode_rooms[room];
+            };
+            label.append(toggle, this._t('block.mode_enable'));
+            left.append(label);
+          }
           const label = document.createElement('label');
           label.textContent = this._t('pause.room_control');
           const select = document.createElement('select');
@@ -13494,6 +13516,7 @@ class ThermostatTimelineCard extends HTMLElement {
             try { if (modes.length) modes.splice(idx, 1); } catch {}
             try { if (tmodes.length) tmodes.splice(idx, 1); } catch {}
 
+            delete this._settingsDraft.block_mode_rooms[primary];
             delete this._settingsDraft.room_pause_controls[primary];
             // Clean labels
             try {
@@ -13568,6 +13591,10 @@ class ThermostatTimelineCard extends HTMLElement {
             if (oldPrimary && newPrimary && oldPrimary !== newPrimary && d.room_pause_controls[oldPrimary]) {
               d.room_pause_controls[newPrimary] ??= d.room_pause_controls[oldPrimary];
               delete d.room_pause_controls[oldPrimary];
+            }
+            if (oldPrimary && newPrimary && oldPrimary !== newPrimary && d.block_mode_rooms[oldPrimary]) {
+              if (newPrimary.startsWith('climate.')) d.block_mode_rooms[newPrimary] = true;
+              delete d.block_mode_rooms[oldPrimary];
             }
             // Migrate merges/temp sensors when primary changes
             if (oldPrimary && newPrimary && oldPrimary !== newPrimary) {
@@ -16878,6 +16905,7 @@ class ThermostatTimelineCard extends HTMLElement {
         if (JSON.stringify(d.vacancy_offsets_c || {}) !== JSON.stringify(c.vacancy_offsets_c || {})) return true;
         if (JSON.stringify(d.away_room_targets_c || {}) !== JSON.stringify(c.away_room_targets_c || {})) return true;
         if (JSON.stringify(d.room_persons || {}) !== JSON.stringify(c.room_persons || {})) return true;
+        if (JSON.stringify(d.block_mode_rooms || {}) !== JSON.stringify(c.block_mode_rooms || {})) return true;
         if (JSON.stringify(d.room_pause_controls || {}) !== JSON.stringify(c.room_pause_controls || {})) return true;
         if (JSON.stringify(d.pause_notifications || {}) !== JSON.stringify(c.pause_notifications || {})) return true;
         const da = (d.away && typeof d.away === 'object') ? d.away : {};
@@ -17349,6 +17377,19 @@ class ThermostatTimelineCard extends HTMLElement {
     try { if (!this._inlineEditing && !this._editing) this._render(); } catch {}
   }
 
+  _setBlockModeEditor(entity, block){
+    const select = this.shadowRoot.querySelector('.ed-mode');
+    const enabled = !!this._config.block_mode_rooms?.[entity] && entity.startsWith('climate.');
+    select.parentElement.style.display = enabled ? '' : 'none';
+    select.replaceChildren(new Option(this._t('block.inherit'), ''), new Option(this._t('block.temperature_only'), 'temperature_only'));
+    const modes = this._hass?.states?.[entity]?.attributes?.hvac_modes || [];
+    for (const mode of modes) select.add(new Option(mode, mode));
+    if (block?.hvac_mode && !Array.from(select.options).some(option => option.value === block.hvac_mode)) {
+      select.add(new Option(block.hvac_mode, block.hvac_mode));
+    }
+    select.value = block?.hvac_mode || '';
+  }
+
   _openEditor(entity, blockId) {
     this._ensureEditModeOn();
     if (!blockId) return this._openNewEditor(entity);
@@ -17362,6 +17403,7 @@ class ThermostatTimelineCard extends HTMLElement {
     if (!row) return;
     const b = row.blocks.find(x => x.id === blockId);
     if (!b) return;
+    this._setBlockModeEditor(entity, b);
     const edTemp = this.shadowRoot.querySelector(".ed-temp");
     const edFrom = this.shadowRoot.querySelector(".ed-from");
   const edTo = this.shadowRoot.querySelector(".ed-to");
@@ -17686,7 +17728,7 @@ class ThermostatTimelineCard extends HTMLElement {
     }
     this._deleteBlock(entity, blockId); this._closeEditor(); }
 
-  _openNewEditor(entity){ this._ensureEditModeOn(); this._editing = { entity, blockId: null }; const row = this._schedules[entity]; if (!row) return; const edTemp = this.shadowRoot.querySelector(".ed-temp"); const edFrom = this.shadowRoot.querySelector(".ed-from"); const edTo   = this.shadowRoot.querySelector(".ed-to"); const overlay = this.shadowRoot.querySelector(".overlay"); const now = this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start + 60, start + 15, 1440); if (edTemp) edTemp.value = String(this._toDisplayTemp(row.defaultTemp ?? 20)); if (edFrom) edFrom.value = this._toTimeInput(start); if (edTo)   edTo.value   = this._toTimeInput(end); const title = this.shadowRoot.querySelector('.modal h3'); if (title) title.textContent = this._t('ui.add_block'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); if (delBtn) delBtn.style.display = 'none'; const err = this.shadowRoot.querySelector(".ed-error"); if (err) { err.style.display = "none"; err.textContent = ""; }
+  _openNewEditor(entity){ this._ensureEditModeOn(); this._editing = { entity, blockId: null }; this._setBlockModeEditor(entity); const row = this._schedules[entity]; if (!row) return; const edTemp = this.shadowRoot.querySelector(".ed-temp"); const edFrom = this.shadowRoot.querySelector(".ed-from"); const edTo   = this.shadowRoot.querySelector(".ed-to"); const overlay = this.shadowRoot.querySelector(".overlay"); const now = this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start + 60, start + 15, 1440); if (edTemp) edTemp.value = String(this._toDisplayTemp(row.defaultTemp ?? 20)); if (edFrom) edFrom.value = this._toTimeInput(start); if (edTo)   edTo.value   = this._toTimeInput(end); const title = this.shadowRoot.querySelector('.modal h3'); if (title) title.textContent = this._t('ui.add_block'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); if (delBtn) delBtn.style.display = 'none'; const err = this.shadowRoot.querySelector(".ed-error"); if (err) { err.style.display = "none"; err.textContent = ""; }
   /* popups visible: continue */
   // Hide any tooltips while editing
   try { const tips = this.shadowRoot.querySelectorAll('.wk-tooltip'); tips.forEach(t => { try { if (t._hideTimer) clearTimeout(t._hideTimer); } catch {} t.style.display='none'; }); } catch {}
@@ -18493,13 +18535,13 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!blockId){
         // New block default around now
         const now = Number.isFinite(atMin) ? atMin : this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start+60, start+15, 1440);
-  this._editing = { entity: eid, blockId: null, profileName: (name || '__new__') };
+  this._editing = { entity: eid, blockId: null, profileName: (name || '__new__') }; this._setBlockModeEditor(eid);
         if (edTemp) { const base = Number(row.defaultTemp||this._config.default_temp||20); edTemp.value = String(this._toDisplayTemp(base)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); }
         if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(start); if (edTo) edTo.value=this._toTimeInput12h(end); if (fromMer){ fromMer.style.display=''; fromMer.value=(start>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(end>=720 && end<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(start); if (edTo) edTo.value=this._toTimeInput(end); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; }
         if (title) title.textContent = this._t('ui.add_block'); if (delBtn) delBtn.style.display='none'; if (err){ err.style.display='none'; err.textContent=''; }
       } else {
         const b = arr.find(x=>x.id===blockId); if (!b) return;
-  this._editing = { entity: eid, blockId, profileName: (name || '__new__') };
+  this._editing = { entity: eid, blockId, profileName: (name || '__new__') }; this._setBlockModeEditor(eid, b);
         if (edTemp) { edTemp.value = String(this._toDisplayTemp(b.temp)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); }
         if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(b.startMin); if (edTo) edTo.value=this._toTimeInput12h(b.endMin); if (fromMer){ fromMer.style.display=''; fromMer.value=(b.startMin>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(b.endMin>=720 && b.endMin<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(b.startMin); if (edTo) edTo.value=this._toTimeInput(b.endMin); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; }
         if (title) title.textContent = this._t('ui.edit_block'); if (delBtn) delBtn.style.display=''; if (err){ err.style.display='none'; err.textContent=''; }
@@ -18637,7 +18679,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const end = this._clamp(start+60, start+15, 1440);
       const row = this._schedules[this._weeklyEntity] || { defaultTemp: this._config.default_temp };
   const edTemp = this.shadowRoot.querySelector('.ed-temp'); const edFrom = this.shadowRoot.querySelector('.ed-from'); const edTo = this.shadowRoot.querySelector('.ed-to'); const overlay = this.shadowRoot.querySelector('.overlay'); const title = this.shadowRoot.querySelector('.modal h3'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); const err = this.shadowRoot.querySelector('.ed-error'); const fromMer = this.shadowRoot.querySelector('.ed-from-mer'); const toMer = this.shadowRoot.querySelector('.ed-to-mer');
-      this._editing = { entity: this._weeklyEntity, blockId: null, weeklyDay: day };
+      this._editing = { entity: this._weeklyEntity, blockId: null, weeklyDay: day }; this._setBlockModeEditor(this._weeklyEntity);
   // Hide any tooltips while editing
   try { const tips = this.shadowRoot.querySelectorAll('.wk-tooltip'); tips.forEach(t => { try { if (t._hideTimer) clearTimeout(t._hideTimer); } catch {} t.style.display='none'; }); } catch {}
   if (edTemp) { edTemp.value = String(this._toDisplayTemp(row.defaultTemp||20)); edTemp.max= String(this._maxDisplay()); }
@@ -18673,7 +18715,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
       if (!b) return;
   const edTemp = this.shadowRoot.querySelector('.ed-temp'); const edFrom = this.shadowRoot.querySelector('.ed-from'); const edTo = this.shadowRoot.querySelector('.ed-to'); const overlay = this.shadowRoot.querySelector('.overlay'); const title = this.shadowRoot.querySelector('.modal h3'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); const err = this.shadowRoot.querySelector('.ed-error'); const fromMer = this.shadowRoot.querySelector('.ed-from-mer'); const toMer = this.shadowRoot.querySelector('.ed-to-mer');
-      this._editing = { entity: this._weeklyEntity, blockId, weeklyDay: day };
+      this._editing = { entity: this._weeklyEntity, blockId, weeklyDay: day }; this._setBlockModeEditor(this._weeklyEntity, b);
   // Hide any tooltips while editing
   try { const tips = this.shadowRoot.querySelectorAll('.wk-tooltip'); tips.forEach(t => { try { if (t._hideTimer) clearTimeout(t._hideTimer); } catch {} t.style.display='none'; }); } catch {}
   if (edTemp) { edTemp.value = String(this._toDisplayTemp(b.temp)); edTemp.max= String(this._maxDisplay()); }
@@ -19010,8 +19052,8 @@ class ThermostatTimelineCard extends HTMLElement {
     const arr = (this._presenceDraft.rooms||{})[eid] || [];
     const row = this._schedules[eid] || { defaultTemp: this._config.default_temp, blocks: [] };
     const edTemp = this.shadowRoot.querySelector('.ed-temp'); const edFrom = this.shadowRoot.querySelector('.ed-from'); const edTo = this.shadowRoot.querySelector('.ed-to'); const overlay = this.shadowRoot.querySelector('.overlay'); const title = this.shadowRoot.querySelector('.modal h3'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); const err = this.shadowRoot.querySelector('.ed-error'); const fromMer = this.shadowRoot.querySelector('.ed-from-mer'); const toMer = this.shadowRoot.querySelector('.ed-to-mer');
-    if (!blockId){ const now = Number.isFinite(atMin) ? atMin : this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start+60, start+15, 1440); this._editing = { entity: eid, blockId: null, presence: true }; if (edTemp) { const base = Number(row.defaultTemp||this._config.default_temp||20); edTemp.value = String(this._toDisplayTemp(base)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); } if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(start); if (edTo) edTo.value=this._toTimeInput12h(end); if (fromMer){ fromMer.style.display=''; fromMer.value=(start>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(end>=720 && end<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(start); if (edTo) edTo.value=this._toTimeInput(end); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; } if (title) title.textContent = this._t('ui.add_block'); if (delBtn) delBtn.style.display='none'; if (err){ err.style.display='none'; err.textContent=''; } }
-    else { const b = arr.find(x=>x.id===blockId); if (!b) return; this._editing = { entity: eid, blockId, presence: true }; if (edTemp) { edTemp.value = String(this._toDisplayTemp(b.temp)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); } if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(b.startMin); if (edTo) edTo.value=this._toTimeInput12h(b.endMin); if (fromMer){ fromMer.style.display=''; fromMer.value=(b.startMin>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(b.endMin>=720 && b.endMin<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(b.startMin); if (edTo) edTo.value=this._toTimeInput(b.endMin); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; } if (title) title.textContent = this._t('ui.edit_block'); if (delBtn) delBtn.style.display=''; if (err){ err.style.display='none'; err.textContent=''; } }
+    if (!blockId){ const now = Number.isFinite(atMin) ? atMin : this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start+60, start+15, 1440); this._editing = { entity: eid, blockId: null, presence: true }; this._setBlockModeEditor(eid); if (edTemp) { const base = Number(row.defaultTemp||this._config.default_temp||20); edTemp.value = String(this._toDisplayTemp(base)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); } if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(start); if (edTo) edTo.value=this._toTimeInput12h(end); if (fromMer){ fromMer.style.display=''; fromMer.value=(start>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(end>=720 && end<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(start); if (edTo) edTo.value=this._toTimeInput(end); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; } if (title) title.textContent = this._t('ui.add_block'); if (delBtn) delBtn.style.display='none'; if (err){ err.style.display='none'; err.textContent=''; } }
+    else { const b = arr.find(x=>x.id===blockId); if (!b) return; this._editing = { entity: eid, blockId, presence: true }; this._setBlockModeEditor(eid, b); if (edTemp) { edTemp.value = String(this._toDisplayTemp(b.temp)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); } if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(b.startMin); if (edTo) edTo.value=this._toTimeInput12h(b.endMin); if (fromMer){ fromMer.style.display=''; fromMer.value=(b.startMin>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(b.endMin>=720 && b.endMin<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(b.startMin); if (edTo) edTo.value=this._toTimeInput(b.endMin); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; } if (title) title.textContent = this._t('ui.edit_block'); if (delBtn) delBtn.style.display=''; if (err){ err.style.display='none'; err.textContent=''; } }
     // Hide presence overlay while editing
     const pov = this.shadowRoot.querySelector('.overlay-presence'); if (pov) pov.classList.remove('open'); this._profilesOverlayHiddenForEditor = false; this._holidayOverlayHiddenForEditor = false; // independent
     try { const modalEl = this.shadowRoot.querySelector('.overlay .modal:not(.modal-week)'); if (modalEl) modalEl.classList.toggle('modal-12h', !!this._config?.time_12h); } catch {}
@@ -19045,12 +19087,12 @@ class ThermostatTimelineCard extends HTMLElement {
     const edTemp = this.shadowRoot.querySelector('.ed-temp'); const edFrom = this.shadowRoot.querySelector('.ed-from'); const edTo = this.shadowRoot.querySelector('.ed-to'); const overlay = this.shadowRoot.querySelector('.overlay'); const title = this.shadowRoot.querySelector('.modal h3'); const delBtn = this.shadowRoot.querySelector('.ed-delete'); const err = this.shadowRoot.querySelector('.ed-error'); const fromMer = this.shadowRoot.querySelector('.ed-from-mer'); const toMer = this.shadowRoot.querySelector('.ed-to-mer');
     if (!blockId){
       const now = Number.isFinite(atMin) ? atMin : this._getNowMin(); const start = this._clamp(Math.round(now), 0, 1380); const end = this._clamp(start+60, start+15, 1440);
-  this._editing = { entity: eid, blockId: null, holiday: true };
+  this._editing = { entity: eid, blockId: null, holiday: true }; this._setBlockModeEditor(eid);
       if (edTemp) { const base = Number(row.defaultTemp||this._config.default_temp||20); edTemp.value = String(this._toDisplayTemp(base)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); }
       if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(start); if (edTo) edTo.value=this._toTimeInput12h(end); if (fromMer){ fromMer.style.display=''; fromMer.value=(start>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(end>=720 && end<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(start); if (edTo) edTo.value=this._toTimeInput(end); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; }
       if (title) title.textContent = this._t('ui.add_block'); if (delBtn) delBtn.style.display='none'; if (err){ err.style.display='none'; err.textContent=''; }
     } else {
-  const b = arr.find(x=>x.id===blockId); if (!b) return; this._editing = { entity: eid, blockId, holiday: true };
+  const b = arr.find(x=>x.id===blockId); if (!b) return; this._editing = { entity: eid, blockId, holiday: true }; this._setBlockModeEditor(eid, b);
       if (edTemp) { edTemp.value = String(this._toDisplayTemp(b.temp)); edTemp.max = String(this._maxDisplay()); edTemp.min = String(this._minDisplay()); }
       if (this._config?.time_12h) { if (edFrom) edFrom.value=this._toTimeInput12h(b.startMin); if (edTo) edTo.value=this._toTimeInput12h(b.endMin); if (fromMer){ fromMer.style.display=''; fromMer.value=(b.startMin>=720)?'PM':'AM'; } if (toMer){ toMer.style.display=''; toMer.value=(b.endMin>=720 && b.endMin<1440)?'PM':'AM'; } } else { if (edFrom) edFrom.value=this._toTimeInput(b.startMin); if (edTo) edTo.value=this._toTimeInput(b.endMin); if (fromMer) fromMer.style.display='none'; if (toMer) toMer.style.display='none'; }
       if (title) title.textContent = this._t('ui.edit_block'); if (delBtn) delBtn.style.display=''; if (err){ err.style.display='none'; err.textContent=''; }
@@ -19226,6 +19268,12 @@ class ThermostatTimelineCard extends HTMLElement {
     const curRoom = this._profilesRoom || this._profilesEntity || entity; const draftArr = (this._profilesDraft?.rooms?.[curRoom]) || []; sourceBlocks = draftArr; b = blockId ? draftArr.find(x=>x.id===blockId) : null; } else if (weeklyDay && this._weeklyDraft) { sourceBlocks = (this._weeklyDraft.days?.[weeklyDay] || []); b = blockId ? sourceBlocks.find(x=>x.id===blockId) : null; if (!b && this._weeklyDraft?._weeklyModes) { for (const modeName in this._weeklyDraft._weeklyModes) { const modeBlocks = this._weeklyDraft._weeklyModes[modeName]?.days?.[weeklyDay]; if (Array.isArray(modeBlocks)) { b = modeBlocks.find(x=>x.id===blockId); if (b) { sourceBlocks = modeBlocks; break; } } } } } else if (holiday && this._holidayDraft?.rooms) { sourceBlocks = (this._holidayDraft.rooms?.[entity] || []); b = blockId ? sourceBlocks.find(x=>x.id===blockId) : null; } else { if (blockId) b = row.blocks.find(x => x.id === blockId); }
     const edTemp = this.shadowRoot.querySelector(".ed-temp"); const edFrom = this.shadowRoot.querySelector(".ed-from"); const edTo   = this.shadowRoot.querySelector(".ed-to");
     const fromMerSel = this.shadowRoot.querySelector('.ed-from-mer'); const toMerSel = this.shadowRoot.querySelector('.ed-to-mer');
+    const mode = this.shadowRoot.querySelector('.ed-mode').value;
+    const modeFields = mode ? { hvac_mode: mode } : {};
+    const updateMode = block => {
+      if (mode) block.hvac_mode = mode;
+      else delete block.hvac_mode;
+    };
     const rawFrom = String(edFrom.value || "");
     const rawTo = String(edTo.value || "");
     let start = this._fromTimeInput(rawFrom);
@@ -19342,11 +19390,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const ov1 = hasOverlap(arr, start, 1440, b?.id);
         const ov2 = hasOverlap(arr, 0, end, null);
         if (ov1 || ov2) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const overlap = ov1 || ov2; const msg = this._t('ui.overlap_msg').replace('{start}', this._label(ov1?Math.max(start, ov1.startMin):0)).replace('{end}', this._label(ov1?Math.min(1440, ov1.endMin):end)); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
+        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
       } else {
         const overlap = hasOverlap(arr, start, end, b?.id);
         if (overlap) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const msg = this._t('ui.overlap_msg').replace('{start}', this._label(Math.max(start, overlap.startMin))).replace('{end}', this._label(Math.min(end, overlap.endMin))); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
+        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
       }
   (this._profilesDraft.rooms||{})[curRoom] = arr.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       this._profilesDirty = true;
@@ -19395,21 +19443,21 @@ class ThermostatTimelineCard extends HTMLElement {
         if (!b) {
           const id1 = Math.random().toString(36).slice(2,9);
           const id2 = Math.random().toString(36).slice(2,9);
-          arrToday.push({ id:id1, startMin:start, endMin:1440, temp });
-          arrToday.push({ id:id2, startMin:0, endMin:end, temp });
+          arrToday.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp });
+          arrToday.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp });
         } else {
-          b.temp = temp; b.startMin = start; b.endMin = 1440;
+          updateMode(b); b.temp = temp; b.startMin = start; b.endMin = 1440;
           const id2 = Math.random().toString(36).slice(2,9);
-          arrToday.push({ id:id2, startMin:0, endMin:end, temp });
+          arrToday.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp });
         }
         this._weeklyDraft.days[dayKey] = arrToday.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       } else {
         if (!b) {
           const id = Math.random().toString(36).slice(2,9);
-          b = { id, startMin: start, endMin: end, temp };
+          b = { ...modeFields, id, startMin: start, endMin: end, temp };
           sourceBlocks.push(b);
         } else {
-          b.temp = temp; b.startMin = start; b.endMin = end;
+          updateMode(b); b.temp = temp; b.startMin = start; b.endMin = end;
         }
         sourceBlocks.sort((a,bx)=>a.startMin - bx.startMin || a.endMin - bx.endMin);
       }
@@ -19473,11 +19521,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const ov1 = hasOverlap(arr, start, 1440, b?.id);
         const ov2 = hasOverlap(arr, 0, end, null);
         if (ov1 || ov2) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const overlap = ov1 || ov2; const msg = this._t('ui.overlap_msg').replace('{start}', this._label(ov1?Math.max(start, ov1.startMin):0)).replace('{end}', this._label(ov1?Math.min(1440, ov1.endMin):end)); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id1, startMin:start, endMin:1440, temp }); arr.push({ id:id2, startMin:0, endMin:end, temp }); } else { b.temp=temp; b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id2, startMin:0, endMin:end, temp }); }
+        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); }
       } else {
         const overlap = hasOverlap(arr, start, end, b?.id);
         if (overlap) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const msg = this._t('ui.overlap_msg').replace('{start}', this._label(Math.max(start, overlap.startMin))).replace('{end}', this._label(Math.min(end, overlap.endMin))); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ id, startMin:start, endMin:end, temp }); } else { b.temp=temp; b.startMin=start; b.endMin=end; }
+        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=end; }
       }
       (this._presenceDraft.rooms||{})[eid] = arr.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       this._render(); this._closeEditor(); if (this._presenceOpen) this._renderPresenceModal();
@@ -19491,11 +19539,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const ov1 = hasOverlap(arr, start, 1440, b?.id);
         const ov2 = hasOverlap(arr, 0, end, null);
         if (ov1 || ov2) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const overlap = ov1 || ov2; const msg = this._t('ui.overlap_msg').replace('{start}', this._label(ov1?Math.max(start, ov1.startMin):0)).replace('{end}', this._label(ov1?Math.min(1440, ov1.endMin):end)); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
+        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
       } else {
         const overlap = hasOverlap(arr, start, end, b?.id);
         if (overlap) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const msg = this._t('ui.overlap_msg').replace('{start}', this._label(Math.max(start, overlap.startMin))).replace('{end}', this._label(Math.min(end, overlap.endMin))); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
+        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
       }
       (this._holidayDraft.rooms||{})[eid] = arr.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       this._render(); this._closeEditor(); this._renderHolidayModal();
@@ -19548,17 +19596,17 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!b) {
         const id1 = Math.random().toString(36).slice(2,9);
         const id2 = Math.random().toString(36).slice(2,9);
-        row.blocks.push({ id:id1, startMin:start, endMin:1440, temp });
-        row.blocks.push({ id:id2, startMin:0, endMin:end, temp });
+        row.blocks.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp });
+        row.blocks.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp });
       } else {
         // Update current b to first part and add second
-        b.temp = temp; b.startMin = start; b.endMin = 1440;
+        updateMode(b); b.temp = temp; b.startMin = start; b.endMin = 1440;
         const id2 = Math.random().toString(36).slice(2,9);
-        row.blocks.push({ id:id2, startMin:0, endMin:end, temp });
+        row.blocks.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp });
       }
       row.blocks.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
     } else {
-      if (!b) { const id = Math.random().toString(36).slice(2,9); b = { id, startMin: start, endMin: end, temp }; row.blocks.push(b); } else { b.temp = temp; b.startMin = start; b.endMin = end; }
+      if (!b) { const id = Math.random().toString(36).slice(2,9); b = { ...modeFields, id, startMin: start, endMin: end, temp }; row.blocks.push(b); } else { updateMode(b); b.temp = temp; b.startMin = start; b.endMin = end; }
       this._applyNoOverlapResize(entity, b, "left", b.startMin); this._applyNoOverlapResize(entity, b, "right", b.endMin);
     }
   // Persist local draft immediately for resilience

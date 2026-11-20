@@ -84,6 +84,38 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.settings["away_room_targets_c"].clear()
         self.assertEqual(target(self.a), 17)
 
+    async def test_mode_only_boundary_and_temperature_only_with_turn_on_enabled(self):
+        del self.mgr._desired_for
+        self.mgr._now_min = lambda: 420
+        self.settings.update(block_mode_rooms={self.a: True}, turn_on={self.a: {"enabled": True}})
+        block = self.schedules[self.a]["blocks"][0]
+        block["hvac_mode"] = "off"
+        state = self.states[self.a]
+        state.attributes.update(temperature=19, preset_modes=["manual"], preset_mode="boost")
+        await self.mgr._maybe_apply_now(only_targets={self.a})
+        self.assertEqual(self.calls, [("climate", "set_hvac_mode", {"entity_id": self.a, "hvac_mode": "off"})])
+        self.calls.clear()
+        state.state = "off"
+        block["hvac_mode"] = "temperature_only"
+        block["temp"] = 22
+        await self.mgr._maybe_apply_now(only_targets={self.a})
+        self.assertEqual(self.calls, [("climate", "set_temperature", {"entity_id": self.a, "temperature": 22})])
+        self.calls.clear()
+        block["hvac_mode"] = "heat"
+        await self.mgr._maybe_apply_now(only_targets={self.a})
+        self.assertEqual([c[1] for c in self.calls], ["set_hvac_mode", "set_temperature"])
+        self.calls.clear()
+        self.settings["room_pause"] = {self.a: {"indef": True}}
+        block["hvac_mode"] = "off"
+        await self.mgr._maybe_apply_now(only_targets={self.a})
+        self.assertEqual(self.calls, [])
+        self.settings["room_pause"] = {}
+        self.settings["merges"] = {self.a: ["climate.extra"]}
+        self.assertEqual(self.mgr._block_mode("climate.extra", self.schedules, self.settings, 420), "off")
+        self.assertIsNone(self.mgr._block_mode(self.a, self.schedules, self.settings, 600))
+        self.settings["block_mode_rooms"] = {}
+        self.assertIsNone(self.mgr._block_mode(self.a, self.schedules, self.settings, 420))
+
     async def test_effective_pause_notifications_and_independent_holds(self):
         guest = "input_boolean.guests"
         rule = {"paused": True, "resumed": True}
