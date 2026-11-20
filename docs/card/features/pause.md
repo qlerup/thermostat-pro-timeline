@@ -63,3 +63,13 @@ Choose **Thermostat Timeline: Pause schedule** in an automation and select the p
 [![Pause and resume from an automation in Home Assistant](../../images/automation-pause-result.png)](../../images/automation-pause.gif)
 
 [Play walkthrough](../../images/automation-pause.gif) | [Full-size GIF](../../images/automation-pause.gif)
+
+## Pause the timeline with an alarm
+
+Open **Settings > Pause** and enable **Pause when the alarm matches**. Choose your `alarm_control_panel` entity. Select each state that should suspend the timeline, for example **armed away** and **armed vacation**, then save. To turn the rule off, clear its switch and save.
+
+Arm the panel in one of the selected states. Scheduled temperature updates stop. Disarm it, or switch to an unselected state, to resume the current schedule. A manually paused room, a global pause or an active binary pause sensor still holds its own pause. If the configured alarm is unavailable, the timeline waits for a known state. An empty selection has no effect.
+
+[![Pause the timeline with an alarm in Home Assistant](../../images/alarm-pause-result.png)](../../images/alarm-pause.gif)
+
+[Play walkthrough](../../images/alarm-pause.gif) | [Full-size GIF](../../images/alarm-pause.gif)

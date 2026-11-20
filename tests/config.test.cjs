@@ -159,3 +159,41 @@ test('opening a card with empty shared storage still schedules initial setup', a
   const {actions} = await openSharedCard({version: 0, schedules: {}, settings: {}});
   assert.deepEqual(actions, ['save']);
 });
+
+test('alarm states pause independently of binary and manual pause', () => {
+  const c = card();
+  const entity = 'alarm_control_panel.house';
+  c._config.alarm_pause = { enabled: true, entity, states: ['armed_away', 'armed_vacation'] };
+  c._hass = { states: { [entity]: { state: 'armed_home' } } };
+  assert.equal(c._isPaused(), false);
+  for (const state of ['armed_away', 'armed_vacation', 'unavailable']) {
+    c._hass.states[entity].state = state;
+    assert.equal(c._isPaused(), true);
+  }
+  c._pauseIndef = true;
+  c._hass.states[entity].state = 'disarmed';
+  assert.equal(c._isPaused(), true);
+  c._pauseIndef = false;
+  assert.equal(c._isPaused(), false);
+});
+
+test('automatic season reload preserves both schedules and the last known plan', () => {
+  const c = card();
+  const entity = 'sensor.season';
+  const eid = 'climate.room';
+  const winter = [{ startMin: 0, endMin: 1440, temp: 21 }];
+  const summer = [{ startMin: 0, endMin: 1440, temp: 17 }];
+  Object.assign(c._config, { seasonal_enabled: true, seasonal_mode: 'winter',
+    season_follow: { enabled: true, entity, spring: 'summer', autumn: 'winter' } });
+  c._hass = { states: { [entity]: { state: 'spring' } } };
+  const row = c._schedules[eid] = { blocks: winter, seasons: { winter: {blocks: winter}, summer: {blocks: summer} } };
+  c._syncSeasonalRowsToBucket();
+  c._applySeasonalModeToRows();
+  assert.equal(row.blocks[0].temp, 17);
+  c._hass.states[entity].state = 'unavailable';
+  assert.equal(c._seasonKey(), 'summer');
+  c._hass.states[entity].state = 'autumn';
+  c._applySeasonalModeToRows();
+  assert.equal(row.blocks[0].temp, 21);
+  assert.equal(row.seasons.summer.blocks[0].temp, 17);
+});

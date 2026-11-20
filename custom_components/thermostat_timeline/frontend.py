@@ -105,13 +105,10 @@ async def _ensure_lovelace_resource_retry(hass: HomeAssistant, attempts_left: in
 
     resources = _get_lovelace_resources(hass)
     if resources is None:
-        async_call_later(
-            hass,
-            5,
-            lambda _now: hass.async_create_task(
-                _ensure_lovelace_resource_retry(hass, attempts_left - 1)
-            ),
-        )
+        async def retry(_now):
+            await _ensure_lovelace_resource_retry(hass, attempts_left - 1)
+
+        async_call_later(hass, 5, retry)
         return
 
     await _ensure_lovelace_resource(hass)

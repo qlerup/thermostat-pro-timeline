@@ -29,3 +29,15 @@ Select Summer and save a short morning block. Here Summer calls for 19 degrees f
 [![Office using a short summer block](../../images/summer-plan-result.png)](../../images/season.gif)
 
 [Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)
+
+## Follow a season sensor
+
+Open **Settings** and enable **summer/winter schedules**. Turn on **Follow a season sensor** and select the Home Assistant sensor that reports `spring`, `summer`, `autumn` and `winter`. Choose a schedule for spring and autumn independently and save.
+
+Summer selects your summer plan and winter selects your winter plan. For example, mapping spring to Summer lets the office switch from its winter target of 21 °C to its summer target of 17 °C when spring begins. The season button shows the active plan. With shared storage and automatic temperature control enabled, the integration applies the change even with the dashboard closed.
+
+An unavailable sensor keeps the last known plan. Until the first valid reading, the manual season is used. Disable **Follow a season sensor** and save to use the manual selector again.
+
+[![Follow a season sensor in Home Assistant](../../images/season-sensor-result.png)](../../images/season-sensor.gif)
+
+[Play walkthrough](../../images/season-sensor.gif) | [Full-size GIF](../../images/season-sensor.gif)

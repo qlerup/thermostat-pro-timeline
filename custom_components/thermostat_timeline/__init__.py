@@ -1387,6 +1387,8 @@ class AutoApplyManager:
         self._unsub_boiler = None
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
+        self._unsub_season = None
+        self._season_sensor = None
         self._unsub_targets = None
         self._watched_targets = ()
         self._last_pause_sensor_on: bool | None = None
@@ -1426,6 +1428,7 @@ class AutoApplyManager:
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        await self._watch_season()
         self._reset_target_recovery_watch()
 
     async def _on_store_changed(self):
@@ -1439,10 +1442,13 @@ class AutoApplyManager:
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        await self._watch_season()
         self._reset_target_recovery_watch()
 
     def _pause_sensor_on(self, settings: dict) -> bool:
-        """Return True when pause is requested via binary sensor."""
+        """Combine the independent binary-sensor and alarm pause rules."""
+        if self._alarm_paused(self.hass, settings):
+            return True
         try:
             if not bool(settings.get("pause_sensor_enabled")):
                 return False
@@ -1454,6 +1460,54 @@ class AutoApplyManager:
             return s == "on"
         except Exception:
             return False
+
+    @staticmethod
+    def _alarm_paused(hass, settings):
+        rule = settings.get("alarm_pause") or {}
+        entity = rule.get("entity", "")
+        states = rule.get("states") or []
+        if not rule.get("enabled") or not entity.startswith("alarm_control_panel.") or not states:
+            return False
+        alarm = hass.states.get(entity)
+        return not alarm or alarm.state in ("unknown", "unavailable") or alarm.state in states
+
+    def _observed_season(self, settings):
+        rule = settings.get("season_follow") or {}
+        if not settings.get("seasonal_enabled") or not rule.get("enabled"):
+            return None
+        state = self.hass.states.get(rule.get("entity") or "")
+        value = state.state if state else None
+        if value in ("summer", "winter"):
+            return value
+        if value in ("spring", "autumn"):
+            return "summer" if rule.get(value) == "summer" else "winter"
+        return None
+
+    async def _watch_season(self):
+        _, settings = self._get_data()
+        rule = settings.get("season_follow") or {}
+        entity = rule.get("entity") if settings.get("seasonal_enabled") and rule.get("enabled") else None
+        if not self._is_active_instance():
+            entity = None
+        if entity != self._season_sensor:
+            if self._unsub_season:
+                self._unsub_season()
+                self._unsub_season = None
+            self._season_sensor = entity
+            if entity:
+                @callback
+                def season_changed(event):
+                    self.hass.async_create_task(self._watch_season())
+                self._unsub_season = async_track_state_change_event(self.hass, [entity], season_changed)
+        season = self._observed_season(settings) if entity else None
+        if season and season != settings.get("sensor_season_last"):
+            await self.hass.services.async_call(DOMAIN, "set_store", {
+                "instance_id": self._instance_id, "activate": False,
+                "settings": {"sensor_season_last": season},
+            }, blocking=True)
+            await self._maybe_apply_now(force=True)
+            await self._maybe_control_boiler(force=True)
+            await self._schedule_next()
 
     def _get_data(self):
         d = self.hass.data.get(DOMAIN, {})
@@ -1485,7 +1539,13 @@ class AutoApplyManager:
         except Exception:
             return None
 
+    def _is_active_instance(self) -> bool:
+        active = getattr(self.hass, "data", {}).get(DOMAIN, {}).get("active_instance_id")
+        return not active or _norm_instance_id(active) == self._instance_id
+
     def _auto_apply_enabled(self) -> bool:
+        if not self._is_active_instance():
+            return False
         _s, settings = self._get_data()
         if not bool(settings.get("auto_apply_enabled")):
             return False
@@ -1544,6 +1604,11 @@ class AutoApplyManager:
 
     def _season_key(self, settings: dict) -> str:
         try:
+            rule = settings.get("season_follow") or {}
+            if rule.get("enabled") and rule.get("entity"):
+                observed = self._observed_season(settings) or settings.get("sensor_season_last")
+                if observed in ("summer", "winter"):
+                    return observed
             return "summer" if str(settings.get("seasonal_mode") or "winter").lower().strip() == "summer" else "winter"
         except Exception:
             return "winter"
@@ -2603,11 +2668,14 @@ class AutoApplyManager:
             self._unsub_pause_sensor = None
         _schedules, settings = self._get_data()
         try:
-            if not bool(settings.get("pause_sensor_enabled")):
-                self._last_pause_sensor_on = None
-                return
-            eid = str(settings.get("pause_sensor_entity") or "").strip()
-            if not eid or not eid.startswith("binary_sensor."):
+            entities = []
+            eid = settings.get("pause_sensor_entity") or ""
+            if settings.get("pause_sensor_enabled") and eid.startswith("binary_sensor."):
+                entities.append(eid)
+            rule = settings.get("alarm_pause") or {}
+            if rule.get("enabled") and (rule.get("entity") or "").startswith("alarm_control_panel."):
+                entities.append(rule["entity"])
+            if not entities:
                 self._last_pause_sensor_on = None
                 return
 
@@ -2617,9 +2685,7 @@ class AutoApplyManager:
             @callback
             def _ch(event):
                 try:
-                    ns = event.data.get("new_state")
-                    s = str(ns.state if ns else "").lower().strip()
-                    now_on = s == "on"
+                    now_on = self._pause_sensor_on(settings)
                 except Exception:
                     return
                 if self._last_pause_sensor_on is not None and now_on == self._last_pause_sensor_on:
@@ -2638,7 +2704,7 @@ class AutoApplyManager:
 
                 self.hass.async_create_task(_handle())
 
-            self._unsub_pause_sensor = async_track_state_change_event(self.hass, [eid], _ch)
+            self._unsub_pause_sensor = async_track_state_change_event(self.hass, entities, _ch)
         except Exception:
             self._unsub_pause_sensor = None
             self._last_pause_sensor_on = None
@@ -3487,6 +3553,8 @@ class OpenWindowManager:
             # Only run when background control is active
             if not bool(settings.get("auto_apply_enabled")):
                 return False
+            if AutoApplyManager._alarm_paused(self.hass, settings):
+                return False
             # Respect pause via binary sensor
             try:
                 if bool(settings.get("pause_sensor_enabled")):
@@ -3827,6 +3895,8 @@ class PresenceSensorManager:
             if not bool(settings.get("presence_sensor_enabled")):
                 return False
             if not bool(settings.get("auto_apply_enabled")):
+                return False
+            if AutoApplyManager._alarm_paused(self.hass, settings):
                 return False
             # Respect pause via sensor and pause gates
             try:

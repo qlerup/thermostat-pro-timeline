@@ -156,6 +156,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/automation-pause.gif) | [Full-size GIF](../../images/automation-pause.gif)
 
+-   **[Pause the timeline with an alarm](pause.md#pause-the-timeline-with-an-alarm)**
+
+    Select an alarm and the states that should pause the schedule.
+
+    [![Pause the timeline with an alarm in Home Assistant](../../images/alarm-pause-result.png)](../../images/alarm-pause.gif)
+
+    [Play walkthrough](../../images/alarm-pause.gif) | [Full-size GIF](../../images/alarm-pause.gif)
+
 </div>
 
 ## Weekdays, profiles and holidays
@@ -209,6 +217,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
     [![Holiday date ranges](../../images/holiday-range-result.png)](../../images/holiday-range.gif)
 
     [Play walkthrough](../../images/holiday-range.gif) | [Full-size GIF](../../images/holiday-range.gif)
+
+-   **[Follow a season sensor](seasonal.md#follow-a-season-sensor)**
+
+    Choose which schedule to use in spring and autumn.
+
+    [![Follow a season sensor in Home Assistant](../../images/season-sensor-result.png)](../../images/season-sensor.gif)
+
+    [Play walkthrough](../../images/season-sensor.gif) | [Full-size GIF](../../images/season-sensor.gif)
 
 </div>
 
