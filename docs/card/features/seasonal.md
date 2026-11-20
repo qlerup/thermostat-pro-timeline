@@ -30,11 +30,28 @@ Select Summer and save a short morning block. Here Summer calls for 19 degrees f
 
 [Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)
 
+## Confirm a manual season change
+
+The card shows **Winter** and **Summer** side by side. A checkmark marks the active plan. By default, choosing the other season switches immediately.
+
+1. Open the card settings and enable **summer/winter schedules**.
+2. On the same tab, turn on **Confirm manual season changes** and save.
+3. On the card, select the other season. If seasonal sources are configured with shared storage, the dialog lists the source modes and any target temperature for the new season.
+4. Choose **Switch season** to apply the plan. Choose **Cancel** or press **Escape** to keep the current season and equipment settings.
+
+[![Review the boiler and heat pump modes before switching](../../images/season-confirm-dialog.png)](../../images/season-confirm.gif)
+
+[Play walkthrough](../../images/season-confirm.gif) | [Full-size GIF](../../images/season-confirm.gif)
+
+The example starts with the boiler heating in Winter. The first switch is cancelled. The second is confirmed, and Summer takes over with the heat pump cooling at 18 °C. Automatic season changes from a sensor continue without a prompt.
+
+[![Summer selected after confirming the source change](../../images/season-confirm-result.png)](../../images/season-confirm.gif)
+
 ## Follow a season sensor
 
 Open **Settings** and enable **summer/winter schedules**. Turn on **Follow a season sensor** and select the Home Assistant sensor that reports `spring`, `summer`, `autumn` and `winter`. Choose a schedule for spring and autumn independently and save.
 
-Summer selects your summer plan and winter selects your winter plan. For example, mapping spring to Summer lets the office switch from its winter target of 21 °C to its summer target of 17 °C when spring begins. The season button shows the active plan. With shared storage and automatic temperature control enabled, the integration applies the change even with the dashboard closed.
+Summer selects your summer plan and winter selects your winter plan. For example, mapping spring to Summer lets the office switch from its winter target of 21 °C to its summer target of 17 °C when spring begins. The selector marks the active plan with a checkmark. Its two buttons are disabled while the sensor controls the season. With shared storage and automatic temperature control enabled, the integration applies the change even with the dashboard closed.
 
 An unavailable sensor keeps the last known plan. Until the first valid reading, the manual season is used. Disable **Follow a season sensor** and save to use the manual selector again.
 
@@ -62,7 +79,7 @@ Use this option when the winter plan needs a boiler and the summer plan needs a 
 2. Under the seasonal settings, enable **Control the source when the season changes**.
 3. For **Summer** and **Winter**, choose a dedicated climate entity and one of its supported modes. Choose **off** for a season when neither source should run. A reversible unit can be selected for both seasons. Thermostats already assigned to rooms or merged with a room are reserved for room control.
 4. Optionally enter a source target for either season. Leave the field empty to keep the device's existing target. The field appears for devices that support setting a single target temperature.
-5. Save. The active season takes effect immediately. Use the season button on the card to switch, or enable **Follow a season sensor** to switch automatically.
+5. Save. The active season takes effect immediately. Select **Winter** or **Summer** on the card to switch, or enable **Follow a season sensor** to switch automatically.
 
 [![Seasonal settings with a heat pump for summer and a boiler for winter](../../images/seasonal-sources-setup.png)](../../images/seasonal-sources.gif)
 

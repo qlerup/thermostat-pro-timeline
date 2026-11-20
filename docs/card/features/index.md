@@ -242,6 +242,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/holiday-range.gif) | [Full-size GIF](../../images/holiday-range.gif)
 
+-   **[Confirm a manual season change](seasonal.md#confirm-a-manual-season-change)**
+
+    Review the seasonal sources, keep the current plan or confirm the switch.
+
+    [![Review a switch from Winter to Summer](../../images/season-confirm-dialog.png)](../../images/season-confirm.gif)
+
+    [Play walkthrough](../../images/season-confirm.gif) | [Full-size GIF](../../images/season-confirm.gif)
+
 -   **[Follow a season sensor](seasonal.md#follow-a-season-sensor)**
 
     Choose which schedule to use in spring and autumn.
