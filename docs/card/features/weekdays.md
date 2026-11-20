@@ -4,6 +4,14 @@ Open the settings gear and choose the Weekdays tab. Start with weekday/weekend g
 
 Select the day or group before editing a block. Switch the view to compare one room across days, or several rooms on the same day.
 
+## Choose a weekday grouping
+
+Open **Settings > Weekdays** and enable weekday schedules. If **Copy main schedule** opens, choose which day group should receive a copy, or select **Don?t copy** to start separately. Group Monday through Friday together for a regular workweek, or choose individual days for different routines.
+
+[![Choose a weekday grouping in Home Assistant](../../images/weekdays-view.png)](../../images/weekdays.gif)
+
+[Play walkthrough](../../images/weekdays.gif) | [Full-size GIF](../../images/weekdays.gif)
+
 ## Settings
 
 - weekdays_enabled: true/false to enable weekday schedules.

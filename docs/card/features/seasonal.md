@@ -11,3 +11,11 @@
 The season selects which timetable applies. To suspend schedule updates for a single room, use its [room pause](pause.md). Selecting Summer alone does not send an HVAC off command.
 
 The stored settings are `seasonal_enabled` and `seasonal_mode` (`summer` or `winter`).
+
+## Enable summer and winter schedules
+
+Open the settings gear and stay on the first tab. Enable **summer/winter schedules** and save when you are ready to use separate timetables.
+
+[![Enable summer and winter schedules in Home Assistant](../../images/season-view.png)](../../images/season.gif)
+
+[Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)

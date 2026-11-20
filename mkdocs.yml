@@ -26,6 +26,8 @@ markdown_extensions:
 nav:
   - Home: index.md
 
+  - Walkthroughs: walkthroughs.md
+
   - Getting started:
       - Installation: getting-started/installation.md
       - Quick start: getting-started/quick-start.md
@@ -54,3 +56,8 @@ nav:
       - Troubleshooting: troubleshooting.md
       - Support: support.md
       - License: license.md
+
+extra_css:
+  - styles/guide.css
+extra_javascript:
+  - scripts/walkthroughs.js

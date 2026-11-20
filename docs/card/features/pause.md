@@ -11,3 +11,19 @@
 **Adjust a thermostat manually.** With background auto-apply enabled, a detected manual change to a climate target creates a timed room pause. For example, a change from 21 to 22.5 degrees during a block lasts until the room’s next effective block start or end, or until midnight. Returning to the scheduled target cancels the generated hold. An explicit room pause takes precedence.
 
 **After a restart.** Timeline saves the hold. The thermostat integration restores its own temperature. Opening an existing shared dashboard in v3.3.3 reads the shared schedule without saving the browser’s copy over it.
+
+## Pause one room for an hour
+
+Choose the pause circle on the **Office row**, then **one hour**. A countdown beside the room confirms which schedule is paused.
+
+[![Pause one room for an hour in Home Assistant](../../images/room-pause-view.png)](../../images/room-pause.gif)
+
+[Play walkthrough](../../images/room-pause.gif) | [Full-size GIF](../../images/room-pause.gif)
+
+## Resume a paused room
+
+Open the same room menu and choose the resume action. The room countdown disappears. Check the global pause button if the schedule still appears suspended.
+
+[![Resume a paused room in Home Assistant](../../images/room-resume-view.png)](../../images/room-resume.gif)
+
+[Play walkthrough](../../images/room-resume.gif) | [Full-size GIF](../../images/room-resume.gif)

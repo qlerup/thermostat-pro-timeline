@@ -14,3 +14,11 @@
 		- switch: switch.boiler_1 (or input_boolean.boiler_1)
 		- switch_domain: switch | input_boolean (optional if entity id includes domain)
 		- on_offset / off_offset: optional per‑room offsets (°C)
+
+## Find the boiler relay settings
+
+Open **Settings > Boiler control** and enable the controls. Select the relay and participating rooms before saving. The example stops at the setup screen in a simulated installation.
+
+[![Find the boiler relay settings in Home Assistant](../../images/boiler-view.png)](../../images/boiler.gif)
+
+[Play walkthrough](../../images/boiler.gif) | [Full-size GIF](../../images/boiler.gif)

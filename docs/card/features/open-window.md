@@ -4,6 +4,14 @@ In the settings gear, open **Open Window Detection**. Enable it, choose a room, 
 
 To verify the mapping, open the assigned sensor for longer than the opening delay, then close all assigned sensors and wait for the closing delay. Use a simulated room first if the thermostat also has its own window detection.
 
+## Set up window detection
+
+Open **Settings > Open Window Detection** and enable the feature. Assign the contact sensor to its room and set separate opening and closing delays before saving.
+
+[![Set up window detection in Home Assistant](../../images/window-view.png)](../../images/window.gif)
+
+[Play walkthrough](../../images/window.gif) | [Full-size GIF](../../images/window.gif)
+
 ## Settings
 
 - open_window:

@@ -21,3 +21,11 @@ Save the card. Check that the room name and measured temperature appear. The sma
 Use a test room for the first run. Add a short block that starts a few minutes ahead and choose a target different from the room default. Double-click or double-tap an existing block to edit its time and temperature. With shared storage and auto-apply active, close the dashboard and check the thermostat's **target temperature** at the boundary. The measured air temperature can take much longer to change.
 
 [Explore card settings](../card/configuration.md) · [Pause a room](../card/features/pause.md)
+
+## Edit a scheduled block
+
+The example opens the 06:00 to 09:00 Office block. Set the start time, end time and target in the same dialog. Select **Save** to apply an edit or **Cancel** to leave the block as it was.
+
+[![Edit a scheduled block in Home Assistant](../images/edit-block-view.png)](../images/edit-block.gif)
+
+[Play walkthrough](../images/edit-block.gif) | [Full-size GIF](../images/edit-block.gif)

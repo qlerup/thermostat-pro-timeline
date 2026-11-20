@@ -4,6 +4,10 @@ Build a daily heating schedule for each room. With shared storage and auto-apply
 
 ![Office timeline showing the current temperature, room pause and settings controls](images/office-dashboard.png)
 
+## Find a guide
+
+[Browse the visual walkthroughs](walkthroughs.md) for step-by-step demonstrations in the desktop dashboard.
+
 | I want to… | Guide |
 | --- | --- |
 | Install the integration and bundled card | [Installation](getting-started/installation.md) |

@@ -1,7 +1,7 @@
 # ❄️ Thermostat Pro Timeline — Integration + Card
 [![hacs\_badge](https://img.shields.io/badge/HACS-Default-blue.svg)](https://hacs.xyz) [![Downloads](https://img.shields.io/github/downloads/qlerup/thermostat-pro-timeline/total)](https://github.com/qlerup/thermostat-pro-timeline/releases)
 
-**[User guide](docs/index.md)** | [Install](docs/getting-started/installation.md) | [Add your first room](docs/getting-started/quick-start.md) | [Pause a room](docs/card/features/pause.md)
+**[User guide](docs/index.md)** | [Visual walkthroughs](docs/walkthroughs.md) | [Install](docs/getting-started/installation.md) | [Add your first room](docs/getting-started/quick-start.md) | [Pause a room](docs/card/features/pause.md)
 
 ## Support this project
 
