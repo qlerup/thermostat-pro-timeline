@@ -4,11 +4,11 @@ from __future__ import annotations
 import logging
 import math
 from datetime import timedelta
-from time import monotonic
+from time import monotonic, time
 
 from homeassistant.core import callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
+from homeassistant.helpers.event import async_call_later, async_track_state_change_event, async_track_time_interval
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, SIGNAL_UPDATED
@@ -30,6 +30,7 @@ class SeasonalSources:
         self.dirty = False
         self.retries = {}
         self.stop_report = {}
+        self.cancel_deadline = None
 
     async def start(self):
         self.owner = await self.store.async_load() or {}
@@ -38,7 +39,13 @@ class SeasonalSources:
         self.entry.async_on_unload(self.close)
         self.wake()
 
+    def clear_deadline(self):
+        if self.cancel_deadline:
+            self.cancel_deadline()
+            self.cancel_deadline = None
+
     def close(self):
+        self.clear_deadline()
         if self.unsubscribe:
             self.unsubscribe()
         if self.task:
@@ -90,10 +97,15 @@ class SeasonalSources:
         room_targets = manager._all_targets(schedules, settings.get("merges") or {}) | set(settings.get("entities") or [])
         if room_targets.intersection((entity, peer)):
             return None
-        return instance, season, entity, peer, mode, active.get("target_c")
+        delay = rule.get("off_delay_minutes", 3) if rule.get("off_delay_enabled") else 0
+        if rule.get("off_delay_enabled") and (type(delay) is not int or delay < 1):
+            return None
+        return instance, season, entity, peer, mode, active.get("target_c"), delay
 
-    async def remember(self, entity, starting, mode=None):
+    async def remember(self, entity, starting, mode=None, confirmed_at=None):
         record = {"entity": entity, "starting": starting}
+        if confirmed_at is not None:
+            record["confirmed_at"] = confirmed_at
         if starting:
             record["mode"] = mode
         if self.owner != record:
@@ -118,19 +130,43 @@ class SeasonalSources:
         if not state or state.state in ("unavailable", "unknown"):
             return False
         uncertain = self.owner.get("starting") and self.owner.get("entity") == entity
-        if state.state == "off":
-            if not uncertain or (entity in self.stop_report and self.stop_report[entity] != state.last_reported):
-                self.stop_report.pop(entity, None)
-                return True
-        if "off" in (state.attributes.get("hvac_modes") or []):
+        if state.state != "off" or (uncertain and
+                self.stop_report.get(entity, state.last_reported) == state.last_reported):
+            if "off" not in (state.attributes.get("hvac_modes") or []):
+                return False
             self.stop_report.setdefault(entity, state.last_reported)
             await self.command(entity, "set_hvac_mode", hvac_mode="off")
-            observed = self.state(entity)
-            return bool(observed and observed.state == "off" and
-                        (not uncertain or observed.last_reported != self.stop_report[entity]))
+            state = self.state(entity)
+            if not state or state.state != "off" or (uncertain and
+                    self.stop_report[entity] == state.last_reported):
+                return False
+        if uncertain:
+            # The entity may have displayed Off throughout an unacknowledged start.
+            await self.remember(entity, False, confirmed_at=state.last_reported.timestamp())
+        self.stop_report.pop(entity, None)
+        return True
+
+    def delay_elapsed(self, entities, minutes):
+        if not minutes:
+            return True
+        since = 0
+        for entity in entities:
+            state = self.state(entity)
+            if not state or state.state != "off":
+                return False
+            since = max(since, state.last_changed.timestamp())
+            if self.owner.get("entity") == entity:
+                since = max(since, self.owner.get("confirmed_at", 0))
+        remaining = since + minutes * 60 - time()
+        if remaining <= 0:
+            return True
+        # Long waits already have the regular 30-second reconciliation tick.
+        if remaining <= 30:
+            self.cancel_deadline = async_call_later(self.hass, remaining, self.wake)
         return False
 
     async def reconcile(self):
+        self.clear_deadline()
         plan = self.plan()
         if not plan:
             self.watch(())
@@ -138,7 +174,7 @@ class SeasonalSources:
             return
         if self.applied != plan:
             self.applied = None
-        _, _, entity, peer, mode, target_c = plan
+        _, _, entity, peer, mode, target_c, delay = plan
         previous = self.owner.get("entity")
         self.watch([entity, peer, previous])
         state = self.state(entity)
@@ -176,6 +212,10 @@ class SeasonalSources:
         if pending_other_mode or current.state not in ("off", mode):
             if not await self.confirmed_off(entity):
                 return
+        stopped = others | ({entity} if previous == entity or peer == entity else set())
+        current = self.state(entity)
+        if not current or (current.state == "off" and not self.delay_elapsed(stopped, delay)):
+            return
         await self.remember(entity, True, mode)
         if self.plan() != plan or any(not self.state(e) or self.state(e).state != "off" for e in others):
             return
@@ -183,6 +223,8 @@ class SeasonalSources:
         if not current or current.state not in ("off", mode):
             return
         if current.state != mode:
+            if not self.delay_elapsed(stopped, delay):
+                return
             await self.command(entity, "set_hvac_mode", hvac_mode=mode)
         if self.plan() != plan or not self.state(entity) or self.state(entity).state != mode:
             return

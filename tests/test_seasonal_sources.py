@@ -2,18 +2,19 @@
 import ast
 import math
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from time import monotonic
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 
-def load_controller():
+def load_controller(clock, schedule):
     path = Path(__file__).resolve().parents[1] / "custom_components/thermostat_timeline/seasonal_sources.py"
     tree = ast.parse(path.read_text())
     tree.body = [node for node in tree.body if isinstance(node, ast.ClassDef)]
     namespace = {"callback": lambda method: method, "Store": Mock, "DOMAIN": "timeline",
-                 "math": math, "monotonic": monotonic}
+                 "math": math, "time": clock, "async_call_later": schedule, "monotonic": monotonic}
     exec(compile(tree, str(path), "exec"), namespace)
     return namespace["SeasonalSources"]
 
@@ -33,7 +34,9 @@ class SeasonalHandoverTest(unittest.IsolatedAsyncioTestCase):
         hass = SimpleNamespace(data={"timeline": {}}, states=self.states,
                                config=SimpleNamespace(units=SimpleNamespace(temperature_unit="C")),
                                services=SimpleNamespace(async_call=self.command))
-        self.controller = load_controller()(hass, None, {"default": manager})
+        self.now = 1000
+        self.schedule = Mock()
+        self.controller = load_controller(lambda: self.now, self.schedule)(hass, None, {"default": manager})
         self.controller.watch = Mock()
         self.controller.store = SimpleNamespace(async_save=AsyncMock())
         self.report(self.old, "heat")
@@ -43,7 +46,8 @@ class SeasonalHandoverTest(unittest.IsolatedAsyncioTestCase):
         self.calls.append((fields["entity_id"], fields.get("hvac_mode", fields.get("temperature"))))
 
     def report(self, entity, mode, temperature=17):
-        self.states[entity] = SimpleNamespace(state=mode, last_reported=object(), attributes={
+        stamp = datetime.fromtimestamp(self.now, timezone.utc)
+        self.states[entity] = SimpleNamespace(state=mode, last_reported=stamp, last_changed=stamp, attributes={
             "hvac_modes": ["heat", "cool", "off"], "supported_features": 1, "temperature": temperature,
             "min_temp": 5, "max_temp": 90})
 
@@ -73,6 +77,7 @@ class SeasonalHandoverTest(unittest.IsolatedAsyncioTestCase):
         await self.controller.reconcile()
         await self.controller.reconcile()
         self.assertEqual(self.calls, [(self.new, "cool"), (self.new, "off")])
+        self.now += 1
         self.report(self.new, "off")
         await self.controller.reconcile()
         self.assertEqual(self.calls[-1], (self.old, "heat"))
@@ -111,3 +116,65 @@ class SeasonalHandoverTest(unittest.IsolatedAsyncioTestCase):
         self.settings["entities"] = [self.new]
         await self.controller.reconcile()
         self.assertFalse(self.calls)
+
+
+    async def test_off_time_starts_at_feedback_and_resets_after_unavailable(self):
+        self.rules.update(off_delay_enabled=True, off_delay_minutes=2)
+        await self.controller.reconcile()
+        self.now += 200
+        self.report(self.old, "off")
+        await self.controller.reconcile()
+        self.now += 110
+        await self.controller.reconcile()
+        self.assertEqual(self.schedule.call_args.args[1], 10)
+        self.report(self.old, "unavailable")
+        self.now += 30
+        await self.controller.reconcile()
+        self.report(self.old, "off")
+        await self.controller.reconcile()
+        self.now += 119
+        await self.controller.reconcile()
+        self.assertEqual(self.calls, [(self.old, "off")])
+        self.now += 1
+        await self.controller.reconcile()
+        self.assertEqual(self.calls[-1], (self.new, "cool"))
+
+    async def test_reversible_unit_observes_delay_after_restart(self):
+        self.rules.update(off_delay_enabled=True, off_delay_minutes=5)
+        self.rules["summer"]["entity"] = self.old
+        self.controller.owner = {"entity": self.old, "starting": False}
+        self.report(self.old, "off")
+        self.now += 299
+        await self.controller.reconcile()
+        self.assertFalse(self.calls)
+        self.now += 1
+        await self.controller.reconcile()
+        self.assertEqual(self.calls, [(self.old, "cool")])
+
+    async def test_disabling_delay_uses_current_plan(self):
+        self.rules.update(off_delay_enabled=True, off_delay_minutes=3)
+        self.report(self.old, "off")
+        await self.controller.reconcile()
+        self.settings["season"] = "winter"
+        await self.controller.reconcile()
+        self.assertFalse(self.calls)
+        self.rules["off_delay_enabled"] = False
+        await self.controller.reconcile()
+        self.assertEqual(self.calls, [(self.old, "heat")])
+
+    async def test_unacknowledged_start_needs_a_fresh_full_off_interval(self):
+        self.rules.update(off_delay_enabled=True, off_delay_minutes=1)
+        self.report(self.old, "off")
+        self.controller.owner = {"entity": self.old, "starting": True, "mode": "heat"}
+        self.now += 300
+        await self.controller.reconcile()
+        self.assertEqual(self.calls, [(self.old, "off")])
+        self.now += 1
+        self.states[self.old].last_reported = datetime.fromtimestamp(self.now, timezone.utc)
+        await self.controller.reconcile()
+        self.now += 59
+        await self.controller.reconcile()
+        self.assertEqual(len(self.calls), 1)
+        self.now += 1
+        await self.controller.reconcile()
+        self.assertEqual(self.calls[-1], (self.new, "cool"))

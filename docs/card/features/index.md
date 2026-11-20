@@ -274,6 +274,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/summer-off.gif) | [Full-size GIF](../../images/summer-off.gif)
 
+-   **[Wait after a seasonal source reports Off](seasonal.md#wait-after-a-seasonal-source-reports-off)**
+
+    Choose how many minutes the previous source must stay off before the next one starts.
+
+    [![Seasonal sources during the wait](../../images/season-off-delay-waiting.png)](../../images/season-off-delay.gif)
+
+    [Play walkthrough](../../images/season-off-delay.gif) | [Full-size GIF](../../images/season-off-delay.gif)
+
 -   **[Switch heating and cooling sources by season](seasonal.md#switch-heating-and-cooling-sources-by-season)**
 
     Select a boiler or heat pump for each season and wait for the previous source to report Off.

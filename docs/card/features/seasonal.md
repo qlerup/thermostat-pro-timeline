@@ -90,3 +90,21 @@ The example starts in winter with the boiler heating to 35 degrees. When Summer 
 [Play walkthrough](../../images/seasonal-sources.gif) | [Full-size GIF](../../images/seasonal-sources.gif)
 
 If the previous source is unavailable or continues to report heating, the new source waits. This check uses the HVAC mode reported by Home Assistant. It cannot verify valve position, flow or pipe temperature. The dashboard may be closed during the change. Turning source control off leaves the equipment in its current mode and returns control to you.
+
+## Wait after a seasonal source reports Off
+
+Use this setting to leave a gap between stopping one source and starting the next. It is off by default. The usual check that the previous source has reported **off** applies with either setting.
+
+1. Open the card settings and enable **summer/winter schedules** and **Control the source when the season changes**. Configure both seasonal sources.
+2. Turn on **Wait after the previous source reports Off**. In **Delay in minutes**, enter a whole number of at least 1 and save. The initial suggestion is 3 minutes.
+3. Select the other season or let the season sensor switch. The old source switches off. The new source can start once Home Assistant has observed the full interval in the **off** state. Time already spent off counts. If the old source becomes unavailable, the interval starts again when it next reports **off**.
+
+[![Both seasonal sources off during the one-minute wait](../../images/season-off-delay-waiting.png)](../../images/season-off-delay.gif)
+
+[Play walkthrough](../../images/season-off-delay.gif) | [Full-size GIF](../../images/season-off-delay.gif)
+
+In this recording the boiler stops first. One minute later, the heat pump starts cooling at 18 °C. Playback skips most of the waiting time. The same delay applies to a reversible unit switching between heating and cooling. Room schedules continue to run during the wait.
+
+[![Heat pump cooling after the delay](../../images/season-off-delay-result.png)](../../images/season-off-delay.gif)
+
+If you change seasons again during the wait, the latest selection determines which source may start. To remove the extra wait, turn the option off and save. Your minute setting is kept for next time.

@@ -371,6 +371,8 @@ const TT_I18N = {
     'season.confirm_setting': 'Confirm manual season changes',
     'season.question': 'Switch to {season}?',
     'season.switch': 'Switch season',
+    'season.delay_enable': 'Wait after the previous source reports Off',
+    'season.delay_minutes': 'Delay in minutes',
     'season.sensor': 'Season sensor',
     'season.off': 'Off',
   'profiles.button': 'Profiles',
@@ -778,6 +780,8 @@ const TT_I18N = {
     'season.confirm_setting': 'Bekræft manuelle sæsonskift',
     'season.question': 'Skift til {season}?',
     'season.switch': 'Skift sæson',
+    'season.delay_enable': 'Vent efter den tidligere kilde melder slukket',
+    'season.delay_minutes': 'Ventetid i minutter',
     'season.sensor': 'Sæsonsensor',
     'season.off': 'Slukket',
     'profiles.button': 'Manuelt skema',
@@ -16682,6 +16686,34 @@ class ThermostatTimelineCard extends HTMLElement {
     const hint = document.createElement('p');
     hint.textContent = 'Choose dedicated climate entities for both seasons. Shared storage and automatic application are required. The other source must report Off before the selected source starts.';
     plans.append(hint);
+    const delayLabel = document.createElement('label');
+    const delayToggle = document.createElement('input');
+    delayToggle.type = 'checkbox';
+    delayToggle.className = 'source-delay-enabled';
+    delayToggle.checked = !!rule.off_delay_enabled;
+    delayLabel.append(delayToggle, ' ' + this._t('season.delay_enable'));
+    plans.append(delayLabel);
+    const duration = document.createElement('label');
+    duration.style.display = delayToggle.checked ? 'block' : 'none';
+    const minutes = document.createElement('input');
+    minutes.className = 'settings-input source-delay-minutes';
+    minutes.type = 'number';
+    minutes.min = '1';
+    minutes.step = '1';
+    minutes.value = rule.off_delay_minutes ?? 3;
+    minutes.required = true;
+    minutes.disabled = !delayToggle.checked;
+    minutes.oninput = () => {
+      if (minutes.validity.valid) rule.off_delay_minutes = minutes.valueAsNumber;
+    };
+    duration.append(this._t('season.delay_minutes') + ' ', minutes);
+    plans.append(duration);
+    delayToggle.onchange = () => {
+      rule.off_delay_enabled = delayToggle.checked;
+      minutes.disabled = !delayToggle.checked;
+      duration.style.display = delayToggle.checked ? 'block' : 'none';
+      if (delayToggle.checked && minutes.validity.valid) rule.off_delay_minutes = minutes.valueAsNumber;
+    };
     const roomIds = new Set([...(draft.entities || []), ...Object.values(draft.merges || {}).flat()]);
     const states = this._hass.states;
     const available = Object.keys(states).filter(id => id.startsWith('climate.') && !roomIds.has(id) &&
