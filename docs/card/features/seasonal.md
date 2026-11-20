@@ -53,3 +53,23 @@ When winter begins or you deselect the room, Timeline restores the previous supp
 [![Switch a thermostat off in summer in Home Assistant](../../images/summer-off-result.png)](../../images/summer-off.gif)
 
 [Play walkthrough](../../images/summer-off.gif) | [Full-size GIF](../../images/summer-off.gif)
+
+## Switch heating and cooling sources by season
+
+Use this option when the winter plan needs a boiler and the summer plan needs a heat pump, or when one reversible unit handles both seasons. Room schedules still set the room thermostats. A source target sets the temperature exposed by the selected climate entity. For a unit that exposes its water setpoint, this is the water target.
+
+1. Enable **shared storage**, **auto-apply**, and **summer/winter schedules** in the card settings.
+2. Under the seasonal settings, enable **Control the source when the season changes**.
+3. For **Summer** and **Winter**, choose a dedicated climate entity and one of its supported modes. Choose **off** for a season when neither source should run. A reversible unit can be selected for both seasons. Thermostats already assigned to rooms or merged with a room are reserved for room control.
+4. Optionally enter a source target for either season. Leave the field empty to keep the device's existing target. The field appears for devices that support setting a single target temperature.
+5. Save. The active season takes effect immediately. Use the season button on the card to switch, or enable **Follow a season sensor** to switch automatically.
+
+[![Seasonal settings with a heat pump for summer and a boiler for winter](../../images/seasonal-sources-setup.png)](../../images/seasonal-sources.gif)
+
+The example starts in winter with the boiler heating to 35 degrees. When Summer is selected, Home Assistant asks the boiler to switch off. Once its climate entity reports **off**, the heat pump starts cooling at 18 degrees. For a reversible unit, changing between heating and cooling also goes through **off**.
+
+[![Summer cooling with the boiler off in Home Assistant](../../images/seasonal-sources-result.png)](../../images/seasonal-sources.gif)
+
+[Play walkthrough](../../images/seasonal-sources.gif) | [Full-size GIF](../../images/seasonal-sources.gif)
+
+If the previous source is unavailable or continues to report heating, the new source waits. This check uses the HVAC mode reported by Home Assistant. It cannot verify valve position, flow or pipe temperature. The dashboard may be closed during the change. Turning source control off leaves the equipment in its current mode and returns control to you.

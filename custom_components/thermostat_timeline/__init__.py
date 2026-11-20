@@ -28,6 +28,8 @@ from typing import Any, Optional
 
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, SIGNAL_UPDATED, BACKUP_STORAGE_KEY
 
+from .seasonal_sources import SeasonalSources
+
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _LOGGER = logging.getLogger(__name__)
@@ -1359,6 +1361,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     mgr = MultiInstanceAutoApplyManager(hass)
     hass.data[DOMAIN]["manager"] = mgr
     await mgr.async_start()
+    await SeasonalSources(hass, entry, mgr).start()
     # ---- Open Window Detection (background, multi-instance) ----
     owd = MultiInstanceOpenWindowManager(hass, apply_multi=mgr, entry=entry)
     # Keep legacy key for compatibility (points to the multi wrapper).

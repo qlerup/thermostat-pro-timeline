@@ -5057,6 +5057,7 @@ class ThermostatTimelineCard extends HTMLElement {
         boiler_manual_targets: !!(config.boiler_manual_targets ?? this._config?.boiler_manual_targets),
         summer_off_rooms: [...(config.summer_off_rooms ?? this._config?.summer_off_rooms ?? [])],
         holiday_trips: [...(config.holiday_trips ?? this._config?.holiday_trips ?? [])],
+        seasonal_sources: JSON.parse(JSON.stringify(config.seasonal_sources ?? this._config?.seasonal_sources ?? {})),
         season_follow: { ...(config.season_follow ?? this._config?.season_follow) },
         seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
         seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -6157,7 +6158,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6442,7 +6443,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -7238,6 +7239,7 @@ class ThermostatTimelineCard extends HTMLElement {
         summer_off_rooms: [...(this._config.summer_off_rooms || [])],
         holiday_trips: [...(this._config.holiday_trips || [])],
         season_follow: { ...this._config.season_follow },
+        seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         weekdays_mode: this._config.weekdays_mode || 'weekday_weekend',
@@ -7297,6 +7299,7 @@ class ThermostatTimelineCard extends HTMLElement {
         summer_off_rooms: [...(this._config.summer_off_rooms || [])],
         holiday_trips: [...(this._config.holiday_trips || [])],
         season_follow: { ...this._config.season_follow },
+        seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         presence_sensors: this._config.presence_sensors,
@@ -9673,6 +9676,11 @@ class ThermostatTimelineCard extends HTMLElement {
                     <div class="desc">Selected rooms stay off during the summer plan. Their previous mode is restored when summer ends.</div>
                     <div class="summer-off-list"></div>
                   </div>
+                  <fieldset class="seasonal-sources">
+                    <legend>Seasonal heating and cooling sources</legend>
+                    <label><input type="checkbox" class="source-enabled"> Control the source when the season changes</label>
+                    <div class="source-plans"></div>
+                  </fieldset>
                   <div class="setting season-follow-row"><label for="season-follow">Follow a season sensor</label><input id="season-follow" type="checkbox"></div>
                   <div class="setting season-follow-options" style="grid-template-columns:1fr">
                     <tt-entity-picker class="season-source" label="Season sensor" include-domains='["sensor"]'></tt-entity-picker>
@@ -12299,6 +12307,7 @@ class ThermostatTimelineCard extends HTMLElement {
         summer_off_rooms: [...(cfg.summer_off_rooms || [])],
         holiday_trips: [...(cfg.holiday_trips || [])],
         season_follow: { ...cfg.season_follow },
+        seasonal_sources: JSON.parse(JSON.stringify(cfg.seasonal_sources || {})),
         seasonal_enabled: !!cfg.seasonal_enabled,
         seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
         weekdays_view: String(cfg.weekdays_view || 'all_rooms_one_day'),
@@ -12523,6 +12532,7 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.summer_off_rooms = [...d.summer_off_rooms];
       cfg.holiday_trips = [...d.holiday_trips];
       cfg.season_follow = { ...d.season_follow };
+      cfg.seasonal_sources = JSON.parse(JSON.stringify(d.seasonal_sources));
       cfg.seasonal_enabled = !!d.seasonal_enabled;
       cfg.seasonal_mode = (String(d.seasonal_mode || prevSeasonalMode || 'winter') === 'summer') ? 'summer' : 'winter';
 
@@ -16561,7 +16571,88 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
+  _bindSeasonalSources(draft){
+    const field = this.shadowRoot.querySelector('.overlay-settings .seasonal-sources');
+    field.style.display = draft.seasonal_enabled ? '' : 'none';
+    const rule = draft.seasonal_sources;
+    const toggle = field.querySelector('.source-enabled');
+    toggle.checked = !!rule.enabled;
+    toggle.onchange = () => {
+      rule.enabled = toggle.checked;
+      this._bindSeasonalSources(draft);
+    };
+    const plans = field.querySelector('.source-plans');
+    plans.replaceChildren();
+    if (!toggle.checked) return;
+    const hint = document.createElement('p');
+    hint.textContent = 'Choose dedicated climate entities for both seasons. Shared storage and automatic application are required. The other source must report Off before the selected source starts.';
+    plans.append(hint);
+    const roomIds = new Set([...(draft.entities || []), ...Object.values(draft.merges || {}).flat()]);
+    const states = this._hass.states;
+    const available = Object.keys(states).filter(id => id.startsWith('climate.') && !roomIds.has(id) &&
+      states[id].attributes.hvac_modes?.includes('off')).sort();
+    const fahrenheit = this._haIsF();
+    for (const season of ['summer','winter']) {
+      const plan = rule[season] || {};
+      const group = document.createElement('fieldset');
+      group.className = 'source-' + season;
+      const legend = document.createElement('legend');
+      legend.textContent = season === 'summer' ? 'Summer' : 'Winter';
+      group.append(legend);
+      const add = (caption, control) => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0';
+        label.append(caption, control);
+        group.append(label);
+      };
+      const entity = document.createElement('select');
+      entity.required = true;
+      entity.className = 'settings-input plant-entity';
+      entity.add(new Option('Choose a source', ''));
+      for (const id of new Set([...available, ...(plan.entity ? [plan.entity] : [])])) {
+        entity.add(new Option(states[id]?.attributes.friendly_name || id, id));
+      }
+      entity.value = plan.entity || '';
+      const attrs = states[entity.value]?.attributes || {};
+      entity.onchange = () => {
+        const modes = states[entity.value]?.attributes.hvac_modes || [];
+        const preferred = season === 'summer' ? 'cool' : 'heat';
+        rule[season] = {entity:entity.value, mode:modes.includes(preferred) ? preferred : 'off'};
+        this._bindSeasonalSources(draft);
+      };
+      add('Source', entity);
+      const mode = document.createElement('select');
+      mode.className = 'settings-input plant-mode';
+      for (const value of ['off','heat','cool'].filter(v => attrs.hvac_modes?.includes(v))) {
+        mode.add(new Option(value, value));
+      }
+      mode.value = plan.mode || 'off';
+      mode.onchange = () => {
+        plan.mode = mode.value;
+        this._bindSeasonalSources(draft);
+      };
+      add('HVAC mode', mode);
+      if (plan.mode && plan.mode !== 'off' && (attrs.supported_features & 1)) {
+        const target = document.createElement('input');
+        target.type = 'number';
+        target.step = 'any';
+        target.className = 'settings-input plant-target';
+        target.placeholder = 'Keep current target';
+        if (attrs.min_temp != null) target.min = attrs.min_temp;
+        if (attrs.max_temp != null) target.max = attrs.max_temp;
+        if (Number.isFinite(plan.target_c)) target.value = Number((fahrenheit ? plan.target_c * 1.8 + 32 : plan.target_c).toFixed(2));
+        target.oninput = () => {
+          if (target.value === '') delete plan.target_c;
+          else if (Number.isFinite(target.valueAsNumber)) plan.target_c = fahrenheit ? (target.valueAsNumber - 32) / 1.8 : target.valueAsNumber;
+        };
+        add('Source target (' + (fahrenheit ? '°F' : '°C') + ')', target);
+      }
+      plans.append(group);
+    }
+  }
+
   _bindSummerRooms(draft){
+    this._bindSeasonalSources(draft);
     const section = this.shadowRoot.querySelector('.overlay-settings .summer-off-setting');
     section.style.display = draft.seasonal_enabled ? '' : 'none';
     const list = section.querySelector('.summer-off-list');
@@ -16760,6 +16851,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
       if (JSON.stringify(d.summer_off_rooms) !== JSON.stringify(c.summer_off_rooms || [])) return true;
       if (JSON.stringify(d.holiday_trips) !== JSON.stringify(c.holiday_trips || [])) return true;
+      if (JSON.stringify(d.seasonal_sources) !== JSON.stringify(c.seasonal_sources || {})) return true;
       if (JSON.stringify(d.season_follow) !== JSON.stringify(c.season_follow || {})) return true;
       if (!!d.seasonal_enabled !== !!c.seasonal_enabled) return true;
       if (String(d.seasonal_mode||'winter') !== String(c.seasonal_mode||'winter')) return true;
@@ -17180,6 +17272,16 @@ class ThermostatTimelineCard extends HTMLElement {
           }
         }
       } catch {}
+      const sourceDraft = this._settingsDraft;
+      if (sourceDraft?.seasonal_enabled && sourceDraft.seasonal_sources?.enabled) {
+        const invalid = this.shadowRoot.querySelector('.seasonal-sources :invalid');
+        if (invalid) {
+          this.shadowRoot.querySelector('.overlay-settings button[data-tab="settings"]')?.click();
+          invalid.scrollIntoView({block:'center'});
+          invalid.reportValidity();
+          return;
+        }
+      }
       // IMPORTANT: do not persist on toggle/input; only commit+save here.
       const previousSummer = JSON.stringify([this._config.seasonal_enabled, this._config.summer_off_rooms]);
       this._applySettingsPopupDraftToConfig();

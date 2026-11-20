@@ -266,6 +266,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/summer-off.gif) | [Full-size GIF](../../images/summer-off.gif)
 
+-   **[Switch heating and cooling sources by season](seasonal.md#switch-heating-and-cooling-sources-by-season)**
+
+    Select a boiler or heat pump for each season and wait for the previous source to report Off.
+
+    [![Summer cooling with the boiler off](../../images/seasonal-sources-result.png)](../../images/seasonal-sources.gif)
+
+    [Play walkthrough](../../images/seasonal-sources.gif) | [Full-size GIF](../../images/seasonal-sources.gif)
+
 -   **[Set departure and return times for a trip](holidays.md#set-departure-and-return-times-for-a-trip)**
 
     Switch to the holiday timetable at departure and resume the normal schedule at the return time.
