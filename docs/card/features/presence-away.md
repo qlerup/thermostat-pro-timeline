@@ -24,6 +24,7 @@ In **Settings > Away**, select the residents, enable Away, set 17 degrees and sa
 
 ## Configuration reference
 
+- `room_persons`: maps a room to one person, for example `{ climate.office: person.anna, climate.hall: person.anna }`. Remove a room from the map to unlink it.
 - presence_sensor_enabled: true/false to configure per‑room presence.
 - presence_sensors: { climate.living_room: binary_sensor.motion_living }.
 - presence_sensor_temps: { climate.living_room: 21 } temperature when presence is ON.
@@ -46,6 +47,8 @@ Open the presence sensor settings for the room. Choose seconds or minutes and se
 [Play walkthrough](../../images/arrival-delay.gif) | [Full-size GIF](../../images/arrival-delay.gif)
 
 ## Plan for combinations of residents
+
+Combination schedules apply to rooms with **No person linked**. A room linked to one person uses the rules in [Follow a person in one or more rooms](#follow-a-person-in-one-or-more-rooms).
 
 Under **Away from home**, select the people to track and enable advanced combinations. Choose the combinations that need a timetable. Open the presence schedule editor and set the blocks for each group. A household with two residents can plan differently for either resident at home and both together. Enable live presence in the header to see the current household state.
 
@@ -88,3 +91,26 @@ The adjustment applies to rooms whose primary thermostat is in **heat** or **coo
 [![Office heating at 19 degrees while its schedule calls for 21](../../images/vacancy-economy-result.png)](../../images/vacancy-economy.gif)
 
 [Play walkthrough](../../images/vacancy-economy.gif) | [Full-size GIF](../../images/vacancy-economy.gif)
+
+## Follow a person in one or more rooms
+
+Use this when a room should follow one resident's location. For example, link both Office and Hall to Anna, or link each bedroom to a different resident. Rooms start with **No person linked**.
+
+1. Open the card settings and choose **Away from home**. Under **Follow a person**, choose a Home Assistant person for the first room. The person's location comes from their Home Assistant tracking setup.
+2. To link another room to the same person, select their name in that room too. Leave shared rooms on **No person linked** to keep their existing rules.
+3. Optionally enable **Use a room-specific Away target** and enter a temperature for the room. Otherwise it uses the shared Away temperature (17 °C by default).
+4. Save. With automatic application enabled, check the target on each thermostat when the person leaves and again when they return.
+
+[![Anna away with Office targeting 16 degrees and Hall targeting 17](../../images/follow-person-result.png)](../../images/follow-person.gif)
+
+[Play walkthrough](../../images/follow-person.gif) | [Full-size GIF](../../images/follow-person.gif)
+
+| Anna's location | Office | Hall |
+| --- | --- | --- |
+| Home | Follows its schedule, currently 21 °C | Follows its schedule, currently 20 °C |
+| Away or in a named zone such as Work | Uses its room-specific Away target of 16 °C | Uses the shared Away target of 17 °C |
+| Back home | Resumes its current schedule | Resumes its current schedule |
+
+**How the rules interact.** Linking a person works even with household Away disabled. For a linked room, the person's location replaces household Away, its departure delay and resident-combination schedules. While the person is home, the room follows its own schedule and any configured room occupancy controls. While they are away, their room's Away target takes priority over occupancy boosts and vacancy adjustments. If their location is missing, unknown or unavailable, the room follows its schedule and occupancy settings.
+
+To unlink a room, select **No person linked** for that room and save. Its household rules take effect again. Other rooms linked to the same person keep their assignments.

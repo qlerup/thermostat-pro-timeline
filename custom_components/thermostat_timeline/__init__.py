@@ -1803,7 +1803,7 @@ class AutoApplyManager:
         except Exception:
             return False
 
-    def _effective_blocks_today(self, row: dict, settings: dict):
+    def _effective_blocks_today(self, row: dict, settings: dict, primary=None):
         # Apply seasonal selection first (affects blocks/weekly/presence buckets).
         try:
             row = self._seasonal_row(row, settings)
@@ -1822,7 +1822,7 @@ class AutoApplyManager:
         # Presence (advanced away) overrides if enabled and an active combo exists
         try:
             away = settings.get("away") or {}
-            if bool(away.get("advanced_enabled")):
+            if not self._room_person(settings, primary) and away.get("advanced_enabled"):
                 key = self._active_presence_combo_key(settings)
                 if key:
                     pres = row.get("presence") or {}
@@ -1921,6 +1921,11 @@ class AutoApplyManager:
                 out.add(e)
         return out
 
+    @staticmethod
+    def _room_person(settings, primary):
+        person = (settings.get("room_persons") or {}).get(primary)
+        return person if isinstance(person, str) and person.startswith("person.") else None
+
     def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int) -> Optional[float]:
         # Resolve primary (merged)
         merges = settings.get("merges") or {}
@@ -1942,9 +1947,10 @@ class AutoApplyManager:
         if not isinstance(row, dict):
             return None
         # Determine which blocks are effective for today
-        blocks = self._effective_blocks_today(row, settings)
+        blocks = self._effective_blocks_today(row, settings, primary)
         # Track if advanced presence is active globally and whether this room has a presence schedule for the active combo
-        presence_key_active = self._active_presence_combo_key(settings)
+        person = self._room_person(settings, primary)
+        presence_key_active = None if person else self._active_presence_combo_key(settings)
         room_has_presence_blocks = False
         try:
             if presence_key_active:
@@ -1990,7 +1996,13 @@ class AutoApplyManager:
             legacy_f = not unit and settings.get("temp_unit") == "F" and want > 45
             storage_scale = 1.8 if unit == "F" or legacy_f else 1
             away = settings.get("away") or {}
-            if bool(away.get("advanced_enabled")):
+            person_state = self.hass.states.get(person) if person else None
+            person_away = person_state and person_state.state not in ("home", "unknown", "unavailable", "")
+            if person_away:
+                targets = settings.get("away_room_targets_c") or {}
+                want = (float(targets[primary]) * storage_scale + (32 if storage_scale == 1.8 else 0)
+                        if primary in targets else float(away.get("target_c", 62.6 if storage_scale == 1.8 else 17)))
+            elif person or bool(away.get("advanced_enabled")):
                 pass  # advanced presence replaces simple away clamp entirely
             elif away.get("enabled") and isinstance(away.get("persons"), list):
                 anyone_home = False
@@ -2011,7 +2023,7 @@ class AutoApplyManager:
         # Per-room presence sensor override (simple presence entity)
         try:
             # Only when feature is enabled in settings
-            if bool(settings.get("presence_sensor_enabled")):
+            if not person_away and bool(settings.get("presence_sensor_enabled")):
                 # Map of primary climate/input_number to binary_sensor entity id
                 pmap = settings.get("presence_sensors") or {}
                 if isinstance(pmap, dict):
@@ -2062,13 +2074,15 @@ class AutoApplyManager:
             pass
         return want
 
-    async def _maybe_apply_now(self, force: bool = False, boundary_only: bool = False, reconcile: bool = False):
+    async def _maybe_apply_now(self, force: bool = False, boundary_only: bool = False, reconcile: bool = False, only_targets=None):
         if not self._auto_apply_enabled():
             return
         schedules, settings = self._get_data()
         merges = settings.get("merges") or {}
         now_min = self._now_min()
         targets = self._all_targets(schedules, merges)
+        if only_targets is not None:
+            targets = targets.intersection(only_targets)
         for eid in targets:
             # Supported targets: climate.* and input_number.*
             if not isinstance(eid, str) or not (eid.startswith("climate.") or eid.startswith("input_number.")):
@@ -2101,7 +2115,7 @@ class AutoApplyManager:
                     if primary is None:
                         primary = eid
                     row = schedules.get(primary) or {}
-                    if not self._entity_has_boundary_now(row, now_min):
+                    if not self._entity_has_boundary_now(row, now_min, primary):
                         continue
                 except Exception:
                     # if in doubt, skip to avoid overriding manual changes unnecessarily
@@ -2155,7 +2169,7 @@ class AutoApplyManager:
                         if primary is None:
                             primary = eid
                         row = schedules.get(primary) or {}
-                        blocks = self._effective_blocks_today(row, settings)
+                        blocks = self._effective_blocks_today(row, settings, primary)
                         for b in blocks:
                             try:
                                 s = int(b.get("startMin", -1))
@@ -2291,7 +2305,7 @@ class AutoApplyManager:
         # consider all block boundaries today
         for eid, row in schedules.items():
             try:
-                blocks = self._effective_blocks_today(row, settings)
+                blocks = self._effective_blocks_today(row, settings, eid)
                 for b in blocks:
                     for t in (int(b.get("startMin", -1)), int(b.get("endMin", -1))):
                         if t < 0:
@@ -2653,12 +2667,12 @@ class AutoApplyManager:
             value = min(value, _f_to_c(upper) if ha_is_f else float(upper))
         return value
 
-    def _manual_target_expiry(self, row, settings):
+    def _manual_target_expiry(self, row, settings, primary=None):
         """Expire a manual target at this room's next boundary or midnight."""
         now = dt_util.now()
         minute = now.hour * 60 + now.minute
         boundaries = [1440]
-        for block in self._effective_blocks_today(row, settings):
+        for block in self._effective_blocks_today(row, settings, primary):
             for key in ("startMin", "endMin"):
                 try:
                     boundary = int(block.get(key, -1))
@@ -2725,7 +2739,7 @@ class AutoApplyManager:
                 else:
                     pauses[primary] = {
                         "indef": False,
-                        "until_ms": self._manual_target_expiry(row, settings),
+                        "until_ms": self._manual_target_expiry(row, settings, primary),
                         "source": "manual_target",
                         "target_c": target_c,
                     }
@@ -3230,24 +3244,32 @@ class AutoApplyManager:
             return
 
     def _reset_person_watch(self):
-        # Recreate person watcher based on settings.away.persons (both simple away and advanced presence)
+        # Share one listener between household rules and linked rooms.
         if self._unsub_persons:
             self._unsub_persons()
             self._unsub_persons = None
-        _schedules, settings = self._get_data()
+        schedules, settings = self._get_data()
         away = settings.get("away") or {}
-        persons = away.get("persons") if isinstance(away, dict) else None
-        if (away.get("enabled") or away.get("advanced_enabled")) and isinstance(persons, list) and persons:
-            @callback
-            def _ch(event):
-                # Apply immediately when presence changes.
-                # Use reconcile to bypass manual-override guard so away/presence
-                # transitions take effect even mid-block.
-                self.hass.async_create_task(self._maybe_apply_now(force=True, reconcile=True))
-                self.hass.async_create_task(self._schedule_next())
-            self._unsub_persons = async_track_state_change_event(self.hass, persons, _ch)
+        household = set(away.get("persons") or []) if away.get("enabled") or away.get("advanced_enabled") else set()
+        assignments = {room: self._room_person(settings, room) for room in schedules}
+        persons = household | {person for person in assignments.values() if person}
+        if persons:
+            async def changed(event):
+                before, after = event.data.get("old_state"), event.data.get("new_state")
+                if before and after and before.state == after.state:
+                    return
+                entity = event.data["entity_id"]
+                targets = set()
+                merges = settings.get("merges") or {}
+                for room, person in assignments.items():
+                    if person == entity or (not person and entity in household):
+                        targets.update([room, *merges.get(room, [])])
+                await self._maybe_apply_now(force=True, reconcile=True, only_targets=targets)
+                await self._maybe_control_boiler(force=True)
+                await self._schedule_next()
+            self._unsub_persons = async_track_state_change_event(self.hass, sorted(persons), changed)
 
-    def _entity_has_boundary_now(self, row: dict, now_min: int) -> bool:
+    def _entity_has_boundary_now(self, row: dict, now_min: int, primary=None) -> bool:
         """Return True if the entity has a block boundary at (or just before) now.
 
         The timer intentionally schedules a few seconds/minutes past the exact
@@ -3258,7 +3280,7 @@ class AutoApplyManager:
         """
         try:
             _s, settings = self._get_data()
-            blocks = self._effective_blocks_today(row, settings)
+            blocks = self._effective_blocks_today(row, settings, primary)
             # allow a 1‑minute grace window (handle wraparound at midnight)
             prev_min = (now_min - 1) % 1440
             for b in blocks:

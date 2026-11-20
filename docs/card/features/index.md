@@ -320,6 +320,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/vacancy-economy.gif) | [Full-size GIF](../../images/vacancy-economy.gif)
 
+-   **[Follow a person in one or more rooms](presence-away.md#follow-a-person-in-one-or-more-rooms)**
+
+    Link rooms to a resident and see their thermostat targets change on departure and return.
+
+    [![Two rooms using their Away targets](../../images/follow-person-result.png)](../../images/follow-person.gif)
+
+    [Play walkthrough](../../images/follow-person.gif) | [Full-size GIF](../../images/follow-person.gif)
+
 </div>
 
 ## Windows and boiler control

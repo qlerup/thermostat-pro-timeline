@@ -53,7 +53,7 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
     def make_manager(self):
         mgr = self.Manager(self.hass)
         mgr._get_data = lambda: (self.schedules, self.settings)
-        mgr._effective_blocks_today = lambda row, settings: row["blocks"]
+        mgr._effective_blocks_today = lambda row, settings, primary=None: row["blocks"]
         mgr._desired_for = lambda eid, schedules, settings, minute: 15
         mgr._owd_mgr = lambda: None
         return mgr
@@ -83,6 +83,43 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(target(self.b), 17)
         self.settings["away_room_targets_c"].clear()
         self.assertEqual(target(self.a), 17)
+
+    def test_person_link_replaces_household_rules_only_for_assigned_rooms(self):
+        del self.mgr._desired_for
+        del self.mgr._effective_blocks_today
+        self.mgr._active_presence_combo_key = lambda settings: "family"
+        self.settings.update(away={"advanced_enabled": True, "target_c": 17},
+                             room_persons={self.a: "person.anna"},
+                             away_room_targets_c={self.a: 16}, merges={self.a: ["climate.linked"]},
+                             presence_sensor_enabled=True, presence_sensors={self.a: "binary_sensor.study"},
+                             presence_sensor_temps={self.a: 23})
+        anna = self.states["person.anna"] = SimpleNamespace(state="home")
+        sensor = self.states["binary_sensor.study"] = SimpleNamespace(state="off")
+        for row in self.schedules.values():
+            row["presence"] = {"family": {"blocks": [{"startMin": 0, "endMin": 1440, "temp": 24}]}}
+
+        def target(room, minute=420):
+            return self.mgr._desired_for(room, self.schedules, self.settings, minute)
+
+        self.assertEqual(target(self.a), 19)
+        self.assertEqual(target(self.b), 24)
+        self.settings["room_persons"][self.b] = "person.anna"
+        for state in ("work", "not_home"):
+            anna.state = state
+            sensor.state = "on"
+            self.assertEqual(target(self.a), 16)
+            self.assertEqual(target("climate.linked"), 16)
+            self.assertEqual(target(self.b), 17)
+        anna.state = "home"
+        self.assertEqual(target(self.a), 23)
+        sensor.state = "off"
+        for state in ("home", "unknown", "unavailable"):
+            anna.state = state
+            self.assertEqual(target(self.a, 600), 15)
+        del self.states["person.anna"]
+        self.assertEqual(target(self.a), 19)
+        del self.settings["room_persons"][self.a]
+        self.assertEqual(target(self.a), 24)
 
     def test_vacancy_economy_follows_mode_schedule_and_sensor_delays(self):
         del self.mgr._desired_for

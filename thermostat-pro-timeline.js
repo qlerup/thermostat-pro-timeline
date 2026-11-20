@@ -164,6 +164,9 @@ const TT_I18N = {
   'editor.instance.desc': 'Keep multiple independent schedules/settings under different IDs.',
   'editor.instance.new_id': 'New ID',
 
+  'away.follow_person': 'Follow a person',
+  'away.follow_desc': 'A linked room follows its own schedule when its person is home and uses its Away temperature elsewhere. This replaces household Away and combination schedules for that room.',
+  'away.no_person': 'No person linked',
   'away.room_target': 'Use a room-specific Away target',
   'presence.vacancy': 'Use an economy temperature when empty',
   'presence.relative': 'Increase the scheduled target when occupied',
@@ -421,6 +424,9 @@ const TT_I18N = {
   'presence.who_away': 'Who is away'
   },
   da: {
+  'away.follow_person': 'Følg en person',
+  'away.follow_desc': 'Rummet følger sin egen tidsplan, når personen er hjemme, og bruger sin ude-temperatur, når personen er ude. Personvalget erstatter husstandens ude-regler og kombinationsplaner for dette rum.',
+  'away.no_person': 'Ingen person tilknyttet',
     'pause.menu_title_room': 'Pause automatisk anvendelse — {room}',
     'pause.room_tooltip': 'Sæt tidsplanen på pause for dette rum',
     'ui.on': 'TIL',
@@ -4548,11 +4554,21 @@ class ThermostatTimelineCard extends HTMLElement {
 
   // ---------- Home Assistant hook ----------
   set hass(hass) {
+    const previousHass = this._hass;
     this._hass = hass; this._lang = ttGetLangFromHass(hass);
     // Storage is now file-based via API, no sensor auto-detection needed
 
     // (Select-based global profile removed)
 
+
+    if (previousHass && this._initialized && this._config?.auto_apply && !this._config.storage_enabled) {
+      const rooms = Object.entries(this._config.room_persons || {}).filter(([, person]) =>
+        previousHass.states[person]?.state !== hass.states[person]?.state);
+      if (rooms.length) {
+        const targets = rooms.flatMap(([room]) => [room, ...(this._config.merges?.[room] || [])]);
+        this._applyCurrentSetpoints(true, true, targets);
+      }
+    }
 
     // Detect Away mode changes and apply immediately
     try {
@@ -4830,6 +4846,7 @@ class ThermostatTimelineCard extends HTMLElement {
       presence_offsets_c: Object.hasOwn(config, 'presence_offsets_c'),
       vacancy_offsets_c: Object.hasOwn(config, 'vacancy_offsets_c'),
       away_room_targets_c: Object.hasOwn(config, 'away_room_targets_c'),
+      room_persons: Object.hasOwn(config, 'room_persons'),
       presence_sensor_temps: false,
       presence_sensor_delays: false,
       presence_sensor_delay_units: false,
@@ -4882,6 +4899,7 @@ class ThermostatTimelineCard extends HTMLElement {
   presence_offsets_c: { ...(config.presence_offsets_c || {}) },
   vacancy_offsets_c: { ...(config.vacancy_offsets_c || {}) },
   away_room_targets_c: { ...(config.away_room_targets_c || {}) },
+  room_persons: { ...(config.room_persons || {}) },
   presence_sensor_temps: (()=>{
     try {
       const src = (config.presence_sensor_temps && typeof config.presence_sensor_temps === 'object') ? config.presence_sensor_temps : {};
@@ -5815,6 +5833,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (!this._yamlProvided?.presence_offsets_c && s.presence_offsets_c) this._config.presence_offsets_c = { ...s.presence_offsets_c };
               if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
               if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
+              if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
               if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
                 const out = {};
                 for (const k of Object.keys(s.presence_sensor_temps||{})) {
@@ -6300,6 +6319,7 @@ class ThermostatTimelineCard extends HTMLElement {
     if (!this._yamlProvided?.presence_offsets_c && s.presence_offsets_c) this._config.presence_offsets_c = { ...s.presence_offsets_c };
     if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
     if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
+    if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
     if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
       const out = {};
       for (const k of Object.keys(s.presence_sensor_temps||{})) {
@@ -7181,6 +7201,7 @@ class ThermostatTimelineCard extends HTMLElement {
         presence_offsets_c: { ...this._config.presence_offsets_c },
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
+        room_persons: { ...this._config.room_persons },
         presence_sensor_temps: (this._config.presence_sensor_temps && typeof this._config.presence_sensor_temps === 'object') ? this._config.presence_sensor_temps : {},
         presence_sensor_delays: (this._config.presence_sensor_delays && typeof this._config.presence_sensor_delays === 'object') ? this._config.presence_sensor_delays : {},
         presence_sensor_delay_units: (this._config.presence_sensor_delay_units && typeof this._config.presence_sensor_delay_units === 'object') ? this._config.presence_sensor_delay_units : {},
@@ -7220,6 +7241,7 @@ class ThermostatTimelineCard extends HTMLElement {
         presence_offsets_c: { ...this._config.presence_offsets_c },
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
+        room_persons: { ...this._config.room_persons },
         presence_sensor_temps: (()=>{
           try {
             const src = (this._config.presence_sensor_temps && typeof this._config.presence_sensor_temps === 'object') ? this._config.presence_sensor_temps : {};
@@ -7853,7 +7875,18 @@ class ThermostatTimelineCard extends HTMLElement {
     return Array.from(out);
   }
 
+  _roomPerson(primary){
+    const id = this._config?.room_persons?.[primary];
+    return typeof id === 'string' && id.startsWith('person.') ? id : null;
+  }
+
   _desiredTempFor(eid, nowMin){ const primary = this._groupPrimaryOf(eid); const row = this._schedules[primary]; if (!row) return null; this._ensureHolidayStruct(row); this._ensurePresenceStruct(row); let blocks = row.blocks||[]; let usedPresence = false; let usedHoliday = false; let presenceKeyActive = null; let presenceHasBlocksForRoom = false;
+    const person = this._roomPerson(primary);
+    const location = person && this._hass?.states?.[person]?.state;
+    if (location && !['home', 'unknown', 'unavailable'].includes(location)) {
+      return this._clamp(Number(this._config.away_room_targets_c?.[primary] ?? this._config.away?.target_c ?? 17),
+        this._config.min_temp ?? 5, this._config.max_temp ?? 25);
+    }
     // Holidays override take highest precedence when enabled
     try {
       if (this._isHolidayActive() && row.holiday && Array.isArray(row.holiday.blocks) && row.holiday.blocks.length) {
@@ -7865,7 +7898,7 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
     // Advanced presence overrides (if enabled and a combo is active) — below holidays, above profiles/weekdays
     try {
-      presenceKeyActive = this._activePresenceComboKey && this._activePresenceComboKey();
+      presenceKeyActive = !person && this._activePresenceComboKey && this._activePresenceComboKey();
       if (presenceKeyActive) {
         const roomBlocks = row.presence && row.presence[presenceKeyActive] && Array.isArray(row.presence[presenceKeyActive].blocks)
           ? row.presence[presenceKeyActive].blocks : [];
@@ -7884,7 +7917,7 @@ class ThermostatTimelineCard extends HTMLElement {
       }
     } catch {}
     // Profiles/Weekdays fallback if presence not used
-    if (!usedPresence) {
+    if (!usedPresence && !(person && usedHoliday)) {
       try {
         if (this._config?.profiles_enabled && !(this._isHolidayActive() && row?.holiday?.blocks?.length)) {
           this._ensureProfilesStruct(row);
@@ -7911,7 +7944,7 @@ class ThermostatTimelineCard extends HTMLElement {
     //   use a presence schedule for this room (usedPresence=false).
     try {
       const advOn = !!(this._config?.away?.advanced_enabled);
-      if (!advOn && !usedPresence && this._isAwayActive() && !this._awayBypass) {
+      if (!person && !advOn && !usedPresence && this._isAwayActive() && !this._awayBypass) {
         awayLimit = Number(this._config.away_room_targets_c?.[primary] ?? this._config.away?.target_c ?? 17);
         if (Number.isFinite(awayLimit)) want = Math.min(want, awayLimit);
       }
@@ -8337,7 +8370,7 @@ class ThermostatTimelineCard extends HTMLElement {
         // Prefer presence schedule when enabled and active; then profiles/weekdays
         let blocks = row.blocks||[]; let usedPresence=false;
         try {
-          const key = this._activePresenceComboKey && this._activePresenceComboKey();
+          const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
           if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
             blocks = row.presence[key].blocks || []; usedPresence=true;
           }
@@ -8380,7 +8413,7 @@ class ThermostatTimelineCard extends HTMLElement {
       // Prefer presence schedule when enabled and active; then profiles/weekdays
       let blocks = row.blocks||[]; let usedPresence=false;
       try {
-        const key = this._activePresenceComboKey && this._activePresenceComboKey();
+        const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
         if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
           blocks = row.presence[key].blocks || []; usedPresence=true;
         }
@@ -8634,14 +8667,14 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
-  async _applyCurrentSetpoints(force=false, reconcile=false){ if (!this._config?.auto_apply || !this._hass) return; if (!this._hasConfig) return; if (this._config?.storage_enabled) return; if (this._isPaused()) return; const nowMin = this._getNowMin(); const targets = this._allTargetEntities(); for (const eid of targets){
+  async _applyCurrentSetpoints(force=false, reconcile=false, selectedTargets=null){ if (!this._config?.auto_apply || !this._hass) return; if (!this._hasConfig) return; if (this._config?.storage_enabled) return; if (this._isPaused()) return; const nowMin = this._getNowMin(); const targets = selectedTargets ?? this._allTargetEntities(); for (const eid of targets){
     if (await this._syncLocalSummerPower(eid)) continue;
     // If this call is from boundary timer (force===true), only apply for entities that have boundary now.
     // On resume from pause (reconcile=true), reconcile across all entities.
     if (force && !reconcile) {
       const primary = this._groupPrimaryOf(eid);
       const row = this._schedules[primary];
-      if (!row || !this._entityHasBoundaryNow(row, nowMin)) { continue; }
+      if (!row || !this._entityHasBoundaryNow(row, nowMin, primary)) { continue; }
     }
     let desired = this._desiredTempFor(eid, nowMin);
     const mx = this._config?.max_temp ?? 25; const mn = this._config?.min_temp ?? 5; if (Number.isFinite(mx)) desired = Math.min(desired, mx); if (Number.isFinite(mn)) desired = Math.max(desired, mn);
@@ -8704,7 +8737,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (this._isPaused()) return;
       const primary = this._groupPrimaryOf(entity);
       let desired = Number(tempC);
-      if (Number.isFinite(this._config.presence_offsets_c?.[primary]) || Number.isFinite(this._config.vacancy_offsets_c?.[primary])) {
+      if (this._roomPerson(primary) || Number.isFinite(this._config.presence_offsets_c?.[primary]) || Number.isFinite(this._config.vacancy_offsets_c?.[primary])) {
         desired = this._desiredTempFor(primary, nowMinOverride ?? this._getNowMin()) ?? desired;
       } else if (!this._config.away?.advanced_enabled && this._isAwayActive() && !this._awayBypass) {
         const limit = Number(this._config.away_room_targets_c?.[primary] ?? this._config.away?.target_c ?? 17);
@@ -8748,12 +8781,12 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
-  _entityHasBoundaryNow(row, nowMin){
+  _entityHasBoundaryNow(row, nowMin, eid){
     try {
       let blocks = row.blocks||[];
       // Prefer presence schedule when enabled and active
       try {
-        const key = this._activePresenceComboKey && this._activePresenceComboKey();
+        const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
         if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
           blocks = row.presence[key].blocks || [];
         } else if (this._config?.weekdays_enabled && row.weekly) {
@@ -11315,7 +11348,7 @@ class ThermostatTimelineCard extends HTMLElement {
     } else {
       // Advanced Presence overrides visual track as well (when a combo is active)
       try {
-        const key = this._activePresenceComboKey && this._activePresenceComboKey();
+        const key = !this._roomPerson(eid) && this._activePresenceComboKey && this._activePresenceComboKey();
         if (key) {
           const roomBlocks = (row.presence && Array.isArray(row.presence[key]?.blocks)) ? (row.presence[key].blocks || []) : [];
           if (roomBlocks.length) {
@@ -12185,6 +12218,7 @@ class ThermostatTimelineCard extends HTMLElement {
         presence_offsets_c: { ...cfg.presence_offsets_c },
         vacancy_offsets_c: { ...cfg.vacancy_offsets_c },
         away_room_targets_c: { ...cfg.away_room_targets_c },
+        room_persons: { ...cfg.room_persons },
         presence_sensor_temps: (()=>{ try { return (cfg.presence_sensor_temps && typeof cfg.presence_sensor_temps === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_temps)) : {}; } catch { return {}; } })(),
 
         presence_sensor_delays: (()=>{ try { return (cfg.presence_sensor_delays && typeof cfg.presence_sensor_delays === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_delays)) : {}; } catch { return {}; } })(),
@@ -12447,6 +12481,7 @@ class ThermostatTimelineCard extends HTMLElement {
         cfg.presence_offsets_c = { ...d.presence_offsets_c };
         cfg.vacancy_offsets_c = { ...d.vacancy_offsets_c };
         cfg.away_room_targets_c = { ...d.away_room_targets_c };
+        cfg.room_persons = { ...d.room_persons };
         const src = (d.presence_sensor_temps && typeof d.presence_sensor_temps === 'object') ? d.presence_sensor_temps : {};
         const out = {};
         const minC = Number(cfg.min_temp);
@@ -13711,6 +13746,11 @@ class ThermostatTimelineCard extends HTMLElement {
               <input class="settings-input sp-away-temp" type="number" step="0.5" />
             </div>
 
+            <div class="settings-card room-person-settings">
+              <div class="title">${this._t('away.follow_person')}</div>
+              <div class="desc">${this._t('away.follow_desc')}</div>
+              <div class="room-person-list" style="display:grid;gap:12px"></div>
+            </div>
             <div class="setting sp-away-persons-row">
               <div class="text">
                 <div class="title sp-away-persons-title"></div>
@@ -13834,6 +13874,35 @@ class ThermostatTimelineCard extends HTMLElement {
             name + ' - ' + this._t('away.room_target'), Number(d.away.target_c ?? 17), false));
         }
         tempRow.append(list);
+      }
+
+      const roomList = page.querySelector('.room-person-list');
+      roomList.replaceChildren();
+      const people = Object.keys(this._hass?.states || {}).filter(id => id.startsWith('person.')).sort();
+      for (const room of this._config.entities || []) {
+        const label = document.createElement('label');
+        const name = d.labels?.[room] || this._prettyName(room);
+        label.textContent = name + ' ';
+        const select = document.createElement('select');
+        select.className = 'settings-input';
+        select.dataset.room = room;
+        select.add(new Option(this._t('away.no_person'), ''));
+        const current = d.room_persons?.[room];
+        for (const person of new Set(current ? [...people, current] : people)) {
+          select.add(new Option(this._hass.states[person]?.attributes?.friendly_name || person, person));
+        }
+        select.value = current || '';
+        select.onchange = () => {
+          if (select.value) d.room_persons[room] = select.value;
+          else delete d.room_persons[room];
+          this._renderSettingsPopupAwayTab();
+        };
+        label.append(select);
+        roomList.append(label);
+        if (current && !awayOn) {
+          roomList.append(this._roomTemperatureOption(d, 'away_room_targets_c', room,
+            name + ' - ' + this._t('away.room_target'), Number(d.away.target_c ?? 17), false));
+        }
       }
 
       // Delay controls
@@ -16704,6 +16773,7 @@ class ThermostatTimelineCard extends HTMLElement {
         if (JSON.stringify(d.presence_offsets_c || {}) !== JSON.stringify(c.presence_offsets_c || {})) return true;
         if (JSON.stringify(d.vacancy_offsets_c || {}) !== JSON.stringify(c.vacancy_offsets_c || {})) return true;
         if (JSON.stringify(d.away_room_targets_c || {}) !== JSON.stringify(c.away_room_targets_c || {})) return true;
+        if (JSON.stringify(d.room_persons || {}) !== JSON.stringify(c.room_persons || {})) return true;
         const da = (d.away && typeof d.away === 'object') ? d.away : {};
         const ca = (c.away && typeof c.away === 'object') ? c.away : {};
         if (!!da.enabled !== !!ca.enabled) return true;
