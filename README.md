@@ -1,6 +1,6 @@
 # Thermostat Pro Timeline
 
-[![GitHub release downloads](https://img.shields.io/github/downloads/qlerup/thermostat-pro-timeline/total)](https://github.com/qlerup/thermostat-pro-timeline/releases) [![Support the project on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/qlerup)
+[![Latest release downloads](https://img.shields.io/github/downloads/qlerup/thermostat-pro-timeline/latest/total?label=latest%20release%20downloads)](https://github.com/qlerup/thermostat-pro-timeline/releases/latest) [![Support the project on Ko-fi](https://img.shields.io/badge/Ko--fi-Support%20the%20project-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/qlerup)
 
 Schedule heating and cooling for each room from a 24-hour timeline in Home Assistant. The integration runs saved schedules in the background and the dashboard card lets you edit them.
 
