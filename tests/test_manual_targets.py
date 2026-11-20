@@ -105,6 +105,26 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         await self.manual(self.a, 15)
         self.assertEqual(self.settings["room_pause"], {})
 
+    async def test_clamped_schedule_write_does_not_create_manual_hold(self):
+        attrs = self.states[self.a].attributes
+        attrs.update(temperature=18, min_temp=16)
+        self.assertTrue(await self.mgr._apply_setpoint(self.a, 15))
+        self.assertEqual(attrs["temperature"], 16)
+        await self.mgr._remember_manual_target(self.a, attrs["temperature"])
+        self.assertEqual(self.settings["room_pause"], {})
+        self.assertTrue(await self.mgr._apply_setpoint(self.a, 20))
+
+    async def test_fahrenheit_schedule_write_does_not_create_manual_hold(self):
+        self.settings["storage_temp_unit"] = "F"
+        self.hass.config.units.temperature_unit = "?F"
+        self.states[self.a].attributes.update(temperature=70, max_temp=75)
+        self.mgr._desired_for = lambda *args: 77
+        self.assertTrue(await self.mgr._apply_setpoint(self.a, 77))
+        reported = self.states[self.a].attributes["temperature"]
+        self.assertAlmostEqual(reported, 75)
+        await self.mgr._remember_manual_target(self.a, reported)
+        self.assertEqual(self.settings["room_pause"], {})
+
     async def test_independent_manual_changes_preserve_both_rooms(self):
         self.states[self.a].attributes["temperature"] = 20
         self.states[self.b].attributes["temperature"] = 21
