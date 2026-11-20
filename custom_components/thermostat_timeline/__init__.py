@@ -29,6 +29,7 @@ from typing import Any, Optional
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, SIGNAL_UPDATED, BACKUP_STORAGE_KEY
 
 from .seasonal_sources import SeasonalSources
+from .thermal import ThermalControl
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -158,6 +159,7 @@ def build_state_payload(hass: HomeAssistant, versions_only: bool = False, instan
     if versions_only:
         return payload
     payload.update({
+        "thermal_status": data["thermal"].status.get(req_iid, {}) if data.get("thermal") else {},
         # Return data for the requested instance (or the active instance when not specified).
         "schedules": inst.get("schedules", {}) if isinstance(inst, dict) else data.get("schedules", {}),
         "weekdays": inst.get("weekdays", {}) if isinstance(inst, dict) else data.get("weekday_schedules", {}),
@@ -196,6 +198,10 @@ class ThermostatTimelineStateView(HomeAssistantView):
             except Exception:
                 iid = None
             payload = build_state_payload(self.hass, versions_only=False, instance_id=iid)
+            room = request.query.get("thermal_room")
+            thermal = self.hass.data.get(DOMAIN, {}).get("thermal")
+            if room and thermal:
+                payload["thermal_history"] = thermal.room_data(payload["instance_id"], room)
             _LOGGER.debug("API /state requested, version=%s", payload.get("version"))
             _dbg(f"API /state returning version={payload.get('version')}")
             return self.json(payload)
@@ -1375,6 +1381,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     bkm = BackupManager(hass, backup_cb=backup_now)
     hass.data[DOMAIN]["backup_manager"] = bkm
     await bkm.async_start()
+    thermal = ThermalControl(hass, entry, mgr)
+    hass.data[DOMAIN]["thermal"] = thermal
+    await thermal.start()
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1957,7 +1966,7 @@ class AutoApplyManager:
                 return mode if isinstance(mode, str) and mode else None
         return None
 
-    def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int) -> Optional[float]:
+    def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int, use_early=True) -> Optional[float]:
         # Resolve primary (merged)
         merges = settings.get("merges") or {}
         primary = None
@@ -1998,6 +2007,13 @@ class AutoApplyManager:
                     break
             except Exception:
                 continue
+        early = getattr(self, "_early_blocks", {}).get(primary) if use_early else None
+        if early and now_min < early[1] and early[0] == dt_util.now().date().isoformat():
+            rules = settings.get("thermal_rooms")
+            rule = rules.get(primary) if isinstance(rules, dict) else None
+            if isinstance(rule, dict) and rule.get("learn"):
+                hit = next((b for b in blocks if isinstance(b, dict)
+                            and str(b.get("startMin")) == str(early[1]) and b.get("temp") == early[2]), hit)
         # Base desired setpoint
         if hit is not None:
             v = hit.get("temp") if isinstance(hit, dict) else None

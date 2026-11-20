@@ -17,6 +17,32 @@ const TT_I18N = {
     'ui.temperature': 'Temperature',
     'ui.delete': 'Delete',
     'ui.cancel': 'Cancel',
+    'thermal.title': 'Learning and floor heating',
+    'thermal.learn': 'Learn when to start heating or cooling',
+    'thermal.floor': 'Control an underfloor heating valve',
+    'thermal.requires': 'Requires shared storage and automatic temperature control.',
+    'thermal.room': 'Room temperature',
+    'thermal.existing': 'Use the room temperature source',
+    'thermal.choose_sensor': 'Choose a temperature sensor',
+    'thermal.outdoor': 'Outdoor temperature',
+    'thermal.choose_outdoor': 'Choose an outdoor source',
+    'thermal.days': 'Days of learning history',
+    'thermal.status': 'Check learning status',
+    'thermal.save_first': 'Save the settings to start learning.',
+    'thermal.no_weather': 'Outdoor temperature unavailable',
+    'thermal.outside': 'Outside',
+    'thermal.runs': 'recorded runs',
+    'thermal.active': 'Early start active',
+    'thermal.eta': 'Estimated time',
+    'thermal.normal': 'Following the normal schedule',
+    'thermal.valve': 'Floor valve',
+    'thermal.choose_valve': 'Choose a 0–100% valve',
+    'thermal.control': 'Valve control',
+    'thermal.binary': 'Open / closed',
+    'thermal.proportional': 'Proportional opening',
+    'thermal.invalid_learn': 'Choose an outdoor source and a positive whole number of history days.',
+    'thermal.invalid_floor': 'Choose a percentage valve and a room temperature source.',
+    'thermal.duplicate_valve': 'Choose a different valve for each room.',
     'ui.close': 'Close',
     'ui.unsaved_confirm': 'You have unsaved changes. Close anyway?',
     'ui.discard_changes': 'Discard changes',
@@ -475,6 +501,32 @@ const TT_I18N = {
     'ui.temperature': 'Temperatur',
     'ui.delete': 'Slet',
     'ui.cancel': 'Annuller',
+    'thermal.title': 'Indlæring og gulvvarme',
+    'thermal.learn': 'Lær hvornår varme eller køling skal starte',
+    'thermal.floor': 'Styr en gulvvarmeventil',
+    'thermal.requires': 'Kræver delt lagring og automatisk temperaturstyring.',
+    'thermal.room': 'Rumtemperatur',
+    'thermal.existing': 'Brug rummets temperaturkilde',
+    'thermal.choose_sensor': 'Vælg en temperaturføler',
+    'thermal.outdoor': 'Udetemperatur',
+    'thermal.choose_outdoor': 'Vælg en udendørs temperaturkilde',
+    'thermal.days': 'Antal dages historik',
+    'thermal.status': 'Vis indlæringsstatus',
+    'thermal.save_first': 'Gem indstillingerne for at starte indlæringen.',
+    'thermal.no_weather': 'Udetemperaturen er utilgængelig',
+    'thermal.outside': 'Ude',
+    'thermal.runs': 'registrerede forløb',
+    'thermal.active': 'Tidlig start er aktiv',
+    'thermal.eta': 'Forventet tid',
+    'thermal.normal': 'Følger den normale tidsplan',
+    'thermal.valve': 'Gulvvarmeventil',
+    'thermal.choose_valve': 'Vælg en 0–100 %-ventil',
+    'thermal.control': 'Ventilstyring',
+    'thermal.binary': 'Åben/lukket',
+    'thermal.proportional': 'Proportional åbning',
+    'thermal.invalid_learn': 'Vælg en udendørs temperaturkilde og et positivt helt antal dage.',
+    'thermal.invalid_floor': 'Vælg en procentventil og en kilde til rumtemperatur.',
+    'thermal.duplicate_valve': 'Vælg en separat ventil til hvert rum.',
     'ui.close': 'Luk',
     'ui.unsaved_confirm': 'Du har ændringer, der ikke er gemt. Vil du lukke alligevel?',
     'ui.discard_changes': 'Forkast ændringer',
@@ -5073,6 +5125,7 @@ class ThermostatTimelineCard extends HTMLElement {
         holiday_trips: [...(config.holiday_trips ?? this._config?.holiday_trips ?? [])],
         confirm_season_change: !!(config.confirm_season_change ?? this._config?.confirm_season_change),
         seasonal_sources: JSON.parse(JSON.stringify(config.seasonal_sources ?? this._config?.seasonal_sources ?? {})),
+        thermal_rooms: JSON.parse(JSON.stringify(config.thermal_rooms ?? this._config?.thermal_rooms ?? {})),
         season_follow: { ...(config.season_follow ?? this._config?.season_follow) },
         seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
         seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -6173,7 +6226,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6458,7 +6511,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -7256,6 +7309,7 @@ class ThermostatTimelineCard extends HTMLElement {
         season_follow: { ...this._config.season_follow },
         confirm_season_change: !!this._config.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
+        thermal_rooms: JSON.parse(JSON.stringify(this._config.thermal_rooms || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         weekdays_mode: this._config.weekdays_mode || 'weekday_weekend',
@@ -7317,6 +7371,7 @@ class ThermostatTimelineCard extends HTMLElement {
         season_follow: { ...this._config.season_follow },
         confirm_season_change: !!this._config.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
+        thermal_rooms: JSON.parse(JSON.stringify(this._config.thermal_rooms || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         presence_sensors: this._config.presence_sensors,
@@ -12406,6 +12461,7 @@ class ThermostatTimelineCard extends HTMLElement {
         season_follow: { ...cfg.season_follow },
         confirm_season_change: !!cfg.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(cfg.seasonal_sources || {})),
+        thermal_rooms: JSON.parse(JSON.stringify(cfg.thermal_rooms || {})),
         seasonal_enabled: !!cfg.seasonal_enabled,
         seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
         weekdays_view: String(cfg.weekdays_view || 'all_rooms_one_day'),
@@ -12631,6 +12687,7 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.holiday_trips = [...d.holiday_trips];
       cfg.season_follow = { ...d.season_follow };
       cfg.confirm_season_change = !!d.confirm_season_change;
+      cfg.thermal_rooms = Object.fromEntries(Object.entries(d.thermal_rooms || {}).filter(([room]) => d.entities.includes(room)));
       cfg.seasonal_sources = JSON.parse(JSON.stringify(d.seasonal_sources));
       cfg.seasonal_enabled = !!d.seasonal_enabled;
       cfg.seasonal_mode = (String(d.seasonal_mode || prevSeasonalMode || 'winter') === 'summer') ? 'summer' : 'winter';
@@ -12933,6 +12990,84 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
     } catch {}
+  }
+
+  _thermalRoomSettings(room, draft){
+    const panel = document.createElement('fieldset');
+    panel.className = 'thermal-room';
+    const states = this._hass?.states || {};
+    const rule = draft.thermal_rooms[room] || {};
+    const change = (key, value) => {
+      rule[key] = value;
+      draft.thermal_rooms[room] = rule;
+    };
+    const draw = () => {
+      panel.replaceChildren();
+      const legend = document.createElement('legend');
+      legend.textContent = this._t('thermal.title');
+      panel.append(legend);
+      const add = (label, control) => {
+        const row = document.createElement('label');
+        row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0';
+        row.append(label, control);
+        panel.append(row);
+      };
+      const toggle = (key, label) => {
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'thermal-' + key;
+        input.checked = !!rule[key];
+        input.onchange = () => { change(key,input.checked); draw(); };
+        add(label,input);
+      };
+      const select = (key,label,options,empty) => {
+        const control = document.createElement('select');
+        control.className = 'settings-input thermal-' + key;
+        if (empty) control.add(new Option(empty,''));
+        for (const [id,name] of options) control.add(new Option(name,id));
+        if (rule[key] && ![...control.options].some(o => o.value === rule[key])) control.add(new Option(rule[key],rule[key]));
+        control.value = rule[key] || (empty ? '' : options[0][0]);
+        control.onchange = () => change(key,control.value);
+        add(label,control);
+      };
+      const options = test => Object.entries(states).filter(([id,st]) => test(id,st.attributes || {}))
+        .sort(([a],[b])=>a.localeCompare(b)).map(([id,st])=>[id,st.attributes.friendly_name || id]);
+      const temp = (id,a) => id.startsWith('sensor.') && ['°C','°F','K'].includes(a.unit_of_measurement);
+      if (room.startsWith('climate.')) toggle('learn',this._t('thermal.learn'));
+      toggle('floor',this._t('thermal.floor'));
+      if (!rule.learn && !rule.floor) return;
+      const hint = document.createElement('p');
+      hint.textContent = this._t('thermal.requires');
+      panel.append(hint);
+      select('sensor',this._t('thermal.room'),options(temp), room.startsWith('climate.') ?
+        this._t('thermal.existing') : this._t('thermal.choose_sensor'));
+      if (rule.learn) {
+        select('outdoor',this._t('thermal.outdoor'),options((id,a)=>temp(id,a)||id.startsWith('weather.')),this._t('thermal.choose_outdoor'));
+        const days = document.createElement('input');
+        days.type = 'number'; days.min = '1'; days.step = '1'; days.required = true;
+        days.className = 'settings-input thermal-days'; days.value = rule.days ?? 7;
+        days.oninput = () => change('days',days.valueAsNumber);
+        add(this._t('thermal.days'),days);
+        const button = document.createElement('button'), status = document.createElement('p');
+        button.type = 'button'; button.className = 'btn ghost thermal-status'; button.textContent = this._t('thermal.status');
+        status.setAttribute('role','status');
+        button.onclick = async () => {
+          const data = (await this._apiFetchState())?.thermal_status?.[room];
+          if (!data) { status.textContent = this._t('thermal.save_first'); return; }
+          const outside = data.outdoor_c == null ? this._t('thermal.no_weather') :
+            this._t('thermal.outside') + ' ' + Number((this._haIsF() ? data.outdoor_c * 1.8 + 32 : data.outdoor_c).toFixed(1)) + (this._haIsF() ? ' °F ' : ' °C ') + data.trend;
+          status.textContent = [outside, data.samples + ' ' + this._t('thermal.runs'),
+            data.early ? this._t('thermal.active') : data.estimate_minutes != null ? this._t('thermal.eta') + ': ' + data.estimate_minutes + ' min' : this._t('thermal.normal')].join(' · ');
+        };
+        panel.append(button,status);
+      }
+      if (rule.floor) {
+        select('valve',this._t('thermal.valve'),options((id,a)=>id.startsWith('number.') && a.unit_of_measurement === '%' && Number(a.min) === 0 && Number(a.max) === 100),this._t('thermal.choose_valve'));
+        select('regulation',this._t('thermal.control'),[['binary',this._t('thermal.binary')],['proportional',this._t('thermal.proportional')]]);
+      }
+    };
+    draw();
+    return panel;
   }
 
   _renderSettingsPopupRoomsTab(){
@@ -13602,6 +13737,7 @@ class ThermostatTimelineCard extends HTMLElement {
           left.append(label);
         }
         left.append(modeRow, pick, nameLabel, nameInp, tempWrap, turnOnWrap, applyWrap, linkWrap, chips);
+        if (room) left.append(this._thermalRoomSettings(room, d));
         try { linkWrap.append(linkLabel, linkPicker); } catch {}
         details.append(left);
 
@@ -16984,6 +17120,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
       if (JSON.stringify(d.summer_off_rooms) !== JSON.stringify(c.summer_off_rooms || [])) return true;
       if (JSON.stringify(d.holiday_trips) !== JSON.stringify(c.holiday_trips || [])) return true;
+      if (JSON.stringify(d.thermal_rooms) !== JSON.stringify(c.thermal_rooms || {})) return true;
       if (JSON.stringify(d.seasonal_sources) !== JSON.stringify(c.seasonal_sources || {})) return true;
       if (!!d.confirm_season_change !== !!c.confirm_season_change) return true;
       if (JSON.stringify(d.season_follow) !== JSON.stringify(c.season_follow || {})) return true;
@@ -17407,6 +17544,18 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
       const sourceDraft = this._settingsDraft;
+      const valves = new Set();
+      for (const [room, r] of Object.entries(sourceDraft?.thermal_rooms || {})) {
+        if (!sourceDraft.entities.includes(room)) continue;
+        let message;
+        if (r.learn && (!r.outdoor || !Number.isSafeInteger(r.days ?? 7) || (r.days ?? 7) < 1))
+          message = this._t('thermal.invalid_learn');
+        if (r.floor && (!r.valve || (!room.startsWith('climate.') && !r.sensor && !sourceDraft.temp_sensors?.[room])))
+          message = this._t('thermal.invalid_floor');
+        if (r.floor && valves.has(r.valve)) message = this._t('thermal.duplicate_valve');
+        if (r.floor) valves.add(r.valve);
+        if (message) { window.alert(room + ': ' + message); return; }
+      }
       if (sourceDraft?.seasonal_enabled && sourceDraft.seasonal_sources?.enabled) {
         const invalid = this.shadowRoot.querySelector('.seasonal-sources :invalid');
         if (invalid) {

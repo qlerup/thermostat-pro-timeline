@@ -6,6 +6,22 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
 <div class="grid cards" markdown>
 
+-   **[Learn when to start heating or cooling](learned-starts.md#learn-when-to-start-heating-or-cooling)**
+
+    Use recent room and weather measurements to reach the next block's temperature earlier.
+
+    [![Set up learned heating and cooling starts](../../images/learn-room-result.png)](../../images/learn-room.gif)
+
+    [Play walkthrough](../../images/learn-room.gif) | [Full-size GIF](../../images/learn-room.gif)
+
+-   **[Control an underfloor heating valve](learned-starts.md#control-an-underfloor-heating-valve)**
+
+    Choose open/closed or proportional control for a room's percentage valve.
+
+    [![A room's floor valve at 50 percent](../../images/floor-valve-result.png)](../../images/floor-valve.gif)
+
+    [Play walkthrough](../../images/floor-valve.gif) | [Full-size GIF](../../images/floor-valve.gif)
+
 -   **[Add a midday block](../../getting-started/quick-start.md#add-a-midday-block)**
 
     Expand the Office row and choose **Add block**.
