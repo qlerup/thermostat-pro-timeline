@@ -46,3 +46,15 @@ Enable **multiple boilers**, expand the room and choose its relay. Give each roo
 [![Assign rooms to different boilers](../../images/multi-boiler-result.png)](../../images/multi-boiler.gif)
 
 [Play walkthrough](../../images/multi-boiler.gif) | [Full-size GIF](../../images/multi-boiler.gif)
+
+## Use a manual thermostat target for boiler demand
+
+Use shared storage with automatic temperature control. In **Settings > Boiler control**, enable boiler control, assign the relay and participating rooms, and turn on **Use manual thermostat targets for boiler demand**. Save, then change a room's thermostat target in Home Assistant or at the thermostat.
+
+For example, Office measures 20 degrees and its schedule calls for 19. Raising its thermostat to 23 creates a temporary room override. The relay now calls for heat using 23 as the target, with your existing switching thresholds. Reducing the target can stop demand if the other rooms sharing the relay are also warm enough. The same rule applies to rooms assigned to separate boilers.
+
+At the room's next schedule boundary, or at midnight when no earlier boundary remains, Timeline resumes the schedule and recalculates demand. Setting the thermostat back to the scheduled temperature also ends the override. Turn the option off to base boiler demand on scheduled targets again. The option is off by default.
+
+[![Use a manual thermostat target for boiler demand in Home Assistant](../../images/boiler-manual-result.png)](../../images/boiler-manual.gif)
+
+[Play walkthrough](../../images/boiler-manual.gif) | [Full-size GIF](../../images/boiler-manual.gif)

@@ -1387,6 +1387,8 @@ class AutoApplyManager:
         self._unsub_boiler = None
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
+        self._unsub_workdays = None
+        self._workday_entities = ()
         self._unsub_season = None
         self._season_sensor = None
         self._unsub_targets = None
@@ -1428,6 +1430,7 @@ class AutoApplyManager:
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        self._watch_workdays()
         await self._watch_season()
         self._reset_target_recovery_watch()
 
@@ -1442,6 +1445,7 @@ class AutoApplyManager:
         self._reset_boiler_watch()
         self._reset_boiler_interval()
         self._reset_pause_sensor_watch()
+        self._watch_workdays()
         await self._watch_season()
         self._reset_target_recovery_watch()
 
@@ -1470,6 +1474,44 @@ class AutoApplyManager:
             return False
         alarm = hass.states.get(entity)
         return not alarm or alarm.state in ("unknown", "unavailable") or alarm.state in states
+
+    def _workday_plan(self, settings):
+        rule = settings.get("workday_plans") or {}
+        if not settings.get("weekdays_enabled") or not rule.get("enabled"):
+            return None
+        pair = []
+        for field in ("today", "tomorrow"):
+            entity = rule.get(field)
+            state = self.hass.states.get(entity) if entity else None
+            if not state or state.state not in ("on", "off"):
+                return None
+            pair.append(state.state)
+        key = "_".join(pair)
+        defaults = {"on_on": "mon", "on_off": "fri", "off_off": "sat", "off_on": "sun"}
+        day = rule.get(key, defaults[key])
+        return day if day in ("mon", "tue", "wed", "thu", "fri", "sat", "sun") else None
+
+    def _watch_workdays(self):
+        _, settings = self._get_data()
+        rule = settings.get("workday_plans") or {}
+        entities = ()
+        if self._is_active_instance() and settings.get("weekdays_enabled") and rule.get("enabled"):
+            entities = tuple(dict.fromkeys(e for e in (rule.get("today"), rule.get("tomorrow")) if e))
+        if entities == self._workday_entities:
+            return
+        if self._unsub_workdays:
+            self._unsub_workdays()
+            self._unsub_workdays = None
+        self._workday_entities = entities
+        if entities:
+            async def changed(event):
+                before, after = event.data.get("old_state"), event.data.get("new_state")
+                if before and after and before.state == after.state:
+                    return
+                await self._maybe_apply_now(force=True)
+                await self._maybe_control_boiler(force=True)
+                await self._schedule_next()
+            self._unsub_workdays = async_track_state_change_event(self.hass, entities, changed)
 
     def _observed_season(self, settings):
         rule = settings.get("season_follow") or {}
@@ -1736,7 +1778,10 @@ class AutoApplyManager:
                 wk = row.get("weekly")
                 if wk and isinstance(wk, dict):
                     days = wk.get("days") or {}
-                    arr = days.get(self._today_key())
+                    day = self._workday_plan(settings)
+                    arr = days.get(day) if day else None
+                    if not isinstance(arr, list):
+                        arr = days.get(self._today_key())
                     if isinstance(arr, list):
                         return arr
         except Exception:
@@ -2713,6 +2758,21 @@ class AutoApplyManager:
     def _f_to_c(v: float) -> float:
         return (float(v) - 32.0) * 5.0 / 9.0
 
+    def _boiler_target_c(self, eid, schedules, settings, now_min):
+        if settings.get("boiler_manual_targets"):
+            primary = eid
+            for room, members in (settings.get("merges") or {}).items():
+                if eid in members:
+                    primary = room
+                    break
+            hold = (settings.get("room_pause") or {}).get(primary) or {}
+            if hold.get("source") == "manual_target" and (hold.get("until_ms") or 0) > time.time() * 1000:
+                target = hold.get("target_c")
+                if isinstance(target, (int, float)):
+                    return target
+        target = self._desired_for(eid, schedules, settings, now_min)
+        return self._stored_setpoint_c(target, settings) if target is not None else None
+
     async def _maybe_control_boiler(self, force: bool = False) -> None:
         """Control boiler switch (switch.* or input_boolean.*).
 
@@ -2828,7 +2888,7 @@ class AutoApplyManager:
 
                             for r in rooms:
                                 try:
-                                    desired_c = self._desired_for(r["eid"], schedules, settings, now_min)
+                                    desired_c = self._boiler_target_c(r["eid"], schedules, settings, now_min)
                                     if desired_c is None:
                                         any_unknown = True
                                         continue
@@ -2921,7 +2981,7 @@ class AutoApplyManager:
                             missing += 1
                             continue
 
-                        desired_c = self._desired_for(eid, schedules, settings, now_min)
+                        desired_c = self._boiler_target_c(eid, schedules, settings, now_min)
                         if desired_c is None:
                             missing += 1
                             continue

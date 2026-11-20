@@ -226,6 +226,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/season-sensor.gif) | [Full-size GIF](../../images/season-sensor.gif)
 
+-   **[Choose a plan with Workday sensors](weekdays.md#choose-a-plan-with-workday-sensors)**
+
+    Select a room timetable using today's and tomorrow's work status.
+
+    [![Choose a plan with Workday sensors in Home Assistant](../../images/workday-plans-result.png)](../../images/workday-plans.gif)
+
+    [Play walkthrough](../../images/workday-plans.gif) | [Full-size GIF](../../images/workday-plans.gif)
+
 </div>
 
 ## Presence and Away
@@ -325,6 +333,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
     [![Multiple boilers](../../images/multi-boiler-result.png)](../../images/multi-boiler.gif)
 
     [Play walkthrough](../../images/multi-boiler.gif) | [Full-size GIF](../../images/multi-boiler.gif)
+
+-   **[Use a manual thermostat target for boiler demand](boiler.md#use-a-manual-thermostat-target-for-boiler-demand)**
+
+    Let a temporary room target call for heat until the next schedule boundary.
+
+    [![Use a manual thermostat target for boiler demand in Home Assistant](../../images/boiler-manual-result.png)](../../images/boiler-manual.gif)
+
+    [Play walkthrough](../../images/boiler-manual.gif) | [Full-size GIF](../../images/boiler-manual.gif)
 
 </div>
 

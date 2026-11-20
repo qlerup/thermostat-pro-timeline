@@ -197,3 +197,24 @@ test('automatic season reload preserves both schedules and the last known plan',
   assert.equal(row.blocks[0].temp, 21);
   assert.equal(row.seasons.summer.blocks[0].temp, 17);
 });
+
+test('workday combinations select saved timetables and fall back to the calendar day', () => {
+  const c = card();
+  c._todayKey = () => 'wed';
+  const today = 'binary_sensor.today', tomorrow = 'binary_sensor.tomorrow';
+  c._config.weekdays_enabled = true;
+  c._config.workday_plans = { enabled: true, today, tomorrow, on_off: 'thu' };
+  c._hass = { states: { [today]: {}, [tomorrow]: {} } };
+  const row = { weekly: { days: { thu: [22], wed: [20] } }, blocks: [18] };
+  for (const [a, b, day] of [['on','on','mon'], ['on','off','thu'], ['off','off','sat'], ['off','on','sun']]) {
+    c._hass.states[today].state = a;
+    c._hass.states[tomorrow].state = b;
+    assert.equal(c._planDay(), day);
+    assert.equal(c._activeWeekdayBlocks(row)[0], day === 'thu' ? 22 : 20);
+  }
+  c._hass.states[tomorrow].state = 'unavailable';
+  assert.equal(c._planDay(), 'wed');
+  c._config.workday_plans.enabled = false;
+  c._hass.states[tomorrow].state = 'on';
+  assert.equal(c._planDay(), 'wed');
+});

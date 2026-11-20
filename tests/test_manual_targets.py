@@ -84,6 +84,47 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.settings["away_room_targets_c"].clear()
         self.assertEqual(target(self.a), 17)
 
+    def test_boiler_uses_only_live_manual_holds_in_celsius(self):
+        settings = dict(self.settings, storage_temp_unit="F", merges={self.a: [self.b]})
+        self.mgr._desired_for = lambda *args: 68
+        hold = {"source": "manual_target", "target_c": 23,
+                "until_ms": (self.now.timestamp() + 60) * 1000}
+        settings["room_pause"] = {self.a: hold}
+        def target():
+            return self.mgr._boiler_target_c(self.b, self.schedules, settings, 600)
+        self.assertEqual(target(), 20)
+        settings["boiler_manual_targets"] = True
+        self.assertEqual(target(), 23)
+        hold["source"] = "automation"
+        self.assertEqual(target(), 20)
+        hold["source"] = "manual_target"
+        self.now += timedelta(minutes=1)
+        self.assertEqual(target(), 20)
+
+    def test_workday_sensor_fallback_and_holiday_priority(self):
+        rule = {"today": "binary_sensor.today", "tomorrow": "binary_sensor.tomorrow",
+                "enabled": True, "on_off": "thu"}
+        settings = dict(self.settings, weekdays_enabled=True, workday_plans=rule)
+        today = self.states[rule["today"]] = SimpleNamespace(state="on")
+        tomorrow = self.states[rule["tomorrow"]] = SimpleNamespace(state="on")
+        del self.mgr._effective_blocks_today
+        self.mgr._today_key = lambda: "wed"
+        days = {day: [{"temp": temp}] for day, temp in
+                zip(("mon", "thu", "sat", "sun", "wed"), (19, 22, 18, 17, 20))}
+        row = {"weekly": {"days": days}, "holiday": {"blocks": [{"temp": 24}]}}
+        def target():
+            return self.mgr._effective_blocks_today(row, settings)[0]["temp"]
+        for a, b, expected in (("on","on",19), ("on","off",22), ("off","off",18),
+                               ("off","on",17), ("unknown","on",20)):
+            today.state, tomorrow.state = a, b
+            self.assertEqual(target(), expected)
+        today.state = "on"
+        rule["enabled"] = False
+        self.assertEqual(target(), 20)
+        rule["enabled"] = True
+        self.mgr._is_holiday_active = lambda config: True
+        self.assertEqual(target(), 24)
+
     async def manual(self, eid, value):
         self.states[eid].attributes["temperature"] = value
         await self.mgr._remember_manual_target(eid, value)

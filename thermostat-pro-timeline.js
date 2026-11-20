@@ -4615,6 +4615,15 @@ class ThermostatTimelineCard extends HTMLElement {
       this._scheduleNextApply();
     }
 
+    const workdayPair = this._workdayPair();
+    if (this._initialized && this._lastWorkdayPair !== undefined && workdayPair !== this._lastWorkdayPair) {
+      this._weekdaysViewDayKey = null;
+      if (!this._editing && !this._inlineEditing) this._render();
+      this._applyCurrentSetpoints(false);
+      this._scheduleNextApply();
+    }
+    this._lastWorkdayPair = workdayPair;
+
     // Detect pause sensor transitions (UI responsiveness + frontend-only behavior when Sync is OFF)
     try {
       const cur = this._isPausedBySensor ? !!this._isPausedBySensor() : false;
@@ -4979,6 +4988,8 @@ class ThermostatTimelineCard extends HTMLElement {
       presence_live_header: !!(config.presence_live_header ?? this._config?.presence_live_header ?? true),
       weekdays_enabled: !!(config.weekdays_enabled ?? false),
         alarm_pause: { ...(config.alarm_pause ?? this._config?.alarm_pause) },
+        workday_plans: { ...(config.workday_plans ?? this._config?.workday_plans) },
+        boiler_manual_targets: !!(config.boiler_manual_targets ?? this._config?.boiler_manual_targets),
         season_follow: { ...(config.season_follow ?? this._config?.season_follow) },
         seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
         seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -5875,7 +5886,7 @@ class ThermostatTimelineCard extends HTMLElement {
                     this._config.apply_enabled = { ...(this._config.apply_enabled || {}), ...ls.apply_enabled };
                   }
                 }
-                if (!this._yamlProvided?.room_pause && (!s.room_pause || typeof s.room_pause !== 'object' || isEmptyObj(s.room_pause))) {
+                if (!this._yamlProvided?.room_pause && (!s.room_pause || typeof s.room_pause !== 'object')) {
                   if (ls.room_pause && typeof ls.room_pause === 'object') {
                     this._config.room_pause = { ...(this._config.room_pause || {}), ...ls.room_pause };
                   }
@@ -6028,13 +6039,13 @@ class ThermostatTimelineCard extends HTMLElement {
             if (typeof s.auto_apply_enabled === 'boolean') this._config.auto_apply = !!s.auto_apply_enabled;
             if (typeof s.apply_on_edit === 'boolean') this._config.apply_on_edit = !!s.apply_on_edit;
             if (typeof s.apply_on_default_change === 'boolean') this._config.apply_on_default_change = !!s.apply_on_default_change;
-            // Final fallback: if backend omitted or defaulted boiler settings, prefer last local copy to keep UI consistent after hard refresh
+            // Final fallback: if backend omitted boiler settings, prefer last local copy to keep UI consistent after hard refresh
             try {
               const rawLocal2 = localStorage.getItem(this._localStoreKey()) || '';
               if (rawLocal2) {
                 const parsed2 = JSON.parse(rawLocal2);
                 const ls2 = parsed2?.settings || {};
-                const has = (obj, k)=> Object.prototype.hasOwnProperty.call(obj||{}, k);
+                const has = (obj, k)=> !Object.hasOwn(s, k) && Object.hasOwn(obj || {}, k);
                 if (!this._yamlProvided?.boiler_enabled && has(ls2, 'boiler_enabled')) this._config.boiler_enabled = !!ls2.boiler_enabled;
                 if (!this._yamlProvided?.boiler_switch && has(ls2, 'boiler_switch')) this._config.boiler_switch = String(ls2.boiler_switch || '');
                 if (!this._yamlProvided?.boiler_rooms && (has(ls2, 'boiler_rooms'))) {
@@ -6074,7 +6085,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last']) {
+            for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6354,7 +6365,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last']) {
+  for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -7094,6 +7105,8 @@ class ThermostatTimelineCard extends HTMLElement {
         max_temp: toStore(Number(this._config.max_temp ?? 25)),
         weekdays_enabled: !!this._config.weekdays_enabled,
         alarm_pause: { ...this._config.alarm_pause },
+        workday_plans: { ...this._config.workday_plans },
+        boiler_manual_targets: !!this._config.boiler_manual_targets,
         season_follow: { ...this._config.season_follow },
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
@@ -7144,6 +7157,8 @@ class ThermostatTimelineCard extends HTMLElement {
         weekdays_view_switch_in_timeline: !!(this._config.weekdays_view_switch_in_timeline ?? base.weekdays_view_switch_in_timeline ?? false),
         weekdays_selected_room: this._config.weekdays_selected_room || base.weekdays_selected_room || '',
         alarm_pause: { ...this._config.alarm_pause },
+        workday_plans: { ...this._config.workday_plans },
+        boiler_manual_targets: !!this._config.boiler_manual_targets,
         season_follow: { ...this._config.season_follow },
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
@@ -7544,12 +7559,12 @@ class ThermostatTimelineCard extends HTMLElement {
         const names = this._weekdayNames();
         const cur = String(this._weekdaysViewDayKey || '').toLowerCase();
         if (names.includes(cur)) return cur;
-        const today = this._todayKey();
+        const today = this._planDay();
         this._weekdaysViewDayKey = today;
         return today;
       }
     } catch {}
-    return this._todayKey();
+    return this._planDay();
   }
 
   _setTimelineDisplayDayKey(dayKey){
@@ -7566,6 +7581,19 @@ class ThermostatTimelineCard extends HTMLElement {
     if (m === 'weekday_weekend') return isWk ? 'mon' : 'sat';
     if (m === 'weekday_sat_sun') return isWk ? 'mon' : d; // sat/sun
     return d; // all_7
+  }
+  _workdayDefaults(){ return {on_on:'mon', on_off:'fri', off_off:'sat', off_on:'sun'}; }
+  _workdayPair(){
+    const rule = this._config?.workday_plans;
+    if (!this._config?.weekdays_enabled || !rule?.enabled) return null;
+    const states = [rule.today, rule.tomorrow].map(id => this._hass?.states?.[id]?.state);
+    return states.every(s => s === 'on' || s === 'off') ? states.join('_') : null;
+  }
+  _planDay(){
+    const pair = this._workdayPair();
+    if (!pair) return this._todayKey();
+    const day = this._config.workday_plans[pair] || this._workdayDefaults()[pair];
+    return this._weekdayNames().includes(day) ? day : this._todayKey();
   }
   _todayKey(){
     try {
@@ -7603,6 +7631,11 @@ class ThermostatTimelineCard extends HTMLElement {
       }
     } catch {}
     return row;
+  }
+  _activeWeekdayBlocks(row){
+    const day = this._planDay();
+    const days = row?.weekly?.days;
+    return this._getBlocksForDay(row, Array.isArray(days?.[day]) ? day : this._todayKey());
   }
   _getBlocksForDay(row, dayKey){ if (!this._config?.weekdays_enabled || !row?.weekly) return row?.blocks || []; const days = row.weekly.days || {}; return Array.isArray(days[dayKey]) ? days[dayKey] : (row.blocks||[]); }
   _weeklyEditableKeys(mode){ const all = this._weekdayNames(); if (!mode) mode = 'weekday_weekend'; if (mode==='weekday_weekend') return ['weekdays','weekend']; if (mode==='weekday_sat_sun') return ['weekdays','sat','sun']; if (mode==='all_7') return all; return ['weekdays','weekend']; }
@@ -7777,10 +7810,10 @@ class ThermostatTimelineCard extends HTMLElement {
           if (ap && row.profiles && Array.isArray(row.profiles[ap]?.blocks) && (row.profiles[ap].blocks||[]).length) {
             blocks = row.profiles[ap].blocks || [];
           } else if (this._config?.weekdays_enabled && row.weekly) {
-            const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey);
+            blocks = this._activeWeekdayBlocks(row);
           }
         } else if (this._config?.weekdays_enabled && row.weekly) {
-          const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey);
+          blocks = this._activeWeekdayBlocks(row);
         }
       } catch { /* fall back to default blocks */ }
     }
@@ -8224,10 +8257,10 @@ class ThermostatTimelineCard extends HTMLElement {
               if (ap && row.profiles && Array.isArray(row.profiles[ap]?.blocks) && (row.profiles[ap].blocks||[]).length) {
                 blocks = row.profiles[ap].blocks || [];
               } else if (this._config?.weekdays_enabled && row.weekly) {
-                const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || [];
+                blocks = this._activeWeekdayBlocks(row) || [];
               }
             } else if (this._config?.weekdays_enabled && row.weekly) {
-              const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || [];
+              blocks = this._activeWeekdayBlocks(row) || [];
             }
           } catch {}
         }
@@ -8267,10 +8300,10 @@ class ThermostatTimelineCard extends HTMLElement {
             if (ap && row.profiles && Array.isArray(row.profiles[ap]?.blocks) && (row.profiles[ap].blocks||[]).length) {
               blocks = row.profiles[ap].blocks || [];
             } else if (this._config?.weekdays_enabled && row.weekly) {
-              const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || [];
+              blocks = this._activeWeekdayBlocks(row) || [];
             }
           } else if (this._config?.weekdays_enabled && row.weekly) {
-            const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || [];
+            blocks = this._activeWeekdayBlocks(row) || [];
           }
         } catch {}
       }
@@ -8618,9 +8651,9 @@ class ThermostatTimelineCard extends HTMLElement {
         if (key && row.presence && Array.isArray(row.presence[key]?.blocks) && row.presence[key].blocks.length) {
           blocks = row.presence[key].blocks || [];
         } else if (this._config?.weekdays_enabled && row.weekly) {
-          const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || [];
+          blocks = this._activeWeekdayBlocks(row) || [];
         }
-      } catch { if (this._config?.weekdays_enabled && row.weekly){ const dayKey = this._todayKey(); blocks = this._getBlocksForDay(row, dayKey) || []; } }
+      } catch { if (this._config?.weekdays_enabled && row.weekly){ blocks = this._activeWeekdayBlocks(row) || []; } }
       // Allow a 1-minute grace window because we intentionally schedule the
       // timer a tiny bit after the exact boundary to avoid races. Otherwise we
       // might miss the equality check and skip applying at the boundary.
@@ -9100,6 +9133,7 @@ class ThermostatTimelineCard extends HTMLElement {
         </style>
       <ha-card class="card">
   <div class="header"><div class="title"></div><div class="weekday-full" style="display:none;"></div><div class="spacer"></div></div>
+  <div class="workday-status" hidden style="padding:0 16px 8px;font-size:.9em"></div>
         <div class="scale"><div class="scale-inner"></div></div>
         <div class="rows"></div>
   <div class="footer"><div class="label-end"><span class="lbl-start">00:00</span><span class="lbl-end">00:00</span></div></div>
@@ -10089,6 +10123,17 @@ class ThermostatTimelineCard extends HTMLElement {
     if (this._suspendRender) return;
     const qs = (s) => this.shadowRoot.querySelector(s);
   const titleEl = qs('.title');
+  const workdayStatus = qs('.workday-status');
+  if (workdayStatus) {
+    workdayStatus.hidden = !(this._config?.weekdays_enabled && this._config?.workday_plans?.enabled);
+    if (!workdayStatus.hidden) {
+      const pair = this._workdayPair();
+      const name = this._weekdayFullName(this._planDay());
+      workdayStatus.textContent = pair
+        ? 'Workday timetable: ' + pair.split('_').map(v => v === 'on' ? 'Work' : 'Free').join(' / ') + ' - ' + name
+        : 'Workday sensors unavailable - using ' + name;
+    }
+  }
   const dayFull = qs('.weekday-full');
   const rowsEl = qs('.rows');
   const scaleEl = qs('.scale-inner');
@@ -11921,7 +11966,7 @@ class ThermostatTimelineCard extends HTMLElement {
         if (raw) {
           const parsed = JSON.parse(raw);
           const ls = parsed?.settings || {};
-          const has = (obj,k)=> Object.prototype.hasOwnProperty.call(obj||{}, k);
+          const has = (obj,k)=> (!k.startsWith('boiler_') || !this._storeLoadedFromApi) && Object.hasOwn(obj || {}, k);
           if (!this._yamlProvided?.presence_live_header && has(ls, 'presence_live_header')) cfg.presence_live_header = !!ls.presence_live_header;
           if (!this._yamlProvided?.boiler_enabled && has(ls, 'boiler_enabled')) cfg.boiler_enabled = !!ls.boiler_enabled;
           if (!this._yamlProvided?.boiler_switch && has(ls, 'boiler_switch')) cfg.boiler_switch = String(ls.boiler_switch || '');
@@ -12038,6 +12083,8 @@ class ThermostatTimelineCard extends HTMLElement {
         weekdays_copy_from_main_mode: '',
         weekdays_copy_from_main_target: '',
         alarm_pause: { ...cfg.alarm_pause, states: [...(cfg.alarm_pause?.states || ['armed_away'])] },
+        workday_plans: { ...cfg.workday_plans },
+        boiler_manual_targets: !!cfg.boiler_manual_targets,
         season_follow: { ...cfg.season_follow },
         seasonal_enabled: !!cfg.seasonal_enabled,
         seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -12258,6 +12305,8 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.temp_unit = (String(d.temp_unit || 'C').toUpperCase() === 'F') ? 'F' : 'C';
       cfg.profiles_enabled = !!d.profiles_enabled;
       cfg.alarm_pause = { ...d.alarm_pause };
+      cfg.workday_plans = { ...d.workday_plans };
+      cfg.boiler_manual_targets = !!d.boiler_manual_targets;
       cfg.season_follow = { ...d.season_follow };
       cfg.seasonal_enabled = !!d.seasonal_enabled;
       cfg.seasonal_mode = (String(d.seasonal_mode || prevSeasonalMode || 'winter') === 'summer') ? 'summer' : 'winter';
@@ -14942,6 +14991,9 @@ class ThermostatTimelineCard extends HTMLElement {
               </div>
               <ha-switch class="sp-boiler-enable"></ha-switch>
             </div>
+            <div class="setting boiler-manual-setting"><div><label for="boiler-manual">Use manual thermostat targets for boiler demand</label>
+              <div class="desc">Shared storage uses the room's manual target until its next schedule boundary.</div></div>
+              <input id="boiler-manual" type="checkbox"></div>
             <div class="setting sp-boiler-multi-setting">
               <div class="text">
                 <div class="title sp-boiler-multi-title"></div>
@@ -15000,6 +15052,11 @@ class ThermostatTimelineCard extends HTMLElement {
 
       // Visibility of dependent controls
       const boilerOn = !!d.boiler_enabled;
+      const manual = page.querySelector('#boiler-manual');
+      manual.closest('.setting').style.display = boilerOn ? '' : 'none';
+      manual.checked = !!d.boiler_manual_targets;
+      manual.disabled = !this._config.storage_enabled;
+      manual.onchange = () => { d.boiler_manual_targets = manual.checked; };
       const multiOn = !!d.boiler_multi_enabled;
       try {
         const switchRow = q('.overlay-settings .sp-boiler-switch-setting');
@@ -15476,6 +15533,44 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
+  _bindWorkdaySettings(page, draft){
+    const rule = draft.workday_plans;
+    const toggle = page.querySelector('#workday-enable');
+    toggle.closest('.setting').style.display = draft.weekdays_enabled ? '' : 'none';
+    toggle.checked = !!rule.enabled;
+    toggle.onchange = () => { rule.enabled = toggle.checked; this._bindWorkdaySettings(page, draft); };
+    const options = page.querySelector('.workday-options');
+    options.style.display = draft.weekdays_enabled && rule.enabled ? '' : 'none';
+    if (!draft.weekdays_enabled || !rule.enabled) return;
+    for (const field of ['today','tomorrow']) {
+      const picker = options.querySelector('.workday-' + field);
+      picker.hass = this._hass;
+      picker.value = rule[field] || '';
+      if (!picker._workdayBound) {
+        picker._workdayBound = true;
+        picker.addEventListener('value-changed', ev => {
+          if (this._settingsDraft) this._settingsDraft.workday_plans[field] = ev.detail.value || '';
+        });
+      }
+    }
+    const mappings = options.querySelector('.workday-mappings');
+    mappings.replaceChildren();
+    for (const [pair, defaultDay] of Object.entries(this._workdayDefaults())) {
+      const label = document.createElement('label');
+      label.style.display = 'flex';
+      label.style.justifyContent = 'space-between';
+      const caption = pair.split('_').map(s => s === 'on' ? 'Work' : 'Free').join(' / ');
+      label.append(caption + ' (today / tomorrow)');
+      const select = document.createElement('select');
+      select.dataset.pair = pair;
+      for (const day of this._weekdayNames()) select.add(new Option(this._weekdayFullName(day), day));
+      select.value = rule[pair] || defaultDay;
+      select.onchange = () => { rule[pair] = select.value; };
+      label.append(select);
+      mappings.append(label);
+    }
+  }
+
   _renderSettingsPopupWeekdaysTab(){
     try {
       const d = this._settingsDraft;
@@ -15494,6 +15589,13 @@ class ThermostatTimelineCard extends HTMLElement {
                 <div class="desc sp-week-enable-desc"></div>
               </div>
               <ha-switch class="sp-week-enable"></ha-switch>
+            </div>
+            <div class="setting workday-setting"><label for="workday-enable">Use Workday sensors to choose the plan</label><input id="workday-enable" type="checkbox"></div>
+            <div class="setting workday-options" style="grid-template-columns:1fr">
+              <tt-entity-picker class="workday-today" label="Workday today (offset 0)" include-domains='["binary_sensor"]'></tt-entity-picker>
+              <tt-entity-picker class="workday-tomorrow" label="Workday tomorrow (offset 1)" include-domains='["binary_sensor"]'></tt-entity-picker>
+              <div class="desc">Choose an existing weekday timetable for each combination.</div>
+              <div class="workday-mappings"></div>
             </div>
             <div class="setting sp-week-view-setting">
               <div class="text">
@@ -15526,6 +15628,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
       const q = (sel)=> this.shadowRoot.querySelector(sel);
       const setChk = (sel, v)=>{ const el=q(sel); if (el) el.checked = !!v; };
+      this._bindWorkdaySettings(page, d);
       setChk('.overlay-settings .sp-week-enable', d.weekdays_enabled);
       setChk('.overlay-settings .sp-week-view-switch', d.weekdays_view_switch_in_timeline);
 
@@ -16269,6 +16372,8 @@ class ThermostatTimelineCard extends HTMLElement {
       if (String(d.temp_unit||'C').toUpperCase() !== String(c.temp_unit||'C').toUpperCase()) return true;
       if (!!d.profiles_enabled !== !!c.profiles_enabled) return true;
       if (JSON.stringify(d.alarm_pause) !== JSON.stringify({ ...c.alarm_pause, states: c.alarm_pause?.states || ['armed_away'] })) return true;
+      if (JSON.stringify(d.workday_plans) !== JSON.stringify(c.workday_plans || {})) return true;
+      if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
       if (JSON.stringify(d.season_follow) !== JSON.stringify(c.season_follow || {})) return true;
       if (!!d.seasonal_enabled !== !!c.seasonal_enabled) return true;
       if (String(d.seasonal_mode||'winter') !== String(c.seasonal_mode||'winter')) return true;
