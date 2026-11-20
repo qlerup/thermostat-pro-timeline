@@ -58,6 +58,32 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         mgr._owd_mgr = lambda: None
         return mgr
 
+    def test_room_targets_follow_schedule_and_away_ceiling(self):
+        del self.mgr._desired_for  # Exercise the real manager instead of the manual-hold stub.
+        sensor = "binary_sensor.study"
+        person = "person.resident"
+        self.states[sensor] = SimpleNamespace(state="on")
+        self.states[person] = SimpleNamespace(state="home")
+        self.settings.update(presence_sensor_enabled=True, presence_sensors={self.a: sensor},
+                             presence_sensor_temps={self.a: 22},
+                             away={"enabled": True, "persons": [person], "target_c": 17})
+
+        def target(room):
+            return self.mgr._desired_for(room, self.schedules, self.settings, 420)
+
+        self.assertEqual(target(self.a), 22)
+        self.settings["presence_offsets_c"] = {self.a: 2}
+        self.assertEqual(target(self.a), 21)
+        self.states[sensor].state = "off"
+        self.assertEqual(target(self.a), 19)
+        self.states[person].state = "not_home"
+        self.states[sensor].state = "on"
+        self.settings["away_room_targets_c"] = {self.a: 16}
+        self.assertEqual(target(self.a), 16)
+        self.assertEqual(target(self.b), 17)
+        self.settings["away_room_targets_c"].clear()
+        self.assertEqual(target(self.a), 17)
+
     async def manual(self, eid, value):
         self.states[eid].attributes["temperature"] = value
         await self.mgr._remember_manual_target(eid, value)

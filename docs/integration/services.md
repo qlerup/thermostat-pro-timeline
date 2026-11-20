@@ -2,6 +2,29 @@
 
 All services live under the domain `thermostat_timeline`. You can call them from Developer Tools → Services or in automations/scripts.
 
+## Pause and resume schedules
+
+Use these actions with the shared integration. Each action accepts an optional `instance_id` (defaults to the active instance) and an optional `entity_id` (one primary room entity or a list). Omit `entity_id` to control the global pause. A room pause and a global pause can coexist.
+
+```yaml
+action: thermostat_timeline.pause_schedule
+data:
+  entity_id: climate.office
+  duration_minutes: 15
+```
+
+Omit `duration_minutes` for an indefinite pause. To resume the same room early:
+
+```yaml
+action: thermostat_timeline.resume_schedule
+data:
+  entity_id: climate.office
+```
+
+To resume the global schedule, use `thermostat_timeline.resume_schedule` with `data: {}`. Existing room pauses still apply.
+
+## Storage and backup actions
+
 Service: `set_store` — replace full store (optionally for an instance)
 
 ```yaml

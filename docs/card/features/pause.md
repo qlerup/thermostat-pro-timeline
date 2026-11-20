@@ -55,3 +55,11 @@ With background control enabled, open the climate entity and raise its target. C
 [![Hold a manual thermostat target](../../images/manual-hold-result.png)](../../images/manual-hold.gif)
 
 [Play walkthrough](../../images/manual-hold.gif) | [Full-size GIF](../../images/manual-hold.gif)
+
+## Pause and resume from an automation
+
+Choose **Thermostat Timeline: Pause schedule** in an automation and select the primary room entity. Enter a duration in minutes or leave it blank for an indefinite pause. Omit the room to pause the entire instance. **Resume schedule** clears the pause for the selected scope. For example, resuming Office during a global pause still leaves Office paused until the global pause ends.
+
+[![Pause and resume from an automation in Home Assistant](../../images/automation-pause-result.png)](../../images/automation-pause.gif)
+
+[Play walkthrough](../../images/automation-pause.gif) | [Full-size GIF](../../images/automation-pause.gif)

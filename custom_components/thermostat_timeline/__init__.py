@@ -6,6 +6,9 @@ import os
 import time
 import traceback
 
+import voluptuous as vol
+from homeassistant.exceptions import ServiceValidationError
+
 from homeassistant.core import HomeAssistant, ServiceCall, callback  # type: ignore[reportMissingImports]
 from homeassistant.config_entries import ConfigEntry  # type: ignore[reportMissingImports]
 from homeassistant.helpers import config_validation as cv  # type: ignore[reportMissingImports]
@@ -398,20 +401,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return newest[1] if newest else None
 
     async def set_store(call: ServiceCall):
-        force = bool(call.data.get("force"))
+        await update_store(call.data)
+
+    async def update_store(data):
+        force = bool(data.get("force"))
         _ensure_instances_loaded(hass)
         instances = hass.data[DOMAIN].setdefault("instances", {})
-        iid_in_call = "instance_id" in call.data
-        iid = _norm_instance_id(call.data.get("instance_id")) if iid_in_call else _norm_instance_id(
+        iid_in_call = "instance_id" in data
+        iid = _norm_instance_id(data.get("instance_id")) if iid_in_call else _norm_instance_id(
             hass.data[DOMAIN].get("active_instance_id") or "default"
         )
 
         # DEBUG temporaire : vérifier ce que le frontend envoie réellement
         try:
-            dbg_settings = call.data.get("settings") or {}
+            dbg_settings = data.get("settings") or {}
             dbg_apply = dbg_settings.get("apply_enabled") or {}
 
-            dbg_schedules = call.data.get("schedules") or {}
+            dbg_schedules = data.get("schedules") or {}
 
             def _temps(eid):
                 row = dbg_schedules.get(eid) or {}
@@ -436,7 +442,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         cur_sched = inst.get("schedules", {}) if isinstance(inst.get("schedules"), dict) else {}
         try:
-            dbg_sched = call.data.get("schedules")
+            dbg_sched = data.get("schedules")
 
         except Exception as err:
             _LOGGER.warning(
@@ -454,8 +460,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # voir si la clé "merges" est bien présente/vide dans la requête reçue,
         # ou si elle est absente (ce qui laisserait l'ancien merges inchangé).
         try:
-            settings_in_call = ("settings" in call.data)
-            dbg_settings2 = call.data.get("settings") or {}
+            settings_in_call = ("settings" in data)
+            dbg_settings2 = data.get("settings") or {}
             merges_key_present = isinstance(dbg_settings2, dict) and ("merges" in dbg_settings2)
 
         except Exception as err:
@@ -470,14 +476,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         prev_active = _norm_instance_id(hass.data[DOMAIN].get("active_instance_id") or "default")
         activate = False
-        if "activate" in call.data:
-            activate = bool(call.data.get("activate"))
+        if "activate" in data:
+            activate = bool(data.get("activate"))
         elif iid_in_call:
             # New clients that pass instance_id will default to activating that instance.
             activate = True
 
-        if "schedules" in call.data:
-            schedules = call.data.get("schedules")
+        if "schedules" in data:
+            schedules = data.get("schedules")
             if not isinstance(schedules, dict):
                 _LOGGER.warning("%s.set_store: schedules must be an object when provided", DOMAIN)
                 return
@@ -485,7 +491,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 inst["schedules"] = schedules
                 sched_changed = True
                 changed = True
-            if "weekdays" not in call.data:
+            if "weekdays" not in data:
                 try:
                     new_week = {}
                     for eid, row in (schedules.items() if isinstance(schedules, dict) else []):
@@ -504,7 +510,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         changed = True
                 except Exception:
                     pass
-            if "profiles" not in call.data:
+            if "profiles" not in data:
                 try:
                     new_prof = {}
                     for eid, row in (schedules.items() if isinstance(schedules, dict) else []):
@@ -524,8 +530,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 except Exception:
                     pass
 
-        if "settings" in call.data:
-            settings = call.data.get("settings")
+        if "settings" in data:
+            settings = data.get("settings")
             if isinstance(settings, dict):
                 merged_settings = dict(cur_set)
                 merged_settings.update(settings)
@@ -552,16 +558,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     settings_changed = True
                     colors_changed = True
 
-        if "colors" in call.data:
-            colors = call.data.get("colors")
+        if "colors" in data:
+            colors = data.get("colors")
             if isinstance(colors, dict):
                 if force or colors != cur_colors:
                     inst["colors"] = colors
                     colors_changed = True
                     changed = True
 
-        if "weekdays" in call.data:
-            weekdays = call.data.get("weekdays")
+        if "weekdays" in data:
+            weekdays = data.get("weekdays")
             if isinstance(weekdays, dict):
                 if force or weekdays != cur_week:
                     inst["weekdays"] = weekdays
@@ -581,8 +587,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 except Exception:
                     pass
 
-        if "profiles" in call.data:
-            profiles = call.data.get("profiles")
+        if "profiles" in data:
+            profiles = data.get("profiles")
             if isinstance(profiles, dict):
                 if force or profiles != cur_prof:
                     inst["profiles"] = profiles
@@ -1282,6 +1288,47 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "ThermostatTimeline frontend reload failed"
             )
 
+    async def change_schedule_pause(call: ServiceCall):
+        """Update only the requested scope, using the same flags as the card."""
+        _ensure_instances_loaded(hass)
+        store_data = hass.data[DOMAIN]
+        iid = _norm_instance_id(call.data.get("instance_id", store_data.get("active_instance_id")))
+        instance = store_data["instances"].get(iid)
+        if instance is None:
+            raise ServiceValidationError(f"Unknown Timeline instance: {iid}")
+        paused = call.service == "pause_schedule"
+        minutes = call.data.get("duration_minutes")
+        until = int((time.time() + minutes * 60) * 1000) if paused and minutes else 0
+        indefinite = paused and minutes is None
+        if "entity_id" in call.data:
+            entities = call.data["entity_id"]
+            settings = instance.get("settings", {})
+            rooms = set(instance.get("schedules", {})) | set(settings.get("entities") or [])
+            if not entities or any(entity not in rooms for entity in entities):
+                raise ServiceValidationError("Select at least one configured Timeline room.")
+            pauses = dict(settings.get("room_pause") or {})
+            for entity in entities:
+                if paused:
+                    pauses[entity] = {"indef": indefinite, "until_ms": until}
+                else:
+                    pauses.pop(entity, None)
+            changes = {"room_pause": pauses}
+        else:
+            changes = {"pause_indef": indefinite, "pause_until_ms": until}
+        # Enter update_store directly so no other task can change the pause map
+        # between the read above and its in-memory update.
+        await update_store({
+            "instance_id": iid, "activate": False, "settings": changes,
+        })
+
+    pause_fields = {
+        vol.Optional("entity_id"): cv.entity_ids,
+        vol.Optional("instance_id"): cv.string,
+    }
+    hass.services.async_register(DOMAIN, "pause_schedule", change_schedule_pause,
+        schema=vol.Schema({**pause_fields, vol.Optional("duration_minutes"): vol.All(vol.Coerce(int), vol.Range(min=1, max=525600))}))
+    hass.services.async_register(DOMAIN, "resume_schedule", change_schedule_pause,
+        schema=vol.Schema(pause_fields))
     hass.services.async_register(DOMAIN, "set_store", set_store)
     hass.services.async_register(DOMAIN, "clear_store", clear_store)
     hass.services.async_register(DOMAIN, "factory_reset", factory_reset)
@@ -1745,6 +1792,10 @@ class AutoApplyManager:
                 want = float(row.get("defaultTemp", 20))
         # Away override (disabled when advanced presence is enabled)
         try:
+            away_limit = None
+            unit = str(settings.get("storage_temp_unit") or "").upper()
+            legacy_f = not unit and settings.get("temp_unit") == "F" and want > 45
+            storage_scale = 1.8 if unit == "F" or legacy_f else 1
             away = settings.get("away") or {}
             if bool(away.get("advanced_enabled")):
                 pass  # advanced presence replaces simple away clamp entirely
@@ -1755,9 +1806,13 @@ class AutoApplyManager:
                     if st and str(st.state).lower() == "home":
                         anyone_home = True
                         break
-                if not anyone_home and ("target_c" in away):
-                    target_c = float(away.get("target_c", want))
-                    want = min(want, target_c)
+                if not anyone_home:
+                    targets = settings.get("away_room_targets_c") or {}
+                    if primary in targets:
+                        away_limit = float(targets[primary]) * storage_scale + (32 if storage_scale == 1.8 else 0)
+                    else:
+                        away_limit = float(away.get("target_c", want))
+                    want = min(want, away_limit)
         except Exception:
             pass
         # Per-room presence sensor override (simple presence entity)
@@ -1776,7 +1831,12 @@ class AutoApplyManager:
                             tmap = settings.get("presence_sensor_temps") or {}
                             try:
                                 val = tmap.get(primary)
-                                if isinstance(val, (int, float, str)):
+                                offsets = settings.get("presence_offsets_c") or {}
+                                if primary in offsets:
+                                    want += float(offsets[primary]) * storage_scale
+                                    if away_limit is not None:
+                                        want = min(want, away_limit)
+                                elif isinstance(val, (int, float, str)):
                                     want = float(val)
                             except Exception:
                                 pass

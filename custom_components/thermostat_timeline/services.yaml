@@ -200,3 +200,45 @@ restore_now:
       selector:
         boolean: {}
 
+
+pause_schedule:
+  name: Pause schedule
+  description: Pause selected room schedules, or the whole instance when entity_id is omitted.
+  fields:
+    entity_id:
+      name: Rooms
+      description: Primary room entities. Leave empty for the whole schedule.
+      selector:
+        entity:
+          multiple: true
+          domain: [climate, input_number]
+    instance_id:
+      name: Instance ID
+      description: Uses the active instance when omitted.
+      selector:
+        text:
+    duration_minutes:
+      name: Duration in minutes
+      description: Omit to pause indefinitely.
+      selector:
+        number:
+          min: 1
+          max: 525600
+          mode: box
+
+resume_schedule:
+  name: Resume schedule
+  description: Resume selected room schedules, or the whole instance when entity_id is omitted.
+  fields:
+    entity_id:
+      name: Rooms
+      description: Primary room entities. Leave empty for the whole schedule.
+      selector:
+        entity:
+          multiple: true
+          domain: [climate, input_number]
+    instance_id:
+      name: Instance ID
+      description: Uses the active instance when omitted.
+      selector:
+        text:

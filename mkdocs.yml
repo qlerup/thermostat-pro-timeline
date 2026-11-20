@@ -12,6 +12,9 @@ theme:
     - search.suggest
     - search.highlight
 
+hooks:
+  - scripts/feature_nav.py
+
 plugins:
   - search
 
@@ -61,3 +64,4 @@ extra_css:
   - styles/guide.css
 extra_javascript:
   - scripts/walkthroughs.js
+  - scripts/feature-menu.js

@@ -23,3 +23,11 @@ Open **Settings > Colors**, choose a shared or room palette, enter the intervals
 [![Office blocks colored by their temperature intervals](../../images/colors-result.png)](../../images/colors.gif)
 
 [Play walkthrough](../../images/colors.gif) | [Full-size GIF](../../images/colors.gif)
+
+## Reorder temperature colors
+
+In **Settings > Colors**, use **Move interval up** or **Move interval down** in the shared or room palette, then save. When intervals overlap, the first matching interval determines the block color. Move it back to restore the previous priority.
+
+[![Reorder temperature colors in Home Assistant](../../images/color-order-result.png)](../../images/color-order.gif)
+
+[Play walkthrough](../../images/color-order.gif) | [Full-size GIF](../../images/color-order.gif)

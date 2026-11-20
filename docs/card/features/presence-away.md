@@ -60,3 +60,19 @@ When Away is active, choose **Resume schedule** in the header to return to the s
 [![Temporarily bypass Away](../../images/away-bypass-result.png)](../../images/away-bypass.gif)
 
 [Play walkthrough](../../images/away-bypass.gif) | [Full-size GIF](../../images/away-bypass.gif)
+
+## Set a room-specific Away target
+
+In the Away settings, enable **Use a room-specific Away target** for a room, enter its temperature and save. With simple Away active, a room set to 16 °C uses 16 °C when its schedule calls for 21 °C and stays at 15 °C when scheduled for 15 °C. Disable the room option to use the shared Away target again.
+
+[![Set a room-specific Away target in Home Assistant](../../images/away-room-limit-result.png)](../../images/away-room-limit.gif)
+
+[Play walkthrough](../../images/away-room-limit.gif) | [Full-size GIF](../../images/away-room-limit.gif)
+
+## Increase the scheduled target when occupied
+
+In **Settings > Presence sensor**, assign a sensor and enable **Increase the scheduled target when occupied** for that room. Enter the increase and save. With a 2 °C increase, an occupied room scheduled for 19 °C targets 21 °C. The configured sensor delays still apply. Disable this option to use the fixed occupied target again.
+
+[![Increase the scheduled target when occupied in Home Assistant](../../images/occupied-offset-result.png)](../../images/occupied-offset.gif)
+
+[Play walkthrough](../../images/occupied-offset.gif) | [Full-size GIF](../../images/occupied-offset.gif)

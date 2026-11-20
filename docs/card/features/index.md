@@ -1,6 +1,6 @@
 # Feature guides
 
-Choose what you want your heating to do. Open a guide for the setup steps and the result to look for in Home Assistant. Choose **Play walkthrough** on an animated example, or click its still image. Click again to return to the still. Feature titles open the full guide.
+Choose what you want your heating to do. Open a guide for the setup steps and the result to look for in Home Assistant. Choose **Play walkthrough** on an animated example, or click its still image. Click again to return to the still. Open the same topics under **Feature guides** in the left menu. Type a name in **Find a feature or page** to jump to it, or choose **Search the whole guide** to search instructions and examples.
 
 ## Build and edit a timeline
 
@@ -69,6 +69,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
     [![Clock, units and language](../../images/clock-result.png)](../../images/clock.gif)
 
     [Play walkthrough](../../images/clock.gif) | [Full-size GIF](../../images/clock.gif)
+
+-   **[Reorder temperature colors](colors.md#reorder-temperature-colors)**
+
+    In **Settings > Colors**, use **Move interval up** or **Move interval down** in the shared or room palette, then save.
+
+    [![Reorder temperature colors in Home Assistant](../../images/color-order-result.png)](../../images/color-order.gif)
+
+    [Play walkthrough](../../images/color-order.gif) | [Full-size GIF](../../images/color-order.gif)
 
 </div>
 
@@ -139,6 +147,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
     [![Pause from a binary sensor](../../images/pause-sensor-result.png)](../../images/pause-sensor.gif)
 
     [Play walkthrough](../../images/pause-sensor.gif) | [Full-size GIF](../../images/pause-sensor.gif)
+
+-   **[Pause and resume from an automation](pause.md#pause-and-resume-from-an-automation)**
+
+    Choose **Thermostat Timeline: Pause schedule** in an automation and select the primary room entity.
+
+    [![Pause and resume from an automation in Home Assistant](../../images/automation-pause-result.png)](../../images/automation-pause.gif)
+
+    [Play walkthrough](../../images/automation-pause.gif) | [Full-size GIF](../../images/automation-pause.gif)
 
 </div>
 
@@ -239,6 +255,22 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
     [![Household combinations](../../images/presence-combinations-result.png)](../../images/presence-combinations.gif)
 
     [Play walkthrough](../../images/presence-combinations.gif) | [Full-size GIF](../../images/presence-combinations.gif)
+
+-   **[Set a room-specific Away target](presence-away.md#set-a-room-specific-away-target)**
+
+    In the Away settings, enable **Use a room-specific Away target** for a room, enter its temperature and save.
+
+    [![Set a room-specific Away target in Home Assistant](../../images/away-room-limit-result.png)](../../images/away-room-limit.gif)
+
+    [Play walkthrough](../../images/away-room-limit.gif) | [Full-size GIF](../../images/away-room-limit.gif)
+
+-   **[Increase the scheduled target when occupied](presence-away.md#increase-the-scheduled-target-when-occupied)**
+
+    In **Settings > Presence sensor**, assign a sensor and enable **Increase the scheduled target when occupied** for that room.
+
+    [![Increase the scheduled target when occupied in Home Assistant](../../images/occupied-offset-result.png)](../../images/occupied-offset.gif)
+
+    [Play walkthrough](../../images/occupied-offset.gif) | [Full-size GIF](../../images/occupied-offset.gif)
 
 </div>
 
@@ -344,4 +376,5 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
 ## Automation and diagnostics
 
-Use [integration actions](../../integration/services.md) to manage schedules from an automation. The [HTTP API](../../integration/api.md) exposes the stored configuration and version counters.
+- **[Integration actions](../../integration/services.md)** to manage schedules from an automation.
+- **[HTTP API](../../integration/api.md)** for stored configuration and version counters.
