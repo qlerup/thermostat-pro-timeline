@@ -1,0 +1,13 @@
+# Summer and winter schedules
+
+1. Open the settings gear on the card and turn on **Enable summer/winter schedules**. Save the settings.
+
+   You will find the switch on the first settings tab.
+
+   ![Season switch on the first settings tab](../../images/season-setting.png)
+2. Use the season selector to choose **Summer** or **Winter** before editing a room's blocks.
+3. Switch seasons to inspect the other timetable. Leave the intended season selected for normal operation.
+
+The season selects which timetable applies. To suspend schedule updates for a single room, use its [room pause](pause.md). Selecting Summer alone does not send an HVAC off command.
+
+The stored settings are `seasonal_enabled` and `seasonal_mode` (`summer` or `winter`).

@@ -1,6 +1,8 @@
 # ❄️ Thermostat Pro Timeline — Integration + Card
 [![hacs\_badge](https://img.shields.io/badge/HACS-Default-blue.svg)](https://hacs.xyz) [![Downloads](https://img.shields.io/github/downloads/qlerup/thermostat-pro-timeline/total)](https://github.com/qlerup/thermostat-pro-timeline/releases)
 
+**[User guide](docs/index.md)** | [Install](docs/getting-started/installation.md) | [Add your first room](docs/getting-started/quick-start.md) | [Pause a room](docs/card/features/pause.md)
+
 ## Support this project
 
 If you find this project useful, you can support me on Ko-fi 💙  
@@ -93,8 +95,8 @@ Thermostat Pro Timeline is a Home Assistant solution composed of:
 2. ⚙️ Click on "Integrations" and select "Custom repositories" (gear icon in the top right corner).
 3. ➕ Add the following repository URL and select "Integration" as type.
    ```yaml
-   https://github.com/qlerup/lovelace-thermostat-pro-timeline
-      ```
+   https://github.com/qlerup/thermostat-pro-timeline
+   ```
 4. 🔍 Find and install the "Thermostat Pro Timeline" integration from the HACS list.
 5. 🔄 Restart Home Assistant.
 6. 📦 The integration will automatically copy the card (JS file) to `/local` and register it as a Lovelace resource.
@@ -337,7 +339,7 @@ data:
 		climate.living_room:
 			defaultTemp: 20
 			blocks:
-				- { from: "06:00", to: "08:00", temp: 21 }
+				- { startMin: 360, endMin: 480, temp: 21 }
 	settings:
 		min_temp: 5
 		max_temp: 25
@@ -353,7 +355,7 @@ data:
 	data:
 		defaultTemp: 21
 		blocks:
-			- { from: "17:00", to: "22:00", temp: 22 }
+			- { startMin: 1020, endMin: 1320, temp: 22 }
 ```
 
 Service: `select_instance` — make an instance active (create/copy if needed)
