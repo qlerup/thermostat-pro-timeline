@@ -84,6 +84,46 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.settings["away_room_targets_c"].clear()
         self.assertEqual(target(self.a), 17)
 
+    async def test_effective_pause_notifications_and_independent_holds(self):
+        guest = "input_boolean.guests"
+        rule = {"paused": True, "resumed": True}
+        self.settings.update(room_pause_controls={self.a: guest, self.b: guest},
+                             pause_notifications=rule)
+        self.states[guest] = SimpleNamespace(state="off")
+        self.mgr._is_active_instance = lambda: True
+        tasks = []
+        self.hass.async_create_task = lambda coro: tasks.append(asyncio.create_task(coro))
+
+        async def messages():
+            released = self.mgr._refresh_pause_state()
+            await asyncio.gather(*tasks)
+            tasks.clear()
+            sent = [data["message"] for _, _, data in self.calls]
+            self.calls.clear()
+            return released, sent
+
+        self.assertEqual(await messages(), (set(), []))
+        self.states[guest].state = "on"
+        self.assertEqual(len((await messages())[1]), 2)
+        self.settings["room_pause"] = {self.a: {"indef": True}}
+        self.assertEqual((await messages())[1], [])
+        self.states[guest].state = "off"
+        released, sent = await messages()
+        self.assertEqual(released, {self.a, self.b})
+        self.assertEqual(sent, [f"{self.b} resumed."])
+        self.settings["pause_indef"] = True
+        self.assertEqual(len((await messages())[1]), 1)
+        self.settings["pause_indef"] = False
+        self.assertEqual((await messages())[1], ["Global schedule resumed."])
+        rule["resumed"] = False
+        self.settings["room_pause"] = {}
+        self.assertEqual((await messages())[1], [])
+        del self.states[guest]
+        self.assertTrue(self.mgr._room_control_paused(self.settings, self.a))
+        await self.mgr._send_pause_notification({"destination": "entity:notify.office"}, "test")
+        self.assertEqual(self.calls[-1][:2], ("notify", "send_message"))
+        self.assertEqual(self.calls[-1][2]["entity_id"], "notify.office")
+
     def test_person_link_replaces_household_rules_only_for_assigned_rooms(self):
         del self.mgr._desired_for
         del self.mgr._effective_blocks_today

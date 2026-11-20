@@ -167,6 +167,15 @@ const TT_I18N = {
   'away.follow_person': 'Follow a person',
   'away.follow_desc': 'A linked room follows its own schedule when its person is home and uses its Away temperature elsewhere. This replaces household Away and combination schedules for that room.',
   'away.no_person': 'No person linked',
+  'pause.control_status': 'Paused by {control}',
+  'pause.room_control': 'Pause this room while the selected control is on',
+  'pause.no_control': 'No pause control',
+  'pause.notifications': 'Pause notifications',
+  'pause.notify_require': 'Shared storage and automatic application must be enabled for notifications.',
+  'pause.notify_paused': 'Notify when paused',
+  'pause.notify_resumed': 'Notify when resumed',
+  'pause.destination': 'Send to',
+  'pause.panel': 'Home Assistant notifications',
   'away.room_target': 'Use a room-specific Away target',
   'presence.vacancy': 'Use an economy temperature when empty',
   'presence.relative': 'Increase the scheduled target when occupied',
@@ -424,6 +433,15 @@ const TT_I18N = {
   'presence.who_away': 'Who is away'
   },
   da: {
+  'pause.panel': 'Beskeder i Home Assistant',
+  'pause.destination': 'Send til',
+  'pause.notify_resumed': 'Giv besked ved genoptagelse',
+  'pause.notify_paused': 'Giv besked ved pause',
+  'pause.notify_require': 'Aktivér fælles lagring og automatisk anvendelse for at modtage beskeder.',
+  'pause.notifications': 'Pausebeskeder',
+  'pause.no_control': 'Ingen pausekontakt',
+  'pause.room_control': 'Sæt rummet på pause, mens den valgte kontakt er aktiv',
+  'pause.control_status': 'Sat på pause af {control}',
   'away.follow_person': 'Følg en person',
   'away.follow_desc': 'Rummet følger sin egen tidsplan, når personen er hjemme, og bruger sin ude-temperatur, når personen er ude. Personvalget erstatter husstandens ude-regler og kombinationsplaner for dette rum.',
   'away.no_person': 'Ingen person tilknyttet',
@@ -4641,6 +4659,18 @@ class ThermostatTimelineCard extends HTMLElement {
     }
     this._lastWorkdayPair = workdayPair;
 
+    if (previousHass && this._initialized) {
+      const controls = Object.entries(this._config?.room_pause_controls || {});
+      const changed = controls.filter(([, entity]) => previousHass.states[entity]?.state !== hass.states[entity]?.state);
+      if (changed.length) {
+        if (!this._editing && !this._inlineEditing) this._render();
+        const resumed = changed.filter(([, entity]) => hass.states[entity]?.state === 'off');
+        if (resumed.length && !this._config.storage_enabled) {
+          const targets = resumed.flatMap(([room]) => [room, ...(this._config.merges?.[room] || [])]);
+          this._applyCurrentSetpoints(true, true, targets);
+        }
+      }
+    }
     // Detect pause sensor transitions (UI responsiveness + frontend-only behavior when Sync is OFF)
     try {
       const cur = this._isPausedBySensor ? !!this._isPausedBySensor() : false;
@@ -4847,6 +4877,8 @@ class ThermostatTimelineCard extends HTMLElement {
       vacancy_offsets_c: Object.hasOwn(config, 'vacancy_offsets_c'),
       away_room_targets_c: Object.hasOwn(config, 'away_room_targets_c'),
       room_persons: Object.hasOwn(config, 'room_persons'),
+      room_pause_controls: Object.hasOwn(config, 'room_pause_controls'),
+      pause_notifications: Object.hasOwn(config, 'pause_notifications'),
       presence_sensor_temps: false,
       presence_sensor_delays: false,
       presence_sensor_delay_units: false,
@@ -4900,6 +4932,8 @@ class ThermostatTimelineCard extends HTMLElement {
   vacancy_offsets_c: { ...(config.vacancy_offsets_c || {}) },
   away_room_targets_c: { ...(config.away_room_targets_c || {}) },
   room_persons: { ...(config.room_persons || {}) },
+  room_pause_controls: { ...(config.room_pause_controls || {}) },
+  pause_notifications: { ...(config.pause_notifications || {}) },
   presence_sensor_temps: (()=>{
     try {
       const src = (config.presence_sensor_temps && typeof config.presence_sensor_temps === 'object') ? config.presence_sensor_temps : {};
@@ -5834,6 +5868,8 @@ class ThermostatTimelineCard extends HTMLElement {
               if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
               if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
               if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
+              if (!this._yamlProvided?.room_pause_controls && s.room_pause_controls) this._config.room_pause_controls = { ...s.room_pause_controls };
+              if (!this._yamlProvided?.pause_notifications && s.pause_notifications) this._config.pause_notifications = { ...s.pause_notifications };
               if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
                 const out = {};
                 for (const k of Object.keys(s.presence_sensor_temps||{})) {
@@ -6320,6 +6356,8 @@ class ThermostatTimelineCard extends HTMLElement {
     if (!this._yamlProvided?.vacancy_offsets_c && s.vacancy_offsets_c) this._config.vacancy_offsets_c = { ...s.vacancy_offsets_c };
     if (!this._yamlProvided?.away_room_targets_c && s.away_room_targets_c) this._config.away_room_targets_c = { ...s.away_room_targets_c };
     if (!this._yamlProvided?.room_persons && s.room_persons) this._config.room_persons = { ...s.room_persons };
+    if (!this._yamlProvided?.room_pause_controls && s.room_pause_controls) this._config.room_pause_controls = { ...s.room_pause_controls };
+    if (!this._yamlProvided?.pause_notifications && s.pause_notifications) this._config.pause_notifications = { ...s.pause_notifications };
     if (s.presence_sensor_temps && typeof s.presence_sensor_temps === 'object' && !this._yamlProvided?.presence_sensor_temps) {
       const out = {};
       for (const k of Object.keys(s.presence_sensor_temps||{})) {
@@ -7202,6 +7240,8 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
         room_persons: { ...this._config.room_persons },
+        room_pause_controls: { ...this._config.room_pause_controls },
+        pause_notifications: { ...this._config.pause_notifications },
         presence_sensor_temps: (this._config.presence_sensor_temps && typeof this._config.presence_sensor_temps === 'object') ? this._config.presence_sensor_temps : {},
         presence_sensor_delays: (this._config.presence_sensor_delays && typeof this._config.presence_sensor_delays === 'object') ? this._config.presence_sensor_delays : {},
         presence_sensor_delay_units: (this._config.presence_sensor_delay_units && typeof this._config.presence_sensor_delay_units === 'object') ? this._config.presence_sensor_delay_units : {},
@@ -7242,6 +7282,8 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...this._config.vacancy_offsets_c },
         away_room_targets_c: { ...this._config.away_room_targets_c },
         room_persons: { ...this._config.room_persons },
+        room_pause_controls: { ...this._config.room_pause_controls },
+        pause_notifications: { ...this._config.pause_notifications },
         presence_sensor_temps: (()=>{
           try {
             const src = (this._config.presence_sensor_temps && typeof this._config.presence_sensor_temps === 'object') ? this._config.presence_sensor_temps : {};
@@ -8230,6 +8272,8 @@ class ThermostatTimelineCard extends HTMLElement {
   }
   _isRoomPaused(eid){
     try {
+      const control = this._config?.room_pause_controls?.[this._groupPrimaryOf(eid)];
+      if (control && this._hass?.states?.[control]?.state !== 'off') return true;
       const { indef, until_ms } = this._roomPauseInfo(eid);
       if (indef) return true;
       if (Number.isFinite(until_ms) && until_ms > Date.now()) return true;
@@ -9675,6 +9719,12 @@ class ThermostatTimelineCard extends HTMLElement {
                     <tt-entity-picker class="alarm-source" label="Alarm entity" include-domains='["alarm_control_panel"]'></tt-entity-picker>
                     <fieldset><legend>Pause in these alarm states</legend><div class="alarm-states"></div></fieldset>
                   </div>
+                  <fieldset class="pause-notifications"><legend>${this._t('pause.notifications')}</legend>
+                    <p>${this._t('pause.notify_require')}</p>
+                    <label><input type="checkbox" class="notify-paused"> ${this._t('pause.notify_paused')}</label>
+                    <label><input type="checkbox" class="notify-resumed"> ${this._t('pause.notify_resumed')}</label>
+                    <label>${this._t('pause.destination')} <select class="settings-input pause-destination"></select></label>
+                  </fieldset>
                 </div>
               </div>
               <div class="settings-page" data-page="weekdays"></div>
@@ -9810,6 +9860,11 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!st) return;
       const isPaused = target ? this._isRoomPaused(target) : this._isPaused();
       if (!isPaused) { st.textContent = ''; return; }
+      const control = target && this._config.room_pause_controls?.[this._groupPrimaryOf(target)];
+      if (control && this._hass?.states?.[control]?.state !== 'off') {
+        st.textContent = this._t('pause.control_status').replace('{control}', this._prettyName(control));
+        return;
+      }
       const indef = target ? this._roomPauseInfo(target).indef : this._pauseIndef;
       if (indef) { st.textContent = this._t('pause.active_indef'); return; }
       const untilMs = target ? this._roomPauseInfo(target).until_ms : this._pauseUntilMs;
@@ -12219,6 +12274,8 @@ class ThermostatTimelineCard extends HTMLElement {
         vacancy_offsets_c: { ...cfg.vacancy_offsets_c },
         away_room_targets_c: { ...cfg.away_room_targets_c },
         room_persons: { ...cfg.room_persons },
+        room_pause_controls: { ...cfg.room_pause_controls },
+        pause_notifications: { ...cfg.pause_notifications },
         presence_sensor_temps: (()=>{ try { return (cfg.presence_sensor_temps && typeof cfg.presence_sensor_temps === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_temps)) : {}; } catch { return {}; } })(),
 
         presence_sensor_delays: (()=>{ try { return (cfg.presence_sensor_delays && typeof cfg.presence_sensor_delays === 'object') ? JSON.parse(JSON.stringify(cfg.presence_sensor_delays)) : {}; } catch { return {}; } })(),
@@ -12482,6 +12539,8 @@ class ThermostatTimelineCard extends HTMLElement {
         cfg.vacancy_offsets_c = { ...d.vacancy_offsets_c };
         cfg.away_room_targets_c = { ...d.away_room_targets_c };
         cfg.room_persons = { ...d.room_persons };
+        cfg.room_pause_controls = { ...d.room_pause_controls };
+        cfg.pause_notifications = { ...d.pause_notifications };
         const src = (d.presence_sensor_temps && typeof d.presence_sensor_temps === 'object') ? d.presence_sensor_temps : {};
         const out = {};
         const minC = Number(cfg.min_temp);
@@ -13391,6 +13450,26 @@ class ThermostatTimelineCard extends HTMLElement {
           } catch {}
         });
 
+        const room = ents[idx];
+        if (room) {
+          const label = document.createElement('label');
+          label.textContent = this._t('pause.room_control');
+          const select = document.createElement('select');
+          select.className = 'settings-input room-pause-control';
+          select.add(new Option(this._t('pause.no_control'), ''));
+          const available = Object.keys(this._hass?.states || {}).filter(id => /^(binary_sensor|input_boolean|switch)\./.test(id));
+          const current = d.room_pause_controls[room];
+          for (const id of new Set([...available.sort(), ...(current ? [current] : [])])) {
+            select.add(new Option(this._hass.states[id]?.attributes?.friendly_name || id, id));
+          }
+          select.value = current || '';
+          select.onchange = () => {
+            if (select.value) d.room_pause_controls[room] = select.value;
+            else delete d.room_pause_controls[room];
+          };
+          label.append(document.createElement('br'), select);
+          left.append(label);
+        }
         left.append(modeRow, pick, nameLabel, nameInp, tempWrap, turnOnWrap, applyWrap, linkWrap, chips);
         try { linkWrap.append(linkLabel, linkPicker); } catch {}
         details.append(left);
@@ -13415,6 +13494,7 @@ class ThermostatTimelineCard extends HTMLElement {
             try { if (modes.length) modes.splice(idx, 1); } catch {}
             try { if (tmodes.length) tmodes.splice(idx, 1); } catch {}
 
+            delete this._settingsDraft.room_pause_controls[primary];
             // Clean labels
             try {
               const labels = { ...(this._settingsDraft.labels || {}) };
@@ -13485,6 +13565,10 @@ class ThermostatTimelineCard extends HTMLElement {
               if (!newPrimary.startsWith('climate.')) this._settingsDraft.room_use_temp_sensor[idx] = false;
             } catch {}
 
+            if (oldPrimary && newPrimary && oldPrimary !== newPrimary && d.room_pause_controls[oldPrimary]) {
+              d.room_pause_controls[newPrimary] ??= d.room_pause_controls[oldPrimary];
+              delete d.room_pause_controls[oldPrimary];
+            }
             // Migrate merges/temp sensors when primary changes
             if (oldPrimary && newPrimary && oldPrimary !== newPrimary) {
               try {
@@ -16526,6 +16610,26 @@ class ThermostatTimelineCard extends HTMLElement {
       const q = (sel)=> this.shadowRoot.querySelector(sel);
       const setChk = (sel, v)=>{ const el=q(sel); if (el) el.checked = !!v; };
 
+      const rule = d.pause_notifications;
+      for (const event of ['paused', 'resumed']) {
+        const input = q('.overlay-settings .notify-' + event);
+        input.checked = !!rule[event];
+        input.onchange = () => { rule[event] = input.checked; };
+      }
+      const dest = q('.overlay-settings .pause-destination');
+      dest.replaceChildren(new Option(this._t('pause.panel'), 'persistent_notification.create'));
+      for (const id of Object.keys(this._hass?.states || {}).filter(id => id.startsWith('notify.')).sort()) {
+        dest.add(new Option(this._prettyName(id), 'entity:' + id));
+      }
+      for (const service of Object.keys(this._hass?.services?.notify || {}).sort()) {
+        if (!['send_message', 'persistent_notification'].includes(service)) dest.add(new Option('notify.' + service, 'notify.' + service));
+      }
+      if (rule.destination && !Array.from(dest.options).some(o => o.value === rule.destination)) {
+        dest.add(new Option(rule.destination, rule.destination));
+      }
+      dest.value = rule.destination || 'persistent_notification.create';
+      dest.onchange = () => { rule.destination = dest.value; };
+
       this._bindAutomationRule('alarm');
       setChk('.overlay-settings .sp-pausebtn', d.show_pause_button);
       setChk('.overlay-settings .sp-pausesensor', d.pause_sensor_enabled);
@@ -16774,6 +16878,8 @@ class ThermostatTimelineCard extends HTMLElement {
         if (JSON.stringify(d.vacancy_offsets_c || {}) !== JSON.stringify(c.vacancy_offsets_c || {})) return true;
         if (JSON.stringify(d.away_room_targets_c || {}) !== JSON.stringify(c.away_room_targets_c || {})) return true;
         if (JSON.stringify(d.room_persons || {}) !== JSON.stringify(c.room_persons || {})) return true;
+        if (JSON.stringify(d.room_pause_controls || {}) !== JSON.stringify(c.room_pause_controls || {})) return true;
+        if (JSON.stringify(d.pause_notifications || {}) !== JSON.stringify(c.pause_notifications || {})) return true;
         const da = (d.away && typeof d.away === 'object') ? d.away : {};
         const ca = (c.away && typeof c.away === 'object') ? c.away : {};
         if (!!da.enabled !== !!ca.enabled) return true;

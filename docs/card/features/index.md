@@ -164,6 +164,22 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/alarm-pause.gif) | [Full-size GIF](../../images/alarm-pause.gif)
 
+-   **[Pause a room with a switch](pause.md#pause-a-room-with-a-switch)**
+
+    Let a guest switch pause selected rooms.
+
+    [![Pause a room with a switch in Home Assistant](../../images/room-pause-control-result.png)](../../images/room-pause-control.gif)
+
+    [Play walkthrough](../../images/room-pause-control.gif) | [Full-size GIF](../../images/room-pause-control.gif)
+
+-   **[Receive pause and resume notifications](pause.md#receive-pause-and-resume-notifications)**
+
+    Choose which schedule changes send a message and where it goes.
+
+    [![Receive pause and resume notifications in Home Assistant](../../images/pause-notifications-result.png)](../../images/pause-notifications.gif)
+
+    [Play walkthrough](../../images/pause-notifications.gif) | [Full-size GIF](../../images/pause-notifications.gif)
+
 </div>
 
 ## Weekdays, profiles and holidays

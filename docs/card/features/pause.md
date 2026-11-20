@@ -73,3 +73,24 @@ Arm the panel in one of the selected states. Scheduled temperature updates stop.
 [![Pause the timeline with an alarm in Home Assistant](../../images/alarm-pause-result.png)](../../images/alarm-pause.gif)
 
 [Play walkthrough](../../images/alarm-pause.gif) | [Full-size GIF](../../images/alarm-pause.gif)
+
+## Pause a room with a switch
+
+1. Open the card settings, choose **Rooms**, and expand the room to control.
+2. Under **Pause this room while the selected control is on**, choose a toggle helper, switch or binary sensor. For example, choose a **Guest mode** toggle for Office. Select the same control in another room to pause both together.
+3. Save, then turn the control on. The room's existing pause indicator lights up. Guests can change the thermostat target while other rooms continue their schedules.
+4. Turn the control off. The room resumes the **current** schedule once all its pauses have cleared. A separate manual room pause, global pause or alarm pause still applies. If the selected control is unavailable, the room stays paused until Home Assistant sees it off. Choose **No pause control** and save to unlink it.
+
+[![Guest mode is on and Office holds a manual 18-degree target](../../images/room-pause-control-result.png)](../../images/room-pause-control.gif)
+
+[Play walkthrough](../../images/room-pause-control.gif) | [Full-size GIF](../../images/room-pause-control.gif)
+
+## Receive pause and resume notifications
+
+With shared storage and automatic application enabled, open **Settings > Pause > Pause notifications**. Select **Notify when paused**, **Notify when resumed**, or both. Choose **Home Assistant notifications** for the built-in notification panel, or select one of your configured notification destinations. Save the settings. Both events are off by default.
+
+Turn on a room's guest switch to receive a pause message. When the last pause for that room clears, a resume message follows. If the switch clears while the room still has a manual pause, the integration waits. A global pause or resume produces one message for the whole schedule. Individual room holds still apply after a global resume. Opening a dashboard or enabling notifications while a pause is already active does not send a retrospective message.
+
+[![Room pause and resume messages in Home Assistant](../../images/pause-notifications-result.png)](../../images/pause-notifications.gif)
+
+[Play walkthrough](../../images/pause-notifications.gif) | [Full-size GIF](../../images/pause-notifications.gif)

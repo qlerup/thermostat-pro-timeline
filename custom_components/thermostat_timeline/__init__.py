@@ -1387,6 +1387,8 @@ class AutoApplyManager:
         self._unsub_boiler = None
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
+        self._pause_snapshot = None
+        self._paused_by_room_control = set()
         self._unsub_workdays = None
         self._stable_occupancy = {}
         self._workday_entities = ()
@@ -1406,6 +1408,7 @@ class AutoApplyManager:
 
     async def async_start(self):
     # Apply once on startup and schedule next if enabled
+        self._refresh_pause_state()
         await self._maybe_apply_now(force=True)
         await self._maybe_control_boiler(force=True)
         await self._schedule_next()
@@ -1438,6 +1441,9 @@ class AutoApplyManager:
         self._reset_target_recovery_watch()
 
     async def _on_store_changed(self):
+        released = self._refresh_pause_state()
+        for room in released:
+            await self._apply_room_now(room)
         # Respect apply_on_edit toggle: only apply immediately on store changes when enabled
         _s, settings = self._get_data()
         if bool(settings.get("apply_on_edit", True)):
@@ -1724,7 +1730,7 @@ class AutoApplyManager:
                     return False
                 primary = next((room for room, children in (settings.get("merges") or {}).items() if eid in children), eid)
                 pause = (settings.get("room_pause") or {}).get(primary) or {}
-                if not (settings.get("apply_enabled") or {}).get(primary, True) or pause.get("indef") or (pause.get("until_ms") or 0) > time.time() * 1000:
+                if self._room_control_paused(settings, primary) or not (settings.get("apply_enabled") or {}).get(primary, True) or pause.get("indef") or (pause.get("until_ms") or 0) > time.time() * 1000:
                     return True
                 state = self.hass.states.get(eid)
                 if not state or state.state in ("unknown", "unavailable"):
@@ -2471,6 +2477,7 @@ class AutoApplyManager:
             if generation != self._timer_generation:
                 return
 
+        self._refresh_pause_state()
         room_resume = self._next_room_resume
         room_resume_at = self._next_room_resume_at
         global_resume = bool(self._next_is_resume)
@@ -2712,6 +2719,8 @@ class AutoApplyManager:
                     return
                 if not (settings.get("apply_enabled") or {}).get(primary, True):
                     return
+                if self._room_control_paused(settings, primary):
+                    return
                 state = self.hass.states.get(eid)
                 if state is None or state.state in ("off", "unknown", "unavailable"):
                     return
@@ -2839,6 +2848,75 @@ class AutoApplyManager:
             targets,
             _target_state_changed,
         )
+    def _room_control_paused(self, settings, room):
+        entity = (settings.get("room_pause_controls") or {}).get(room)
+        if not isinstance(entity, str) or not entity.startswith(("input_boolean.", "binary_sensor.", "switch.")):
+            return False
+        state = self.hass.states.get(entity)
+        return state is None or state.state != "off"
+
+    def _refresh_pause_state(self):
+        schedules, settings = self._get_data()
+        controls = settings.get("room_pause_controls") or {}
+        paused = {room for room in controls if room in schedules and self._room_control_paused(settings, room)}
+        released = self._paused_by_room_control - paused
+        self._paused_by_room_control = paused
+        rule = settings.get("pause_notifications") or {}
+        if not (rule.get("paused") or rule.get("resumed")) or not self._is_active_instance() or not settings.get("auto_apply_enabled"):
+            self._pause_snapshot = None
+            return released
+        now = time.time() * 1000
+        global_reason = ""
+        if self._alarm_paused(self.hass, settings):
+            global_reason = "alarm pause rule"
+        elif self._pause_sensor_on(settings):
+            global_reason = settings.get("pause_sensor_entity")
+        elif settings.get("pause_indef") or (settings.get("pause_until_ms") or 0) > now:
+            global_reason = "schedule pause"
+        reasons = {None: global_reason}
+        for room in schedules:
+            hold = (settings.get("room_pause") or {}).get(room) or {}
+            reason = ""
+            if room in paused:
+                reason = controls[room]
+            elif hold.get("indef") or (hold.get("until_ms") or 0) > now:
+                reason = "manual temperature hold" if hold.get("source") == "manual_target" else "room pause"
+            reasons[room] = global_reason or reason
+        previous = self._pause_snapshot
+        self._pause_snapshot = reasons
+        if previous is None:
+            return released
+        scopes = [None] if bool(previous[None]) != bool(global_reason) else schedules
+        for room in scopes:
+            reason = reasons[room]
+            if room not in previous or bool(previous[room]) == bool(reason):
+                continue
+            if not rule.get("paused" if reason else "resumed"):
+                continue
+            room_state = self.hass.states.get(room) if room else None
+            name = (settings.get("labels") or {}).get(room) or getattr(room_state, "name", room) or "Global schedule"
+            if reason and "." in reason:
+                control_state = self.hass.states.get(reason)
+                reason = getattr(control_state, "name", reason)
+            message = f"{name} paused ({reason})." if reason else f"{name} resumed."
+            self.hass.async_create_task(self._send_pause_notification(rule, message))
+        return released
+
+    async def _send_pause_notification(self, rule, message):
+        destination = rule.get("destination") or "persistent_notification.create"
+        data = {"title": "Thermostat Pro Timeline", "message": message}
+        if destination.startswith("entity:notify."):
+            domain, service = "notify", "send_message"
+            data["entity_id"] = destination.removeprefix("entity:")
+        elif destination.startswith("notify.") or destination == "persistent_notification.create":
+            domain, service = destination.split(".", 1)
+        else:
+            return
+        try:
+            await self.hass.services.async_call(domain, service, data, blocking=True)
+        except Exception:
+            _LOGGER.exception("Could not send Timeline pause notification to %s", destination)
+
     def _reset_pause_sensor_watch(self) -> None:
         if self._unsub_pause_sensor:
             try:
@@ -2855,6 +2933,8 @@ class AutoApplyManager:
             rule = settings.get("alarm_pause") or {}
             if rule.get("enabled") and (rule.get("entity") or "").startswith("alarm_control_panel."):
                 entities.append(rule["entity"])
+            entities.extend(entity for entity in (settings.get("room_pause_controls") or {}).values()
+                            if isinstance(entity, str) and entity.startswith(("input_boolean.", "binary_sensor.", "switch.")))
             if not entities:
                 self._last_pause_sensor_on = None
                 return
@@ -2868,7 +2948,9 @@ class AutoApplyManager:
                     now_on = self._pause_sensor_on(settings)
                 except Exception:
                     return
-                if self._last_pause_sensor_on is not None and now_on == self._last_pause_sensor_on:
+                released = self._refresh_pause_state()
+                global_change = now_on != self._last_pause_sensor_on
+                if not released and not global_change:
                     return
                 self._last_pause_sensor_on = now_on
 
@@ -2878,7 +2960,11 @@ class AutoApplyManager:
                     if now_on:
                         await self._schedule_next()
                         return
-                    await self._maybe_apply_now(force=True, reconcile=True)
+                    if global_change:
+                        await self._maybe_apply_now(force=True, reconcile=True)
+                    else:
+                        for room in released:
+                            await self._apply_room_now(room)
                     await self._maybe_control_boiler(force=True)
                     await self._schedule_next()
 
@@ -3362,6 +3448,9 @@ class AutoApplyManager:
             # same primary-entity resolution as apply_enabled above so a
             # merged/secondary entity correctly inherits its room's pause.
             try:
+                if self._room_control_paused(settings, primary_for_apply):
+                    self._last_apply_skipped_voluntarily = True
+                    return False
                 room_pause_map = settings.get("room_pause") or {}
                 entry = room_pause_map.get(primary_for_apply) if isinstance(room_pause_map, dict) else None
                 if isinstance(entry, dict):
