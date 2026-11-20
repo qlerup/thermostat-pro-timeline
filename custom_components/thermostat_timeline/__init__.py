@@ -1313,12 +1313,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN]["manager"] = mgr
     await mgr.async_start()
     # ---- Open Window Detection (background, multi-instance) ----
-    owd = MultiInstanceOpenWindowManager(hass, apply_multi=mgr)
+    owd = MultiInstanceOpenWindowManager(hass, apply_multi=mgr, entry=entry)
     # Keep legacy key for compatibility (points to the multi wrapper).
     hass.data[DOMAIN]["open_window_manager"] = owd
     await owd.async_start()
     # ---- Presence Sensor Manager (background, multi-instance) ----
-    psm = MultiInstancePresenceSensorManager(hass, apply_multi=mgr)
+    psm = MultiInstancePresenceSensorManager(hass, apply_multi=mgr, entry=entry)
     hass.data[DOMAIN]["presence_sensor_manager"] = psm
     await psm.async_start()
     # ---- Backup Manager (auto backup) ----
@@ -1341,8 +1341,10 @@ class AutoApplyManager:
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
         self._unsub_targets = None
+        self._watched_targets = ()
         self._last_pause_sensor_on: bool | None = None
         self._last_applied = {}  # eid -> {"min": int, "temp": float}
+        self._manual_target_lock = asyncio.Lock()
         self._next_is_resume = False
         self._next_room_resume = None
         self._next_room_resume_at = None
@@ -2342,15 +2344,113 @@ class AutoApplyManager:
         except Exception:
             self._unsub_boiler_interval = None
     
+    def _ha_uses_fahrenheit(self) -> bool:
+        try:
+            unit = self.hass.config.units.temperature_unit
+            return unit == UnitOfTemperature.FAHRENHEIT or "F" in str(unit).upper()
+        except Exception:
+            return False
+
+    @staticmethod
+    def _stored_setpoint_c(val: float, settings: dict) -> float:
+        value = float(val)
+        storage_unit = str(settings.get("storage_temp_unit") or "").upper().strip()
+        # Legacy clients stored Fahrenheit values without a storage unit.
+        legacy_f = storage_unit != "C" and str(settings.get("temp_unit") or "").upper().strip() == "F"
+        return _f_to_c(value) if storage_unit == "F" or (legacy_f and value > 45.0) else value
+
+    @staticmethod
+    def _clamp_climate_setpoint_c(value: float, attrs, ha_is_f: bool) -> float:
+        lower, upper = attrs.get("min_temp"), attrs.get("max_temp")
+        if isinstance(lower, (int, float)):
+            value = max(value, _f_to_c(lower) if ha_is_f else float(lower))
+        if isinstance(upper, (int, float)):
+            value = min(value, _f_to_c(upper) if ha_is_f else float(upper))
+        return value
+
+    def _manual_target_expiry(self, row, settings):
+        """Expire a manual target at this room's next boundary or midnight."""
+        now = dt_util.now()
+        minute = now.hour * 60 + now.minute
+        boundaries = [1440]
+        for block in self._effective_blocks_today(row, settings):
+            for key in ("startMin", "endMin"):
+                try:
+                    boundary = int(block.get(key, -1))
+                except (TypeError, ValueError):
+                    continue
+                if minute < boundary <= 1440:
+                    boundaries.append(boundary)
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return (midnight + timedelta(minutes=min(boundaries))).timestamp() * 1000.0
+
+    async def _remember_manual_target(self, eid, temperature):
+        """Persist manual target holds using Timeline's native timed room pause.
+
+        VTherm restores the target itself. The saved pause prevents startup and
+        availability reconciliation from replacing it before the next boundary.
+        Normal schedule writes equal the desired value and cannot create holds.
+        """
+        async with self._manual_target_lock:
+            try:
+                if not self._auto_apply_enabled():
+                    return
+                schedules, settings = self._get_data()
+                primary = eid
+                if primary not in schedules:
+                    for candidate, members in (settings.get("merges") or {}).items():
+                        if eid in (members or []):
+                            primary = candidate
+                            break
+                row = schedules.get(primary)
+                if not isinstance(row, dict):
+                    return
+                if not (settings.get("apply_enabled") or {}).get(primary, True):
+                    return
+                state = self.hass.states.get(eid)
+                if state is None or state.state in ("off", "unknown", "unavailable"):
+                    return
+                current = state.attributes.get("temperature")
+                if not isinstance(current, (int, float)) or abs(current - temperature) >= 0.05:
+                    return  # A newer target superseded this queued event.
+                desired = self._desired_for(eid, schedules, settings, self._now_min())
+                if desired is None:
+                    return
+                ha_is_f = self._ha_uses_fahrenheit()
+                target_c = _f_to_c(temperature) if ha_is_f else float(temperature)
+                scheduled_c = self._clamp_climate_setpoint_c(
+                    self._stored_setpoint_c(desired, settings), state.attributes, ha_is_f
+                )
+                pauses = dict(settings.get("room_pause") or {})
+                existing = pauses.get(primary) or {}
+                owned = existing.get("source") == "manual_target"
+                active = bool(existing.get("indef")) or float(existing.get("until_ms") or 0) > time.time() * 1000.0
+                if active and not owned:
+                    return  # Preserve pauses explicitly chosen by the user.
+                if abs(target_c - scheduled_c) < 0.05:
+                    if not owned:
+                        return
+                    pauses.pop(primary, None)
+                else:
+                    pauses[primary] = {
+                        "indef": False,
+                        "until_ms": self._manual_target_expiry(row, settings),
+                        "source": "manual_target",
+                        "target_c": target_c,
+                    }
+                await self.hass.services.async_call(
+                    DOMAIN, "set_store",
+                    {"instance_id": self._instance_id, "activate": False,
+                     "settings": {"room_pause": pauses}},
+                    blocking=True,
+                )
+                _LOGGER.info("ThermostatTimeline manual target hold: %s target=%s pause=%s",
+                             primary, target_c, pauses.get(primary))
+            except Exception:
+                _LOGGER.exception("ThermostatTimeline failed to preserve manual target for %s", eid)
+
     def _reset_target_recovery_watch(self):
         """Reconcile a scheduled entity when its target temperature becomes available."""
-    
-        if self._unsub_targets is not None:
-            try:
-                self._unsub_targets()
-            except Exception:
-                pass
-            self._unsub_targets = None
     
         try:
             schedules, settings = self._get_data()
@@ -2364,6 +2464,17 @@ class AutoApplyManager:
             if isinstance(eid, str)
             and (eid.startswith("climate.") or eid.startswith("input_number."))
         ]
+
+        watched_targets = tuple(sorted(set(targets)))
+        if self._unsub_targets is not None and watched_targets == self._watched_targets:
+            return  # Settings saves must not interrupt manual-target detection.
+        if self._unsub_targets is not None:
+            try:
+                self._unsub_targets()
+            except Exception:
+                pass
+            self._unsub_targets = None
+        self._watched_targets = watched_targets
     
         if not targets:
             return
@@ -2404,6 +2515,8 @@ class AutoApplyManager:
                 return
     
             if old_temp is not None:
+                if eid.startswith("climate.") and abs(new_temp - old_temp) >= 0.05:
+                    self.hass.async_create_task(self._remember_manual_target(eid, new_temp))
                 return
     
             _LOGGER.info(
@@ -2990,35 +3103,12 @@ class AutoApplyManager:
                 except Exception:
                     return
 
-            def _ha_is_f() -> bool:
-                try:
-                    u = self.hass.config.units.temperature_unit
-                    return u == UnitOfTemperature.FAHRENHEIT or "F" in str(u).upper()
-                except Exception:
-                    return False
-
-            ha_is_f = _ha_is_f()
+            ha_is_f = self._ha_uses_fahrenheit()
 
             def _to_ha_from_c(val_c: float) -> float:
                 return _c_to_f(val_c) if ha_is_f else float(val_c)
 
-            def _to_c_from_ha(val_ha: float) -> float:
-                return _f_to_c(val_ha) if ha_is_f else float(val_ha)
-
-            def _store_to_c(val: float) -> float:
-                v = float(val)
-                su = str((settings or {}).get("storage_temp_unit") or "").upper().strip()
-                if su == "F":
-                    return _f_to_c(v)
-                if su == "C":
-                    return v
-                # Legacy heuristic: only treat as °F when display unit is F *and* values look like °F.
-                legacy_u = str((settings or {}).get("temp_unit") or "").upper().strip()
-                if legacy_u == "F" and v > 45.0:
-                    return _f_to_c(v)
-                return v
-
-            desired_c = _store_to_c(desired)
+            desired_c = self._stored_setpoint_c(desired, settings or {})
 
             st = self.hass.states.get(eid)
             if not st:
@@ -3047,29 +3137,8 @@ class AutoApplyManager:
             hvac_modes = [str(x).lower() for x in (attrs.get("hvac_modes") or [])]
             preset_mode = str(attrs.get("preset_mode", "") or "").lower()
             preset_modes = [str(x).lower() for x in (attrs.get("preset_modes") or [])]
-            min_t = attrs.get("min_temp")
-            max_t = attrs.get("max_temp")
-
-            min_c = None
-            max_c = None
-            try:
-                if isinstance(min_t, (int, float)):
-                    min_c = _to_c_from_ha(float(min_t))
-                if isinstance(max_t, (int, float)):
-                    max_c = _to_c_from_ha(float(max_t))
-            except Exception:
-                min_c = None
-                max_c = None
-
             def _clamp_c(val_c: float) -> float:
-                try:
-                    if isinstance(min_c, (int, float)):
-                        val_c = max(val_c, float(min_c))
-                    if isinstance(max_c, (int, float)):
-                        val_c = min(val_c, float(max_c))
-                except Exception:
-                    pass
-                return val_c
+                return self._clamp_climate_setpoint_c(val_c, attrs, ha_is_f)
 
             # If preset has a manual/hold and not active, switch to it
             try:
@@ -3266,8 +3335,9 @@ class MultiInstanceAutoApplyManager:
 class MultiInstanceOpenWindowManager:
     """Run Open Window Detection independently per instance."""
 
-    def __init__(self, hass: HomeAssistant, apply_multi: MultiInstanceAutoApplyManager):
+    def __init__(self, hass: HomeAssistant, apply_multi: MultiInstanceAutoApplyManager, *, entry: ConfigEntry):
         self.hass = hass
+        self._entry = entry
         self._apply_multi = apply_multi
         self._managers: dict[str, OpenWindowManager] = {}
         self._unsub = None
@@ -3300,7 +3370,7 @@ class MultiInstanceOpenWindowManager:
                     mgr = self._apply_multi.get(iidn)
                     if not mgr:
                         continue
-                    owd = OpenWindowManager(self.hass, apply_mgr=mgr, instance_id=iidn)
+                    owd = OpenWindowManager(self.hass, apply_mgr=mgr, instance_id=iidn, entry=self._entry)
                     self._managers[iidn] = owd
                     await owd.async_start()
                 except Exception:
@@ -3316,8 +3386,9 @@ class OpenWindowManager:
     Uses settings.open_window from the shared store.
     """
 
-    def __init__(self, hass: HomeAssistant, apply_mgr: AutoApplyManager, instance_id: str = "default"):
+    def __init__(self, hass: HomeAssistant, apply_mgr: AutoApplyManager, instance_id: str = "default", *, entry: ConfigEntry):
         self.hass = hass
+        self._entry = entry
         self._mgr = apply_mgr
         self._instance_id = _norm_instance_id(instance_id)
         self._unsub = None
@@ -3507,11 +3578,17 @@ class OpenWindowManager:
         if open_now:
             self._cancel_task(room, "resume")
             if not is_susp and (room, "suspend") not in self._room_tasks:
-                self._room_tasks[(room, "suspend")] = self.hass.async_create_task(self._delayed_suspend(room))
+                self._room_tasks[(room, "suspend")] = self._entry.async_create_background_task(
+                    self.hass, self._delayed_suspend(room), f"thermostat_timeline window suspend {room}",
+                    eager_start=False,
+                )
         else:
             self._cancel_task(room, "suspend")
             if is_susp and (room, "resume") not in self._room_tasks:
-                self._room_tasks[(room, "resume")] = self.hass.async_create_task(self._delayed_resume(room))
+                self._room_tasks[(room, "resume")] = self._entry.async_create_background_task(
+                    self.hass, self._delayed_resume(room), f"thermostat_timeline window resume {room}",
+                    eager_start=False,
+                )
 
     async def _delayed_suspend(self, room: str) -> None:
         try:
@@ -3614,8 +3691,9 @@ class MultiInstancePresenceSensorManager:
     overrides apply even when the card is closed.
     """
 
-    def __init__(self, hass: HomeAssistant, apply_multi: MultiInstanceAutoApplyManager):
+    def __init__(self, hass: HomeAssistant, apply_multi: MultiInstanceAutoApplyManager, *, entry: ConfigEntry):
         self.hass = hass
+        self._entry = entry
         self._apply_multi = apply_multi
         self._managers: dict[str, PresenceSensorManager] = {}
 
@@ -3646,7 +3724,7 @@ class MultiInstancePresenceSensorManager:
                     mgr = self._apply_multi.get(iidn)
                     if not mgr:
                         continue
-                    psm = PresenceSensorManager(self.hass, apply_mgr=mgr, instance_id=iidn)
+                    psm = PresenceSensorManager(self.hass, apply_mgr=mgr, instance_id=iidn, entry=self._entry)
                     self._managers[iidn] = psm
                     await psm.async_start()
                 except Exception:
@@ -3659,8 +3737,9 @@ class MultiInstancePresenceSensorManager:
 class PresenceSensorManager:
     """Background handler for simple per-room presence sensors with ON/OFF delays."""
 
-    def __init__(self, hass: HomeAssistant, apply_mgr: AutoApplyManager, instance_id: str = "default"):
+    def __init__(self, hass: HomeAssistant, apply_mgr: AutoApplyManager, instance_id: str = "default", *, entry: ConfigEntry):
         self.hass = hass
+        self._entry = entry
         self._mgr = apply_mgr
         self._instance_id = _norm_instance_id(instance_id)
         self._unsub = None
@@ -3838,8 +3917,12 @@ class PresenceSensorManager:
                     except Exception:
                         return
                     finally:
-                        self._tasks.pop((room, "on"), None)
-                self._tasks[(room, "on")] = self.hass.async_create_task(_fire_on())
+                        if self._tasks.get((room, "on")) is asyncio.current_task():
+                            self._tasks.pop((room, "on"), None)
+                self._tasks[(room, "on")] = self._entry.async_create_background_task(
+                    self.hass, _fire_on(), f"thermostat_timeline presence on {room}",
+                    eager_start=False,
+                )
             elif state == "off":
                 self._cancel_task(room, "on")
                 if (room, "off") in self._tasks:
@@ -3859,8 +3942,12 @@ class PresenceSensorManager:
                     except Exception:
                         return
                     finally:
-                        self._tasks.pop((room, "off"), None)
-                self._tasks[(room, "off")] = self.hass.async_create_task(_fire_off())
+                        if self._tasks.get((room, "off")) is asyncio.current_task():
+                            self._tasks.pop((room, "off"), None)
+                self._tasks[(room, "off")] = self._entry.async_create_background_task(
+                    self.hass, _fire_off(), f"thermostat_timeline presence off {room}",
+                    eager_start=False,
+                )
         except Exception:
             return
 
