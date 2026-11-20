@@ -17,7 +17,7 @@
 
 ## Find the boiler relay settings
 
-Open **Settings > Boiler control** and enable the controls. Select the relay and participating rooms before saving. The example stops at the setup screen in a simulated installation.
+Open **Settings > Boiler control** and enable the controls. Select the relay and participating rooms before saving. The walkthrough selects the simulated Office relay, saves and reopens the settings to show the selected relay.
 
 [![Find the boiler relay settings in Home Assistant](../../images/boiler-view.png)](../../images/boiler.gif)
 

@@ -33,3 +33,23 @@ This page covers the core YAML options. Feature-specific pages (Weekdays, Presen
 ## Input number room mode
 
 - room_use_input_number: internal editor flag; in YAML just put the `input_number.*` directly in entities to force input number mode per room.
+
+## External room sensors and device Boost mode
+
+Selecting an external room temperature sensor changes the room temperature shown
+by the card. With boiler control disabled, this does not change the scheduled
+target sent to the radiator thermostat. Timeline does not forward temperature
+measurements into a thermostat's manufacturer-specific external-sensor input;
+keep any device-specific automation that performs that transfer.
+
+Device Boost mode is not a Timeline pause. A scheduled application can select a
+supported `manual` or `hold` preset and send the scheduled temperature, interrupting
+Boost. A thermostat's own five-minute Boost timeout does not change the saved
+Timeline schedule. Pause Timeline while you want device-local control; the exact
+Boost timeout remains the thermostat's responsibility.
+
+## Room defaults and automatic control
+
+Set a room default for the hours between scheduled blocks. For example, use 18 degrees as the default and add a 21-degree block from 06:00 to 09:00. At 09:00 the default applies again unless another block or override takes effect.
+
+Use shared storage with **Auto-apply** to run the schedule while the dashboard is closed. Enable **Apply on edit** when an edit to the current period should also update the thermostat immediately. **Apply on default change** does the same when the current period uses the room default.

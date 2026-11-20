@@ -12,3 +12,13 @@ Before changing several rooms, create a backup with the [backup action](../../in
 - storage_sync_mode: instant | delay (delay batches writes)
 - storage_sync_min / storage_sync_sec: delay config if `storage_sync_mode: delay` (min/sec).
 - backup_auto_enabled: true/false and backup_interval_days: 1..365 for automatic backups.
+
+## Choose an instance
+
+Use the same instance ID on dashboards that edit the same plan. Give a second plan its own ID and use the **select_instance** action to activate it. When creating an instance, choose whether to start empty or copy the active plan.
+
+## Save and restore a backup
+
+Create a backup slot before making a large change. Select the sections to include, such as the main schedule, weekdays or colors. To recover only a timetable, select its slot and the relevant schedule section. Choose **Merge** to combine the selected data with existing entries or **Replace** to replace the selected sections.
+
+Enable automatic backups and set the interval in days to create recurring snapshots. To move a backup to another installation, export the backup, import it there and then restore the desired slot.

@@ -82,3 +82,12 @@ Utilities
 
 - `clear`: Clear all schedules and bump version.
 - `factory_reset`: Delete integration storage files and recreate empty (removes all instances, schedules, settings, backups).
+
+## Maintain the integration
+
+| Action | Effect |
+| --- | --- |
+| `reload_frontend` | Redeploys the bundled card and refreshes the Lovelace resource after an update. |
+| `import_backup` | Appends imported backup slots. Restore a slot to apply it. |
+| `delete_backup` | Deletes the numbered slot (starting at 1). Omitting the slot clears all backups. |
+| `clear_store` | Clears schedules and settings across all instances and recreates the default instance. |

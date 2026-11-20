@@ -1,4 +1,5 @@
 use_directory_urls: false
+site_url: https://qlerup.github.io/thermostat-pro-timeline/
 site_name: Thermostat Pro Timeline
 repo_name: qlerup/thermostat-pro-timeline
 repo_url: https://github.com/qlerup/thermostat-pro-timeline
@@ -36,17 +37,18 @@ nav:
       - Configuration: card/configuration.md
       - Examples: card/examples.md
       - Internationalization: card/internationalization.md
-      - Features:
-          - Weekdays: card/features/weekdays.md
-          - Profiles: card/features/profiles.md
-          - Presence & away: card/features/presence-away.md
-          - Holidays: card/features/holidays.md
-          - Pause and manual targets: card/features/pause.md
-          - Seasonal: card/features/seasonal.md
-          - Open Window Detection: card/features/open-window.md
-          - Boiler control: card/features/boiler.md
-          - Color ranges: card/features/colors.md
-          - Storage & backup: card/features/storage.md
+  - Features:
+      - Feature directory: card/features/index.md
+      - Weekdays: card/features/weekdays.md
+      - Profiles: card/features/profiles.md
+      - Presence & away: card/features/presence-away.md
+      - Holidays: card/features/holidays.md
+      - Pause and manual targets: card/features/pause.md
+      - Seasonal: card/features/seasonal.md
+      - Open Window Detection: card/features/open-window.md
+      - Boiler control: card/features/boiler.md
+      - Color ranges: card/features/colors.md
+      - Storage & backup: card/features/storage.md
 
   - Integration:
       - Services: integration/services.md
