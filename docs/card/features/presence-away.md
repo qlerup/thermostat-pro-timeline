@@ -101,6 +101,8 @@ Use this when a room should follow one resident's location. For example, link bo
 3. Optionally enable **Use a room-specific Away target** and enter a temperature for the room. Otherwise it uses the shared Away temperature (17 °C by default).
 4. Save. With automatic application enabled, check the target on each thermostat when the person leaves and again when they return.
 
+[![Both rooms linked to Anna in the Away settings, with a separate Away target for Office](../../images/follow-person-setup.png)](../../images/follow-person.gif)
+
 [![Anna away with Office targeting 16 degrees and Hall targeting 17](../../images/follow-person-result.png)](../../images/follow-person.gif)
 
 [Play walkthrough](../../images/follow-person.gif) | [Full-size GIF](../../images/follow-person.gif)
