@@ -7,7 +7,7 @@ import time
 import traceback
 
 import voluptuous as vol
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from homeassistant.core import HomeAssistant, ServiceCall, callback  # type: ignore[reportMissingImports]
 from homeassistant.config_entries import ConfigEntry  # type: ignore[reportMissingImports]
@@ -1396,6 +1396,8 @@ class AutoApplyManager:
         self._last_pause_sensor_on: bool | None = None
         self._last_applied = {}  # eid -> {"min": int, "temp": float}
         self._manual_target_lock = asyncio.Lock()
+        self._summer_power_lock = asyncio.Lock()
+        self._next_trip = False
         self._next_is_resume = False
         self._next_room_resume = None
         self._next_room_resume_at = None
@@ -1439,6 +1441,11 @@ class AutoApplyManager:
         _s, settings = self._get_data()
         if bool(settings.get("apply_on_edit", True)):
             await self._maybe_apply_now(force=True)
+        elif self._auto_apply_enabled() and (settings.get("summer_off_rooms") or settings.get("summer_previous_modes")):
+            for eid in self._all_targets(_s, settings.get("merges") or {}):
+                restoring = eid in (settings.get("summer_previous_modes") or {})
+                if not await self._sync_summer_power(eid) and restoring:
+                    await self.async_apply_entity_now(eid, reconcile=True)
         await self._maybe_control_boiler(force=True)
         await self._schedule_next()
         self._reset_person_watch()
@@ -1690,6 +1697,79 @@ class AutoApplyManager:
         except Exception:
             return row
 
+    def _summer_off(self, eid, settings):
+        if not settings.get("seasonal_enabled") or self._season_key(settings) != "summer":
+            return False
+        rooms = settings.get("summer_off_rooms") or []
+        if not (eid in rooms or any(eid in (settings.get("merges") or {}).get(room, []) for room in rooms)):
+            return False
+        state = self.hass.states.get(eid)
+        return bool(state and "off" in (state.attributes.get("hvac_modes") or []))
+
+    async def _sync_summer_power(self, eid):
+        """Store the mode we switched off so winter and restarts can restore it."""
+        if not eid.startswith("climate."):
+            return False
+        async with self._summer_power_lock:
+            _, settings = self._get_data()
+            try:
+                previous = dict(settings.get("summer_previous_modes") or {})
+                summer = self._summer_off(eid, settings)
+                if eid in previous:
+                    state = self.hass.states.get(eid)
+                    if not state or state.state in ("unknown", "unavailable"):
+                        return True
+                if not summer and eid not in previous:
+                    return False
+                primary = next((room for room, children in (settings.get("merges") or {}).items() if eid in children), eid)
+                pause = (settings.get("room_pause") or {}).get(primary) or {}
+                if not (settings.get("apply_enabled") or {}).get(primary, True) or pause.get("indef") or (pause.get("until_ms") or 0) > time.time() * 1000:
+                    return True
+                state = self.hass.states.get(eid)
+                if not state or state.state in ("unknown", "unavailable"):
+                    return True
+                modes = state.attributes.get("hvac_modes") or []
+                if summer and "off" not in modes:
+                    return False
+                async def save_modes():
+                    await self.hass.services.async_call(DOMAIN, "set_store", {
+                        "instance_id": self._instance_id, "activate": False,
+                        "settings": {"summer_previous_modes": previous},
+                    }, blocking=True)
+                if summer:
+                    if state.state != "off":
+                        if eid not in previous:
+                            previous[eid] = state.state
+                            await save_modes()
+                        await self.hass.services.async_call("climate", "set_hvac_mode",
+                            {"entity_id": eid, "hvac_mode": "off"}, blocking=True)
+                    self._last_applied.pop(eid, None)
+                    return True
+                mode = previous.pop(eid)
+                if state.state == "off" and mode in modes:
+                    await self.hass.services.async_call("climate", "set_hvac_mode",
+                        {"entity_id": eid, "hvac_mode": mode}, blocking=True)
+                await save_modes()
+                self._last_applied.pop(eid, None)
+                return False
+            except HomeAssistantError as err:
+                _LOGGER.warning("Could not change summer HVAC mode for %s: %s", eid, err)
+                return True
+
+    def _trip_edges(self, settings):
+        if not settings.get("holidays_enabled") or settings.get("holidays_source") != "manual":
+            return
+        for trip in settings.get("holiday_trips") or []:
+            try:
+                start = dt_util.parse_datetime(trip["start"] + ":00")
+                end = dt_util.parse_datetime(trip["end"] + ":00")
+                if start and end and end > start:
+                    zone = dt_util.now().tzinfo
+                    yield (dt_util.as_utc(start.replace(tzinfo=zone)),
+                           dt_util.as_utc(end.replace(tzinfo=zone)))
+            except (KeyError, TypeError, ValueError):
+                continue
+
     def _is_holiday_active(self, settings: dict) -> bool:
         """Determine whether Holiday mode is active.
 
@@ -1704,6 +1784,8 @@ class AutoApplyManager:
                 return False
             src = str(settings.get("holidays_source") or "calendar").lower().strip()
             if src == "manual":
+                if settings.get("holiday_trips") and any(start <= dt_util.utcnow() < end for start, end in self._trip_edges(settings)):
+                    return True
                 dates = settings.get("holidays_dates")
                 if not isinstance(dates, list) or not dates:
                     return False
@@ -1984,6 +2066,8 @@ class AutoApplyManager:
                     continue
             except Exception:
                 pass
+            if await self._sync_summer_power(eid):
+                continue
             # If we are at a boundary tick (timer), only apply for entities that have a boundary now
             if boundary_only:
                 try:
@@ -2160,6 +2244,8 @@ class AutoApplyManager:
                 pass
 
             schedules, settings = self._get_data()
+            if await self._sync_summer_power(eid):
+                return
             now_min = self._now_min()
             desired = self._desired_for(eid, schedules, settings, now_min)
             if desired is None:
@@ -2301,6 +2387,11 @@ class AutoApplyManager:
             boundary = self._next_boundary_dt()
 
         candidates = []
+        if boundary:
+            _, settings = self._get_data()
+            now = dt_util.utcnow()
+            for interval in self._trip_edges(settings):
+                candidates.extend(("trip", edge, None) for edge in interval if edge > now)
 
         if boundary:
             candidates.append(("boundary", boundary, None))
@@ -2312,8 +2403,11 @@ class AutoApplyManager:
         if not candidates:
             return
 
-        kind, when, room_eid = min(candidates, key=lambda item: item[1])
-
+        # A trip edge can coincide with the expiry of a manual pause.
+        # Preserve room reconciliation as well as the new holiday timetable.
+        priority = {"global_resume": 0, "room_resume": 1, "trip": 2, "boundary": 3}
+        kind, when, room_eid = min(candidates, key=lambda item: (item[1], priority[item[0]]))
+        self._next_trip = any(event == "trip" and at == when for event, at, _ in candidates)
         self._next_is_resume = kind == "global_resume"
         self._next_room_resume = room_eid if kind == "room_resume" else None
         self._next_room_resume_at = when if kind == "room_resume" else None
@@ -2350,6 +2444,8 @@ class AutoApplyManager:
         room_resume = self._next_room_resume
         room_resume_at = self._next_room_resume_at
         global_resume = bool(self._next_is_resume)
+        trip_change = self._next_trip
+        self._next_trip = False
 
         self._next_room_resume = None
         self._next_room_resume_at = None
@@ -2390,6 +2486,9 @@ class AutoApplyManager:
                     )
                     await self._apply_room_now(str(eid))
 
+            if trip_change:
+                await self._maybe_apply_now(force=True)
+
         elif global_resume:
             await self._maybe_apply_now(
                 force=True,
@@ -2400,7 +2499,7 @@ class AutoApplyManager:
         else:
             await self._maybe_apply_now(
                 force=True,
-                boundary_only=True,
+                boundary_only=not trip_change,
                 reconcile=False,
             )
 
@@ -2552,7 +2651,13 @@ class AutoApplyManager:
                 if minute < boundary <= 1440:
                     boundaries.append(boundary)
         midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        return (midnight + timedelta(minutes=min(boundaries))).timestamp() * 1000.0
+        expiry = (midnight + timedelta(minutes=min(boundaries))).timestamp()
+        if (row.get("holiday") or {}).get("blocks"):
+            for interval in self._trip_edges(settings):
+                for edge in interval:
+                    if now.timestamp() < edge.timestamp() < expiry:
+                        expiry = edge.timestamp()
+        return expiry * 1000.0
 
     async def _remember_manual_target(self, eid, temperature):
         """Persist manual target holds using Timeline's native timed room pause.
@@ -2888,6 +2993,9 @@ class AutoApplyManager:
 
                             for r in rooms:
                                 try:
+                                    if self._summer_off(r["eid"], settings):
+                                        any_seen = True
+                                        continue
                                     desired_c = self._boiler_target_c(r["eid"], schedules, settings, now_min)
                                     if desired_c is None:
                                         any_unknown = True
@@ -2981,6 +3089,9 @@ class AutoApplyManager:
                             missing += 1
                             continue
 
+                        if self._summer_off(eid, settings):
+                            compared += 1
+                            continue
                         desired_c = self._boiler_target_c(eid, schedules, settings, now_min)
                         if desired_c is None:
                             missing += 1
@@ -3848,7 +3959,8 @@ class OpenWindowManager:
                 except Exception:
                     pass
             for eid in entities:
-                await self._turn_climate(eid, "turn_on")
+                if not self._mgr._summer_off(eid, settings):
+                    await self._turn_climate(eid, "turn_on")
                 try:
                     await self._mgr.async_apply_entity_now(eid, reconcile=True)
                 except Exception:
@@ -3863,7 +3975,8 @@ class OpenWindowManager:
             to_resume = list(self._suspended_entities)
             self._suspended_entities.clear()
             for eid in to_resume:
-                await self._turn_climate(eid, "turn_on")
+                if not self._mgr._summer_off(eid, settings):
+                    await self._turn_climate(eid, "turn_on")
                 try:
                     await self._mgr.async_apply_entity_now(eid, reconcile=True)
                 except Exception:

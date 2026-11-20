@@ -36,3 +36,15 @@ Use **Settings > Holidays > Calendar** and select a dedicated holiday calendar. 
 [![Follow a holiday calendar](../../images/calendar-result.png)](../../images/calendar.gif)
 
 [Play walkthrough](../../images/calendar.gif) | [Full-size GIF](../../images/calendar.gif)
+
+## Set departure and return times for a trip
+
+In **Settings > Holidays**, enable holidays and choose **Manual**. Create the room's holiday timetable first. In the date range controls, choose the departure and return dates and enter either or both times. Select **Add range**, check the interval, then **Save**.
+
+For example, a trip from Friday at 16:00 to Sunday at 12:00 starts using holiday blocks at 16:00 on Friday. At noon on Sunday, the room resumes the schedule that would normally apply at that moment. The recording shows Office using its 17-degree holiday target during a trip. Shared storage and automatic temperature control let the integration handle both transitions with the dashboard closed.
+
+Times use Home Assistant's local time zone. A blank departure time means the start of the first date. A blank return time includes the whole final date. Leave both blank for an ordinary whole-day range. Overlapping trips and whole-day dates keep the holiday timetable active while any entry matches. To cancel a timed trip, remove its interval and save. Rooms without holiday blocks keep their usual schedules.
+
+[![Set departure and return times for a trip in Home Assistant](../../images/holiday-trip-result.png)](../../images/holiday-trip.gif)
+
+[Play walkthrough](../../images/holiday-trip.gif) | [Full-size GIF](../../images/holiday-trip.gif)

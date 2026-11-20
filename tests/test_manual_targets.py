@@ -125,6 +125,47 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.mgr._is_holiday_active = lambda config: True
         self.assertEqual(target(), 24)
 
+    def test_manual_trip_edges_are_exclusive_and_union_with_dates(self):
+        self.globals["dt_util"].parse_datetime = datetime.fromisoformat
+        self.settings.update(holidays_enabled=True, holidays_source="manual", holidays_dates=[],
+                             holiday_trips=[{"start": "2026-11-09T10:15", "end": "2026-11-09T10:45"},
+                                            {"start": "2026-11-09T10:30", "end": "2026-11-09T11:00"}])
+        for hour, minute, active in [(10,14,False),(10,15,True),(10,45,True),(11,0,False)]:
+            self.now = self.now.replace(hour=hour, minute=minute)
+            self.assertEqual(self.mgr._is_holiday_active(self.settings), active)
+        self.settings["holidays_dates"] = ["2026-11-09"]
+        self.assertTrue(self.mgr._is_holiday_active(self.settings))
+        self.settings["holidays_enabled"] = False
+        self.assertFalse(self.mgr._is_holiday_active(self.settings))
+
+    def test_trip_departure_ends_a_manual_hold_only_in_rooms_with_holiday_blocks(self):
+        self.globals["dt_util"].parse_datetime = datetime.fromisoformat
+        self.settings.update(holidays_enabled=True, holidays_source="manual",
+                             holiday_trips=[{"start": "2026-11-09T10:15", "end": "2026-11-10T12:00"}])
+        row = dict(self.schedules[self.a], holiday={"blocks": [{"temp": 17}]})
+        expected = self.now.replace(minute=15).timestamp() * 1000
+        self.assertEqual(self.mgr._manual_target_expiry(row, self.settings), expected)
+        self.assertGreater(self.mgr._manual_target_expiry(self.schedules[self.b], self.settings), expected)
+
+    async def test_summer_off_only_restores_modes_owned_by_timeline(self):
+        self.settings.update(seasonal_enabled=True, seasonal_mode="summer", summer_off_rooms=[self.a])
+        self.assertTrue(await self.mgr._sync_summer_power(self.a))
+        self.assertEqual(self.settings["summer_previous_modes"], {self.a: "heat"})
+        self.assertEqual(self.calls[-1][2]["hvac_mode"], "off")
+        self.states[self.a].state = "off"
+        self.calls.clear()
+        self.assertTrue(await self.mgr._sync_summer_power(self.a))
+        self.assertFalse(await self.mgr._sync_summer_power(self.b))
+        self.assertEqual(self.calls, [])
+        self.settings["seasonal_mode"] = "winter"
+        self.assertFalse(await self.make_manager()._sync_summer_power(self.a))
+        self.assertEqual(self.calls[0][2]["hvac_mode"], "heat")
+        self.assertEqual(self.settings["summer_previous_modes"], {})
+        self.settings["seasonal_mode"] = "summer"
+        self.calls.clear()
+        self.assertTrue(await self.mgr._sync_summer_power(self.a))
+        self.assertEqual(self.calls, [])
+
     async def manual(self, eid, value):
         self.states[eid].attributes["temperature"] = value
         await self.mgr._remember_manual_target(eid, value)

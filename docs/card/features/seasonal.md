@@ -41,3 +41,15 @@ An unavailable sensor keeps the last known plan. Until the first valid reading, 
 [![Follow a season sensor in Home Assistant](../../images/season-sensor-result.png)](../../images/season-sensor.gif)
 
 [Play walkthrough](../../images/season-sensor.gif) | [Full-size GIF](../../images/season-sensor.gif)
+
+## Switch a thermostat off in summer
+
+In **Settings**, enable summer/winter schedules. Under **Switch thermostats off in summer**, select the rooms to switch off and save. The list includes configured climate rooms whose thermostats support the HVAC `off` mode. Leave a room unchecked to run its summer timetable as usual. Automatic temperature control must be enabled.
+
+Select **Summer** on the timeline, or let your configured season sensor select it. In the recording, Office switches to **Off** while Hall continues heating to its summer target of 18 degrees. Later blocks cannot turn Office back on. A selected room contributes no boiler demand while summer shutoff applies.
+
+When winter begins or you deselect the room, Timeline restores the previous supported HVAC mode for a thermostat it switched off and resumes normal scheduling. With shared storage, this also works with the dashboard closed and after a Home Assistant restart. With browser storage, keep the same dashboard open for transitions. Room and global pauses still take precedence.
+
+[![Switch a thermostat off in summer in Home Assistant](../../images/summer-off-result.png)](../../images/summer-off.gif)
+
+[Play walkthrough](../../images/summer-off.gif) | [Full-size GIF](../../images/summer-off.gif)

@@ -4990,6 +4990,8 @@ class ThermostatTimelineCard extends HTMLElement {
         alarm_pause: { ...(config.alarm_pause ?? this._config?.alarm_pause) },
         workday_plans: { ...(config.workday_plans ?? this._config?.workday_plans) },
         boiler_manual_targets: !!(config.boiler_manual_targets ?? this._config?.boiler_manual_targets),
+        summer_off_rooms: [...(config.summer_off_rooms ?? this._config?.summer_off_rooms ?? [])],
+        holiday_trips: [...(config.holiday_trips ?? this._config?.holiday_trips ?? [])],
         season_follow: { ...(config.season_follow ?? this._config?.season_follow) },
         seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
         seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -6085,7 +6087,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'workday_plans', 'boiler_manual_targets']) {
+            for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6365,7 +6367,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'workday_plans', 'boiler_manual_targets']) {
+  for (const key of ['alarm_pause', 'season_follow', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -6833,6 +6835,47 @@ class ThermostatTimelineCard extends HTMLElement {
       return vals.reduce((a,b)=>a+b,0) / vals.length;
     } catch { return NaN; }
   }
+  _summerOff(eid){
+    const rooms = this._config?.summer_off_rooms || [];
+    return rooms.length > 0 && this._seasonEnabled() && this._seasonKey() === 'summer' &&
+      rooms.includes(this._groupPrimaryOf(eid)) && !!this._hass?.states?.[eid]?.attributes?.hvac_modes?.includes('off');
+  }
+
+  async _syncLocalSummerPower(eid){
+    if (this._config?.storage_enabled || !eid.startsWith('climate.')) return false;
+    this._summerCommands ??= new Map();
+    if (this._summerCommands.has(eid)) return this._summerCommands.get(eid);
+    const command = this._applyLocalSummerMode(eid).catch(err => {
+      console.warn('Could not change summer HVAC mode for ' + eid, err);
+      return true;
+    });
+    this._summerCommands.set(eid, command);
+    try { return await command; } finally { this._summerCommands.delete(eid); }
+  }
+  async _applyLocalSummerMode(eid){
+    const key = this._localStoreKey() + ':summer-mode:' + eid;
+    let previous;
+    try { previous = localStorage.getItem(key); } catch { return false; }
+    const summer = this._summerOff(eid);
+    if (!summer && !previous) return false;
+    const state = this._hass?.states?.[eid];
+    if (!state || ['unknown', 'unavailable'].includes(state.state) || this._isRoomPaused(eid) ||
+        this._config.apply_enabled?.[this._groupPrimaryOf(eid)] === false) return true;
+    if (summer) {
+      if (state.state !== 'off') {
+        if (!previous) localStorage.setItem(key, state.state);
+        await this._hass.callService('climate','set_hvac_mode',{entity_id:eid,hvac_mode:'off'});
+      }
+    } else {
+      if (state.state === 'off' && state.attributes.hvac_modes?.includes(previous)) {
+        await this._hass.callService('climate','set_hvac_mode',{entity_id:eid,hvac_mode:previous});
+      }
+      localStorage.removeItem(key);
+    }
+    if (this._lastApplied) delete this._lastApplied[eid];
+    return summer;
+  }
+
   async _applySetpointForEntity(eid, desiredC){
     try {
       // Per-room "Enable schedule updates" toggle: when disabled for this room,
@@ -6850,6 +6893,7 @@ class ThermostatTimelineCard extends HTMLElement {
         return true;
       })();
       if (!applyEnabled) return;
+      if (await this._syncLocalSummerPower(eid)) return;
 
       // Per-room pause: temporary suppression, independent of the global
       // pause button. Mirrors _isPaused()'s semantics but scoped to this
@@ -7107,6 +7151,8 @@ class ThermostatTimelineCard extends HTMLElement {
         alarm_pause: { ...this._config.alarm_pause },
         workday_plans: { ...this._config.workday_plans },
         boiler_manual_targets: !!this._config.boiler_manual_targets,
+        summer_off_rooms: [...(this._config.summer_off_rooms || [])],
+        holiday_trips: [...(this._config.holiday_trips || [])],
         season_follow: { ...this._config.season_follow },
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
@@ -7159,6 +7205,8 @@ class ThermostatTimelineCard extends HTMLElement {
         alarm_pause: { ...this._config.alarm_pause },
         workday_plans: { ...this._config.workday_plans },
         boiler_manual_targets: !!this._config.boiler_manual_targets,
+        summer_off_rooms: [...(this._config.summer_off_rooms || [])],
+        holiday_trips: [...(this._config.holiday_trips || [])],
         season_follow: { ...this._config.season_follow },
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
@@ -7433,6 +7481,7 @@ class ThermostatTimelineCard extends HTMLElement {
       this._config.seasonal_mode = target;
       try { if (this._settingsDraft) this._settingsDraft.seasonal_mode = target; } catch {}
       this._applySeasonalModeToRows(true, prev);
+      if (!this._config.storage_enabled) this._applyCurrentSetpoints(false);
       try { this._render(); } catch {}
       try { this._scheduleNextApply(); } catch {}
       try { this._debouncedSaveStore(); } catch {}
@@ -7735,11 +7784,37 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
     try { const d=new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${dd}`; } catch { return ''; }
   }
+  _tripIntervals(){
+    const trips = this._config?.holiday_trips;
+    if (!this._config?.holidays_enabled || this._config.holidays_source !== 'manual' || !trips?.length) return [];
+    const zone = this._hass?.config?.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const key = JSON.stringify([zone,trips]);
+    if (this._tripCache?.key === key) return this._tripCache.intervals;
+    const fmt = new Intl.DateTimeFormat('sv-SE', {timeZone:zone, year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+    const localMillis = ms => Date.parse(fmt.format(ms).replace(' ', 'T') + ':00Z');
+    const resolve = value => {
+      const wall = Date.parse(value + ':00Z');
+      if (!Number.isFinite(wall)) return NaN;
+      // Use the earlier occurrence of a repeated hour and shift a missing hour forward.
+      const day = 86400000;
+      const candidates = [wall-day,wall+day].map(ms => wall - (localMillis(ms)-ms)).sort((a,b) => a-b);
+      return candidates.find(ms => localMillis(ms) === wall) ?? candidates[candidates.length-1];
+    };
+    const intervals = trips.map(trip => [resolve(trip.start),resolve(trip.end)]).filter(([a,b]) => b>a);
+    this._tripCache = {key,intervals};
+    return intervals;
+  }
+  _timedTripActive(){
+    const now = Date.now();
+    return this._tripIntervals().some(([start,end]) => start <= now && now < end);
+  }
   _isHolidayActive(){
     try {
       if (!this._config?.holidays_enabled) return false;
       const src = this._config.holidays_source || 'calendar';
       if (src === 'manual') {
+        if (this._timedTripActive()) return true;
         const list = Array.isArray(this._config.holidays_dates) ? this._config.holidays_dates : [];
         const today = this._todayISO();
         return !!list.find(d=>String(d)===today);
@@ -8344,9 +8419,19 @@ class ThermostatTimelineCard extends HTMLElement {
     const resumeMs = this._resumeAtMs();
     const isResume = !!(resumeMs && resumeMs < targetMs);
     if (isResume) targetMs = resumeMs;
-    const delay = Math.max(500, targetMs - Date.now());
+    const now = Date.now();
+    const edges = this._tripIntervals().flat().filter(edge => edge > now);
+    const tripEdge = Math.min(...edges);
+    const tripChange = tripEdge <= targetMs;
+    if (tripChange) targetMs = tripEdge;
+    const delay = Math.max(500, targetMs - now);
     this._transitionTimer = setTimeout(async () => {
-      await this._applyCurrentSetpoints(true, isResume);
+      if (tripChange) {
+        await this._applyCurrentSetpoints(false, isResume && resumeMs === targetMs);
+        this._render();
+      } else {
+        await this._applyCurrentSetpoints(true, isResume);
+      }
       this._scheduleNextApply();
     }, delay);
     // Also make sure we have a standalone resume timer if paused
@@ -8443,6 +8528,7 @@ class ThermostatTimelineCard extends HTMLElement {
           let allOkForOff = true;
 
           for (const r of rooms) {
+            if (this._summerOff(r.eid)) { anySeen = true; continue; }
             const desiredC = Number(this._desiredTempFor ? this._desiredTempFor(r.eid, nowMin) : null);
             const curC = Number(this._roomCurrentTemperatureC ? this._roomCurrentTemperatureC(r.eid) : NaN);
             if (!Number.isFinite(desiredC) || !Number.isFinite(curC)) { anyUnknown = true; continue; }
@@ -8497,6 +8583,7 @@ class ThermostatTimelineCard extends HTMLElement {
       let allOkForOff = true;
 
       for (const eid of roomEntities) {
+        if (this._summerOff(eid)) { anySeen = true; continue; }
         const desiredC = Number(this._desiredTempFor ? this._desiredTempFor(eid, nowMin) : null);
         const curC = Number(this._roomCurrentTemperatureC ? this._roomCurrentTemperatureC(eid) : NaN);
 
@@ -8530,6 +8617,7 @@ class ThermostatTimelineCard extends HTMLElement {
   }
 
   async _applyCurrentSetpoints(force=false, reconcile=false){ if (!this._config?.auto_apply || !this._hass) return; if (!this._hasConfig) return; if (this._config?.storage_enabled) return; if (this._isPaused()) return; const nowMin = this._getNowMin(); const targets = this._allTargetEntities(); for (const eid of targets){
+    if (await this._syncLocalSummerPower(eid)) continue;
     // If this call is from boundary timer (force===true), only apply for entities that have boundary now.
     // On resume from pause (reconcile=true), reconcile across all entities.
     if (force && !reconcile) {
@@ -9479,6 +9567,11 @@ class ThermostatTimelineCard extends HTMLElement {
                     <ha-switch class="sp-seasonal"></ha-switch>
                   </div>
 
+                  <div class="setting summer-off-setting" style="grid-template-columns:1fr">
+                    <div class="title">Switch thermostats off in summer</div>
+                    <div class="desc">Selected rooms stay off during the summer plan. Their previous mode is restored when summer ends.</div>
+                    <div class="summer-off-list"></div>
+                  </div>
                   <div class="setting season-follow-row"><label for="season-follow">Follow a season sensor</label><input id="season-follow" type="checkbox"></div>
                   <div class="setting season-follow-options" style="grid-template-columns:1fr">
                     <tt-entity-picker class="season-source" label="Season sensor" include-domains='["sensor"]'></tt-entity-picker>
@@ -11647,7 +11740,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (unitC) unitC.onclick = ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.temp_unit = 'C'; this._renderSettingsPopupTab(); } catch {} };
       if (unitF) unitF.onclick = ()=>{ try { if (!this._settingsDraft) return; this._settingsDraft.temp_unit = 'F'; this._renderSettingsPopupTab(); } catch {} };
       if (swProfiles) swProfiles.onchange = onSw('profiles_enabled');
-      if (swSeasonal) swSeasonal.onchange = e => { onSw('seasonal_enabled')(e); this._bindAutomationRule('season'); };
+      if (swSeasonal) swSeasonal.onchange = e => { onSw('seasonal_enabled')(e); this._bindSummerRooms(this._settingsDraft); this._bindAutomationRule('season'); };
 
       // Configuration ID (instance) toggle (persists outside of the popup draft)
       if (swInstance) {
@@ -12085,6 +12178,8 @@ class ThermostatTimelineCard extends HTMLElement {
         alarm_pause: { ...cfg.alarm_pause, states: [...(cfg.alarm_pause?.states || ['armed_away'])] },
         workday_plans: { ...cfg.workday_plans },
         boiler_manual_targets: !!cfg.boiler_manual_targets,
+        summer_off_rooms: [...(cfg.summer_off_rooms || [])],
+        holiday_trips: [...(cfg.holiday_trips || [])],
         season_follow: { ...cfg.season_follow },
         seasonal_enabled: !!cfg.seasonal_enabled,
         seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -12307,6 +12402,8 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.alarm_pause = { ...d.alarm_pause };
       cfg.workday_plans = { ...d.workday_plans };
       cfg.boiler_manual_targets = !!d.boiler_manual_targets;
+      cfg.summer_off_rooms = [...d.summer_off_rooms];
+      cfg.holiday_trips = [...d.holiday_trips];
       cfg.season_follow = { ...d.season_follow };
       cfg.seasonal_enabled = !!d.seasonal_enabled;
       cfg.seasonal_mode = (String(d.seasonal_mode || prevSeasonalMode || 'winter') === 'summer') ? 'summer' : 'winter';
@@ -14323,9 +14420,13 @@ class ThermostatTimelineCard extends HTMLElement {
                 <div class="title sp-holidays-ranges-title" style="font-size:.95rem;"></div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                   <input class="settings-input sp-holidays-range-from" type="date" />
+                  <label>Departure time (optional) <input class="settings-input trip-from-time" type="time"></label>
                   <input class="settings-input sp-holidays-range-to" type="date" />
+                  <label>Return time (optional) <input class="settings-input trip-to-time" type="time"></label>
                   <button type="button" class="btn ghost sp-holidays-add-range"></button>
                 </div>
+                <div class="trip-message" role="status"></div>
+                <div class="linked-chips timed-trips"></div>
                 <div class="linked-chips sp-holidays-range-chips"></div>
               </div>
             </div>
@@ -14445,6 +14546,26 @@ class ThermostatTimelineCard extends HTMLElement {
           }
         } catch {}
       };
+      const renderTrips = () => {
+        const list = page.querySelector('.timed-trips');
+        list.replaceChildren();
+        for (const trip of this._settingsDraft.holiday_trips) {
+          const chip = document.createElement('span');
+          chip.className = 'pill-chip';
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'rm';
+          remove.textContent = '\u00d7';
+          remove.setAttribute('aria-label', 'Remove trip starting ' + trip.start);
+          remove.onclick = () => {
+            this._settingsDraft.holiday_trips = this._settingsDraft.holiday_trips.filter(t => t !== trip);
+            renderTrips();
+          };
+          chip.append(trip.start.replace('T',' ') + ' to ' + trip.end.replace('T',' '), remove);
+          list.append(chip);
+        }
+      };
+      renderTrips();
       renderGrpChips();
 
       // Bind events once
@@ -14528,6 +14649,22 @@ class ThermostatTimelineCard extends HTMLElement {
               const t = String(inpt.value||'').trim();
               if (!f || !t) return;
               if (!/^\d{4}-\d{2}-\d{2}$/.test(f) || !/^\d{4}-\d{2}-\d{2}$/.test(t)) return;
+              const fromTime = page.querySelector('.trip-from-time');
+              const toTime = page.querySelector('.trip-to-time');
+              const msg = page.querySelector('.trip-message');
+              msg.textContent = '';
+              if (fromTime.value || toTime.value) {
+                const start = f + 'T' + (fromTime.value || '00:00');
+                const afterEnd = new Date(t + 'T00:00:00Z');
+                afterEnd.setUTCDate(afterEnd.getUTCDate() + 1);
+                const end = toTime.value ? t + 'T' + toTime.value : afterEnd.toISOString().slice(0,10) + 'T00:00';
+                if (end <= start) { msg.textContent = 'Return must be after departure.'; return; }
+                const trips = this._settingsDraft.holiday_trips;
+                if (!trips.some(v => v.start === start && v.end === end)) trips.push({start, end});
+                fromTime.value = toTime.value = inpf.value = inpt.value = '';
+                renderTrips();
+                return;
+              }
               let d1 = new Date(f+'T00:00:00');
               let d2 = new Date(t+'T00:00:00');
               if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return;
@@ -16190,6 +16327,7 @@ class ThermostatTimelineCard extends HTMLElement {
         bF && bF.classList.toggle('active', wantF);
       } catch {}
       setChk('.overlay-settings .sp-profiles', d.profiles_enabled);
+      this._bindSummerRooms(d);
       this._bindAutomationRule('season');
       setChk('.overlay-settings .sp-seasonal', d.seasonal_enabled);
 
@@ -16219,6 +16357,30 @@ class ThermostatTimelineCard extends HTMLElement {
         setLbl('.overlay-settings .sp-slabel-maxc', 'editor.max_c');
       } catch {}
     } catch {}
+  }
+
+  _bindSummerRooms(draft){
+    const section = this.shadowRoot.querySelector('.overlay-settings .summer-off-setting');
+    section.style.display = draft.seasonal_enabled ? '' : 'none';
+    const list = section.querySelector('.summer-off-list');
+    list.replaceChildren();
+    for (const eid of draft.entities || []) {
+      const selected = draft.summer_off_rooms.includes(eid);
+      const modes = this._hass?.states?.[eid]?.attributes?.hvac_modes || [];
+      if (!eid.startsWith('climate.') || (!selected && !modes.includes('off'))) continue;
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = eid;
+      input.checked = selected;
+      input.onchange = () => {
+        draft.summer_off_rooms = [...list.querySelectorAll('input:checked')].map(el => el.value);
+      };
+      label.append(input, ' ' + (draft.labels?.[eid] || this._prettyName(eid)));
+      list.append(label);
+    }
+    if (!list.childElementCount) section.style.display = 'none';
   }
 
   _bindAutomationRule(kind){
@@ -16374,6 +16536,8 @@ class ThermostatTimelineCard extends HTMLElement {
       if (JSON.stringify(d.alarm_pause) !== JSON.stringify({ ...c.alarm_pause, states: c.alarm_pause?.states || ['armed_away'] })) return true;
       if (JSON.stringify(d.workday_plans) !== JSON.stringify(c.workday_plans || {})) return true;
       if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
+      if (JSON.stringify(d.summer_off_rooms) !== JSON.stringify(c.summer_off_rooms || [])) return true;
+      if (JSON.stringify(d.holiday_trips) !== JSON.stringify(c.holiday_trips || [])) return true;
       if (JSON.stringify(d.season_follow) !== JSON.stringify(c.season_follow || {})) return true;
       if (!!d.seasonal_enabled !== !!c.seasonal_enabled) return true;
       if (String(d.seasonal_mode||'winter') !== String(c.seasonal_mode||'winter')) return true;
@@ -16790,7 +16954,11 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
       // IMPORTANT: do not persist on toggle/input; only commit+save here.
+      const previousSummer = JSON.stringify([this._config.seasonal_enabled, this._config.summer_off_rooms]);
       this._applySettingsPopupDraftToConfig();
+      if (!this._config.storage_enabled && previousSummer !== JSON.stringify([this._config.seasonal_enabled, this._config.summer_off_rooms])) {
+        await this._applyCurrentSetpoints(false);
+      }
       if (this._config?.storage_enabled && typeof this._saveStore === 'function') {
         await this._saveStore(true);
         // Pull fresh settings back from the integration to avoid any race where UI shows defaults after a hard refresh

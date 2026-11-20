@@ -218,3 +218,18 @@ test('workday combinations select saved timetables and fall back to the calendar
   c._hass.states[tomorrow].state = 'on';
   assert.equal(c._planDay(), 'wed');
 });
+
+test('trip start and end use Home Assistant time, including DST changes', () => {
+  const c = card();
+  c._hass = {config:{time_zone:'Europe/Copenhagen'}};
+  Object.assign(c._config, {holidays_enabled:true, holidays_source:'manual', holiday_trips:[
+    { start:'2026-10-25T02:15', end:'2026-10-25T03:30' },
+    { start:'2026-03-29T02:15', end:'2026-03-29T04:00' }
+  ]});
+  const [autumn, spring] = c._tripIntervals();
+  assert.equal(new Date(autumn[0]).toISOString(), '2026-10-25T00:15:00.000Z');
+  assert.equal(new Date(autumn[1]).toISOString(), '2026-10-25T02:30:00.000Z');
+  assert.equal(new Date(spring[0]).toISOString(), '2026-03-29T01:15:00.000Z');
+  c._config.holidays_source = 'calendar';
+  assert.equal(c._tripIntervals().length, 0);
+});

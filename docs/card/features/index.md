@@ -234,6 +234,22 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/workday-plans.gif) | [Full-size GIF](../../images/workday-plans.gif)
 
+-   **[Switch a thermostat off in summer](seasonal.md#switch-a-thermostat-off-in-summer)**
+
+    Keep selected thermostats off while other rooms follow their summer plans.
+
+    [![Switch a thermostat off in summer in Home Assistant](../../images/summer-off-result.png)](../../images/summer-off.gif)
+
+    [Play walkthrough](../../images/summer-off.gif) | [Full-size GIF](../../images/summer-off.gif)
+
+-   **[Set departure and return times for a trip](holidays.md#set-departure-and-return-times-for-a-trip)**
+
+    Switch to the holiday timetable at departure and resume the normal schedule at the return time.
+
+    [![Set departure and return times for a trip in Home Assistant](../../images/holiday-trip-result.png)](../../images/holiday-trip.gif)
+
+    [Play walkthrough](../../images/holiday-trip.gif) | [Full-size GIF](../../images/holiday-trip.gif)
+
 </div>
 
 ## Presence and Away
