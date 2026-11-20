@@ -4649,7 +4649,7 @@ class ThermostatTimelineCard extends HTMLElement {
       // load had already fetched the wrong (default/shared) instance's data -
       // making independent per-card instances collapse into one on reload (#63).
       try { this._hydrateInstanceCfgFromLocal(); } catch {}
-      this._loadStore(true).then(async () => {
+      this._loadStore(true).then(async (hasSharedData) => {
         this._ensureSchedules();
         // Ensure labels/merges/temp_sensors from backend are reflected in config before first render
         try { await this._hydrateUiNamesFromBackend(); } catch {}
@@ -4662,14 +4662,16 @@ class ThermostatTimelineCard extends HTMLElement {
         // Ved load sætter vi korrekt setpoint én gang
         this._applyCurrentSetpoints(true);
         this._scheduleNextApply();
-        // Push any YAML-provided settings to storage/local after first load
-        // but avoid resetting a pending delayed sync countdown on hard refresh
-        try {
-          const hasPending = Number(this._storeDelayDue||0) > Date.now() || !!localStorage.getItem(this._syncDueKey());
-          if (!(this._config?.storage_enabled && this._config?.storage_sync_mode === 'delay' && hasPending)) {
-            this._debouncedSaveStore();
-          }
-        } catch {}
+        // A card opening on an existing shared store is a read. Its local
+        // snapshot can be older than the current schedule or room pause.
+        if (!hasSharedData) {
+          try {
+            const hasPending = Number(this._storeDelayDue||0) > Date.now() || !!localStorage.getItem(this._syncDueKey());
+            if (!(this._config?.storage_enabled && this._config?.storage_sync_mode === 'delay' && hasPending)) {
+              this._debouncedSaveStore();
+            }
+          } catch {}
+        }
   // (Removed polling safety net)
       });
     } else {
@@ -4734,6 +4736,8 @@ class ThermostatTimelineCard extends HTMLElement {
   // ---------- Config ----------
     setConfig(config) {
     if (!config || !Array.isArray(config.entities)) throw new Error(ttLocalize('err.config_entities', navigator.language || 'en'));
+    const configSignature = JSON.stringify(config);
+    const cardConfigChanged = this._cardConfigSignature !== configSignature;
     const savedConfig = this._hasConfig ? this._config : null;
     const prevDefault = Number(this._config?.default_temp);
     const yamlSetsDefault = Object.prototype.hasOwnProperty.call(config, 'default_temp');
@@ -5030,13 +5034,14 @@ class ThermostatTimelineCard extends HTMLElement {
       this._startUiTimer();
       if (!this._inlineEditing && !this._editing) this._render();
       this._scheduleNextApply();
-      // Persist shared settings to storage so other users/dashboards pick them up
-      this._debouncedSaveStore();
+      // HA can resend the same YAML when reopening or restoring a view.
+      if (!this._config.storage_enabled || cardConfigChanged) this._debouncedSaveStore();
 
       // Boiler control (frontend only when Sync is OFF)
       try { this._setupBoilerControl(); } catch {}
     }
     // Mark config as ready
+    this._cardConfigSignature = configSignature;
     this._hasConfig = true;
 
     // Boiler control (frontend only when Sync is OFF)
@@ -5581,10 +5586,15 @@ class ThermostatTimelineCard extends HTMLElement {
   async _loadStore(preferSensor = true) {
     const hardReset = this._hardResetActive();
     let stMain = null, stSet = null, stCol = null, stWeek = null, stProf = null;
+    let hasSharedData = false;
     // Load from integration API (file-based storage)
     if (this._config?.storage_enabled) {
       const api = await this._apiFetchState();
       if (api && typeof api === 'object') {
+        hasSharedData = ['schedules', 'weekdays', 'profiles', 'settings', 'colors'].some(key => {
+          const value = api[key];
+          return value && typeof value === 'object' && Object.keys(value).length > 0;
+        });
         stMain = { state: Number(api.version || 0), attributes: { schedules: api.schedules, weekdays: api.weekdays, profiles: api.profiles, settings: api.settings, colors: api.colors } };
         stSet = { state: Number(api.settings_version || api.version || 0), attributes: { settings: api.settings, colors: api.colors } };
         stCol = { state: Number(api.colors_version || api.version || 0), attributes: { colors: api.colors } };
@@ -6126,7 +6136,7 @@ class ThermostatTimelineCard extends HTMLElement {
         try { const payload = this._makeStoragePayload(true); localStorage.setItem(this._localStoreKey(), JSON.stringify(payload)); } catch {}
         this._storeLoaded = true;
         this._storeLoadedFromApi = true;
-        return;
+        return hasSharedData;
       } catch (e) { /* fallback */ }
     }
     try {

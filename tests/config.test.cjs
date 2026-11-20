@@ -119,3 +119,43 @@ test('shared storage card initialization does not send climate temperature comma
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(calls.filter(args=>args[0]==='climate').length,0);
 });
+const openSharedCard = async (api) => {
+  const c = card();
+  const actions = [];
+  c._init = () => {};
+  c._apiFetchState = async () => api;
+  c._hydrateUiNamesFromBackend = async () => {};
+  c._hydrateInstanceCfgFromLocal = () => {};
+  c._restoreSyncDue = () => {};
+  c._render = () => {};
+  c._scheduleNextApply = () => {};
+  c._startStoreWatchTimer = () => {};
+  c._setupBoilerControl = () => {};
+  c._startUiTimer = () => {};
+  c._debouncedSaveStore = () => actions.push('save');
+  c.hass = {
+    states: {'climate.room': {state: 'heat', attributes: {temperature: 22.5}}},
+    callService: async (domain, service) => actions.push(`${domain}.${service}`),
+  };
+  await new Promise(resolve => setImmediate(resolve));
+  return {c, actions};
+};
+
+test('opening an existing shared card does not save over backend state', async () => {
+  const {c, actions} = await openSharedCard({
+    version: 2,
+    schedules: {'climate.room': {defaultTemp: 21, blocks: []}},
+    settings: {entities: ['climate.room'], auto_apply_enabled: true},
+  });
+  assert.equal(c._schedules['climate.room'].defaultTemp, 21);
+  assert.deepEqual(actions, []);
+  c.setConfig({entities: ['climate.room']});
+  assert.deepEqual(actions, []);
+  c.setConfig({entities: ['climate.room'], labels: {'climate.room': 'Kitchen'}});
+  assert.deepEqual(actions, ['save']);
+});
+
+test('opening a card with empty shared storage still schedules initial setup', async () => {
+  const {actions} = await openSharedCard({version: 0, schedules: {}, settings: {}});
+  assert.deepEqual(actions, ['save']);
+});
