@@ -84,6 +84,40 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.settings["away_room_targets_c"].clear()
         self.assertEqual(target(self.a), 17)
 
+    def test_vacancy_economy_follows_mode_schedule_and_sensor_delays(self):
+        del self.mgr._desired_for
+        sensor = "binary_sensor.study"
+        st = self.states[sensor] = SimpleNamespace(state="off", last_changed=self.now)
+        self.settings.update(presence_sensor_enabled=True, presence_sensors={self.a: sensor},
+                             presence_sensor_delays={self.a: {"off_s": 60, "on_s": 30}},
+                             vacancy_offsets_c={self.a: 2}, min_temp=14, max_temp=20)
+
+        def target(minute=420):
+            return self.mgr._desired_for(self.a, self.schedules, self.settings, minute)
+
+        self.assertEqual(target(), 19)
+        self.now += timedelta(seconds=60)
+        self.assertEqual(target(), 17)
+        self.assertEqual(target(600), 14)
+        self.states[self.a].state = "cool"
+        self.assertEqual(target(), 20)
+        self.states[self.a].state = "heat_cool"
+        self.assertEqual(target(), 19)
+        self.states[self.a].state = "heat"
+        st.state, st.last_changed = "on", self.now
+        self.assertEqual(target(), 17)
+        self.now += timedelta(seconds=30)
+        self.assertEqual(target(), 19)
+        st.state = "unavailable"
+        self.assertEqual(target(), 19)
+        st.state, st.last_changed = "off", self.now
+        self.assertEqual(target(), 19)
+        self.now += timedelta(seconds=60)
+        self.settings.update(away={"enabled": True, "persons": ["person.test"], "target_c": 16})
+        self.assertEqual(target(), 16)
+        self.settings.update(away={}, vacancy_offsets_c={})
+        self.assertEqual(target(), 19)
+
     def test_boiler_uses_only_live_manual_holds_in_celsius(self):
         settings = dict(self.settings, storage_temp_unit="F", merges={self.a: [self.b]})
         self.mgr._desired_for = lambda *args: 68

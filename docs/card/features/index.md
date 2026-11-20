@@ -312,6 +312,14 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/occupied-offset.gif) | [Full-size GIF](../../images/occupied-offset.gif)
 
+-   **[Use an economy temperature when a room is empty](presence-away.md#use-an-economy-temperature-when-a-room-is-empty)**
+
+    Set a per-room difference for heating or cooling after the occupancy sensor clears.
+
+    [![Office heating at 19 degrees while its schedule calls for 21](../../images/vacancy-economy-result.png)](../../images/vacancy-economy.gif)
+
+    [Play walkthrough](../../images/vacancy-economy.gif) | [Full-size GIF](../../images/vacancy-economy.gif)
+
 </div>
 
 ## Windows and boiler control

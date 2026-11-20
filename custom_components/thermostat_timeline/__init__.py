@@ -1388,6 +1388,7 @@ class AutoApplyManager:
         self._unsub_boiler_interval = None
         self._unsub_pause_sensor = None
         self._unsub_workdays = None
+        self._stable_occupancy = {}
         self._workday_entities = ()
         self._unsub_season = None
         self._season_sensor = None
@@ -2018,6 +2019,21 @@ class AutoApplyManager:
                     if s_eid and s_eid.startswith("binary_sensor."):
                         st = self.hass.states.get(s_eid)
                         s = str(st.state if st else "").lower().strip()
+                        eco = (settings.get("vacancy_offsets_c") or {}).get(primary)
+                        if isinstance(eco, (int, float)) and eco >= 0:
+                            key = (primary, s_eid)
+                            if s in ("on", "off"):
+                                delays = (settings.get("presence_sensor_delays") or {}).get(primary) or {}
+                                delay = max(0, float(delays.get(s + "_s", 180)))
+                                if (dt_util.utcnow() - st.last_changed).total_seconds() >= delay:
+                                    self._stable_occupancy[key] = s
+                                s = self._stable_occupancy.get(key)
+                            else:
+                                self._stable_occupancy.pop(key, None)
+                            if s == "off" and away_limit is None:
+                                mode = getattr(self.hass.states.get(primary), "state", None)
+                                if mode in ("heat", "cool"):
+                                    want += (eco if mode == "cool" else -eco) * storage_scale
                         if s == "on":
                             # Temperature override when presence is ON
                             tmap = settings.get("presence_sensor_temps") or {}
@@ -4168,7 +4184,6 @@ class PresenceSensorManager:
                         ns = event.data.get("new_state")
                         s = str(ns.state if ns else "").lower().strip()
                         self.hass.async_create_task(self._schedule_room(room, s))
-                        break
             except Exception:
                 return
 
@@ -4194,12 +4209,20 @@ class PresenceSensorManager:
                 if age_s >= need:
                     # Apply immediately based on current state
                     self.hass.async_create_task(self._mgr._maybe_apply_now(force=True))
+                elif s in ("on", "off"):
+                    await self._schedule_room(room, s, age_s)
         except Exception:
             pass
 
-    async def _schedule_room(self, room: str, state: str) -> None:
+    async def _schedule_room(self, room: str, state: str, age_s: float = 0) -> None:
         try:
             on_s, off_s = self._delays_s.get(room, (180, 180))
+            if state not in ("on", "off"):
+                self._cancel_task(room, "on")
+                self._cancel_task(room, "off")
+                if room in (self._settings().get("vacancy_offsets_c") or {}):
+                    await self._mgr._maybe_apply_now(force=True)
+                return
             if state == "on":
                 self._cancel_task(room, "off")
                 if (room, "on") in self._tasks:
@@ -4207,7 +4230,7 @@ class PresenceSensorManager:
                 async def _fire_on():
                     try:
                         if on_s:
-                            await asyncio.sleep(on_s)
+                            await asyncio.sleep(max(0, on_s - age_s))
                         # still on?
                         se = self._room_sensor.get(room)
                         st = self.hass.states.get(se) if se else None
@@ -4233,7 +4256,7 @@ class PresenceSensorManager:
                 async def _fire_off():
                     try:
                         if off_s:
-                            await asyncio.sleep(off_s)
+                            await asyncio.sleep(max(0, off_s - age_s))
                         se = self._room_sensor.get(room)
                         st = self.hass.states.get(se) if se else None
                         if str(st.state if st else "").lower().strip() != "off":

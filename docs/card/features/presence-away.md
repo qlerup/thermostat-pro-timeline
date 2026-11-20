@@ -76,3 +76,15 @@ In **Settings > Presence sensor**, assign a sensor and enable **Increase the sch
 [![Increase the scheduled target when occupied in Home Assistant](../../images/occupied-offset-result.png)](../../images/occupied-offset.gif)
 
 [Play walkthrough](../../images/occupied-offset.gif) | [Full-size GIF](../../images/occupied-offset.gif)
+
+## Use an economy temperature when a room is empty
+
+In **Settings > Presence sensor**, enable presence control, expand the room and select its occupancy sensor. Turn on **Use an economy temperature when empty**, enter a temperature difference and save. Set the exit delay to the length of time the sensor must stay clear.
+
+With a 2 °C difference and a scheduled target of 21 °C, an empty room targets **19 °C in heat mode** or **23 °C in cool mode**. The difference follows each schedule change and respects the configured temperature limits. After the entry delay, the room uses its occupied target or its configured occupied increase. Turn off the economy option to return to the normal schedule whenever the room is empty.
+
+The adjustment applies to rooms whose primary thermostat is in **heat** or **cool** mode. Simple household Away takes priority. An unavailable occupancy sensor leaves the scheduled target in effect, subject to other active controls.
+
+[![Office heating at 19 degrees while its schedule calls for 21](../../images/vacancy-economy-result.png)](../../images/vacancy-economy.gif)
+
+[Play walkthrough](../../images/vacancy-economy.gif) | [Full-size GIF](../../images/vacancy-economy.gif)
