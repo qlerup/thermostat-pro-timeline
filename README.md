@@ -8,7 +8,9 @@ Schedule heating and cooling for each room from a 24-hour timeline in Home Assis
 
 New to the card? Follow [Add your first thermostat](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html) to connect a room, set a temperature block and check the result. The guide includes desktop demonstrations of editing a schedule, pausing a room and configuring sensors.
 
-[![Office heating schedule in Home Assistant](docs/images/office-dashboard.png)](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html)
+[![Office heating schedule in Home Assistant](docs/images/office-dashboard.png)](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html#edit-a-scheduled-block)
+
+[Play the timeline demo in the user guide](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html#edit-a-scheduled-block)
 
 [![Open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=qlerup&repository=thermostat-pro-timeline)
 

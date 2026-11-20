@@ -20,4 +20,6 @@ Enable the global palette to give the same temperature the same color in every r
 
 Open **Settings > Colors**, choose a shared or room palette, enter the intervals and save. In this example 21 degrees falls in an amber range and 22 degrees in a coral range. Each block also shows its target as a number.
 
-[![Office blocks colored by their temperature intervals](../../images/colors-result.png)](../../images/colors-result.png)
+[![Office blocks colored by their temperature intervals](../../images/colors-result.png)](../../images/colors.gif)
+
+[Play walkthrough](../../images/colors.gif) | [Full-size GIF](../../images/colors.gif)

@@ -14,4 +14,6 @@ Select a saved profile to preview its blocks. Choose **Activate** to use it for 
 
 After activation, the card header names the active profile. Office now shows its 08:00 to 17:00 block at 23 degrees. Deactivate the profile to return to the ordinary timetable.
 
-[![Office using the Work from home profile](../../images/profile-result.png)](../../images/profile-result.png)
+[![Office using the Work from home profile](../../images/profile-result.png)](../../images/profile.gif)
+
+[Play walkthrough](../../images/profile.gif) | [Full-size GIF](../../images/profile.gif)

@@ -2,7 +2,9 @@
 
 Build a daily heating schedule for each room. With shared storage and auto-apply enabled, Home Assistant runs your schedules while the dashboard is closed.
 
-![Office timeline showing the current temperature, room pause and settings controls](images/office-dashboard.png)
+[![Office timeline showing the current temperature, room pause and settings controls](images/office-dashboard.png)](images/edit-block.gif)
+
+[Play walkthrough](images/edit-block.gif) | [Full-size GIF](images/edit-block.gif)
 
 ## Find a guide
 

@@ -16,7 +16,9 @@ Open **Settings > Open Window Detection** and enable the feature. Assign the con
 
 Open the assigned contact and wait for the opening delay. Here the Office contact reads **Open** and the thermostat reads **Off**. The saved blocks remain visible. Close all assigned contacts and wait for the closing delay before checking the thermostat again.
 
-[![Office contact open and thermostat off with its timeline still visible](../../images/open-contact-result.png)](../../images/open-contact-result.png)
+[![Office contact open and thermostat off with its timeline still visible](../../images/open-contact-result.png)](../../images/window.gif)
+
+[Play walkthrough](../../images/window.gif) | [Full-size GIF](../../images/window.gif)
 
 ## Settings
 

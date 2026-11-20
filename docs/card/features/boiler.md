@@ -27,4 +27,22 @@ Open **Settings > Boiler control** and enable the controls. Select the relay and
 
 Set the participating room above its measured temperature. Office measures 20 degrees and requests 23, so the example boiler switch turns on. Lower the target and check the relay once all participating rooms have cleared their demand. With several rooms assigned, one room can keep the relay on.
 
-[![Office thermostat calling for heat and the boiler demand switch on](../../images/boiler-demand-result.png)](../../images/boiler-demand-result.png)
+[![Office thermostat calling for heat and the boiler demand switch on](../../images/boiler-demand-result.png)](../../images/boiler.gif)
+
+[Play walkthrough](../../images/boiler.gif) | [Full-size GIF](../../images/boiler.gif)
+
+## Tune the switching thresholds
+
+Set the on and off offsets under **Boiler control** and save. With a 21-degree target and offsets of 0.5, demand starts below 20.5 degrees and clears at or above 21.5 once all assigned rooms are satisfied. Separate thresholds reduce repeated switching near the target.
+
+[![Tune the switching thresholds](../../images/boiler-offsets-result.png)](../../images/boiler-offsets.gif)
+
+[Play walkthrough](../../images/boiler-offsets.gif) | [Full-size GIF](../../images/boiler-offsets.gif)
+
+## Assign rooms to different boilers
+
+Enable **multiple boilers**, expand the room and choose its relay. Give each room its own offsets if needed. Rooms sharing a relay contribute to the demand for that relay.
+
+[![Assign rooms to different boilers](../../images/multi-boiler-result.png)](../../images/multi-boiler.gif)
+
+[Play walkthrough](../../images/multi-boiler.gif) | [Full-size GIF](../../images/multi-boiler.gif)

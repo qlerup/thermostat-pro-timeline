@@ -4,7 +4,9 @@
 
    You will find the switch on the first settings tab.
 
-   ![Season switch on the first settings tab](../../images/season-setting.png)
+   [![Season switch on the first settings tab](../../images/season-setting.png)](../../images/season.gif)
+
+   [Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)
 2. Use the season selector to choose **Summer** or **Winter** before editing a room's blocks.
 3. Switch seasons to inspect the other timetable. Leave the intended season selected for normal operation.
 
@@ -24,4 +26,6 @@ Open the settings gear and stay on the first tab. Enable **summer/winter schedul
 
 Select Summer and save a short morning block. Here Summer calls for 19 degrees from 07:00 to 08:00. Select Winter to inspect the other timetable. Leave the season that should control the thermostat selected.
 
-[![Office using a short summer block](../../images/summer-plan-result.png)](../../images/summer-plan-result.png)
+[![Office using a short summer block](../../images/summer-plan-result.png)](../../images/season.gif)
+
+[Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)

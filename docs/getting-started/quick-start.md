@@ -14,13 +14,23 @@ auto_apply: true
 
 Save the card. Check that the room name and measured temperature appear. The small pause icon on the room row affects that room; the larger pause button in the header affects the whole schedule.
 
-![A single Office thermostat displayed on the timeline](../images/office-dashboard.png)
+[![A single Office thermostat displayed on the timeline](../images/office-dashboard.png)](../images/edit-block.gif)
+
+[Play walkthrough](../images/edit-block.gif) | [Full-size GIF](../images/edit-block.gif)
 
 ## Try a schedule
 
 Use a test room for the first run. Add a short block that starts a few minutes ahead and choose a target different from the room default. Double-click or double-tap an existing block to edit its time and temperature. With shared storage and auto-apply active, close the dashboard and check the thermostat's **target temperature** at the boundary. The measured air temperature can take much longer to change.
 
 [Explore card settings](../card/configuration.md) · [Pause a room](../card/features/pause.md)
+
+## Add a midday block
+
+Expand the Office row and choose **Add block**. Enter 12:00 to 14:00 and 23 degrees, save the block, then save pending changes in the card header. The new period appears between the morning and evening blocks.
+
+[![Add a midday block](../images/add-block-result.png)](../images/add-block.gif)
+
+[Play walkthrough](../images/add-block.gif) | [Full-size GIF](../images/add-block.gif)
 
 ## Edit a scheduled block
 
@@ -33,3 +43,9 @@ The walkthrough changes the 06:00 to 09:00 Office block from 21 to 23 degrees, s
 ## Remove a block
 
 Double-click the block, check its start and end times, then select **Delete**. Check the gap on the timeline. With the normal room schedule active, the room default covers that period.
+
+The recording removes the morning block and saves the remaining evening period.
+
+[![Delete a block](../images/delete-block-result.png)](../images/delete-block.gif)
+
+[Play walkthrough](../images/delete-block.gif) | [Full-size GIF](../images/delete-block.gif)
