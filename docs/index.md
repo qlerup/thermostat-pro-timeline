@@ -8,7 +8,7 @@ Build a daily heating schedule for each room. With shared storage and auto-apply
 
 [Explore all features](card/features/index.md) to find room controls, schedule types, sensor settings and backup tools.
 
-[Browse the visual walkthroughs](walkthroughs.md) for step-by-step demonstrations in the desktop dashboard.
+Each feature guide pairs its settings with an example of the resulting timeline, thermostat target or device state.
 
 | I want to… | Guide |
 | --- | --- |

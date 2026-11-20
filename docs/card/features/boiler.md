@@ -22,3 +22,9 @@ Open **Settings > Boiler control** and enable the controls. Select the relay and
 [![Find the boiler relay settings in Home Assistant](../../images/boiler-view.png)](../../images/boiler.gif)
 
 [Play walkthrough](../../images/boiler.gif) | [Full-size GIF](../../images/boiler.gif)
+
+## See a request for heat
+
+Set the participating room above its measured temperature. Office measures 20 degrees and requests 23, so the example boiler switch turns on. Lower the target and check the relay once all participating rooms have cleared their demand. With several rooms assigned, one room can keep the relay on.
+
+[![Office thermostat calling for heat and the boiler demand switch on](../../images/boiler-demand-result.png)](../../images/boiler-demand-result.png)

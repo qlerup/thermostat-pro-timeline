@@ -12,6 +12,12 @@ Open **Settings > Weekdays** and enable weekday schedules. If **Copy main schedu
 
 [Play walkthrough](../../images/weekdays.gif) | [Full-size GIF](../../images/weekdays.gif)
 
+## Compare days for one room
+
+Select the view for one room across all days. Here Office warms up at 06:00 on weekdays. Saturday starts at 08:00 and reaches 23 degrees. Select the corresponding day before editing a block.
+
+[![Office timelines with a later Saturday block](../../images/weekday-rows-result.png)](../../images/weekday-rows-result.png)
+
 ## Settings
 
 - weekdays_enabled: true/false to enable weekday schedules.

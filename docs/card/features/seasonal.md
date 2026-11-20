@@ -19,3 +19,9 @@ Open the settings gear and stay on the first tab. Enable **summer/winter schedul
 [![Enable summer and winter schedules in Home Assistant](../../images/season-view.png)](../../images/season.gif)
 
 [Play walkthrough](../../images/season.gif) | [Full-size GIF](../../images/season.gif)
+
+## Read the summer plan
+
+Select Summer and save a short morning block. Here Summer calls for 19 degrees from 07:00 to 08:00. Select Winter to inspect the other timetable. Leave the season that should control the thermostat selected.
+
+[![Office using a short summer block](../../images/summer-plan-result.png)](../../images/summer-plan-result.png)

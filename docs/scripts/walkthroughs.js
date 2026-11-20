@@ -1,22 +1,35 @@
-// Plain Markdown links also work when these pages are read on GitHub.
+// Keep the ordinary GIF links functional when JavaScript is unavailable.
 document.querySelectorAll(".md-typeset a").forEach(link => {
   if (link.textContent !== "Play walkthrough") return;
-  const preview = link.closest("p")?.previousElementSibling?.querySelector("a img");
+  const imageLink = link.closest("p")?.previousElementSibling?.querySelector("a");
+  const preview = imageLink?.querySelector("img");
   if (!preview) return;
+
   const still = preview.src;
   const animation = link.href;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "walkthrough-toggle";
-  button.textContent = link.textContent;
-  button.setAttribute("aria-pressed", "false");
-  button.setAttribute("aria-label", "Play walkthrough: " + preview.alt);
-  button.addEventListener("click", () => {
-    const play = button.getAttribute("aria-pressed") !== "true";
-    preview.src = play ? animation : still;
-    button.setAttribute("aria-pressed", String(play));
-    button.textContent = play ? "Show still image" : "Play walkthrough";
-    button.setAttribute("aria-label", button.textContent + ": " + preview.alt);
-  });
-  link.replaceWith(button);
+  const imageButton = document.createElement("button");
+  const textButton = document.createElement("button");
+  imageButton.className = "walkthrough-preview";
+  textButton.className = "walkthrough-toggle";
+  imageLink.replaceWith(imageButton);
+  imageButton.append(preview);
+  link.replaceWith(textButton);
+
+  let playing = false;
+  function updateControls() {
+    const action = playing ? "Show still image" : "Play walkthrough";
+    textButton.textContent = action;
+    for (const button of [imageButton, textButton]) {
+      button.setAttribute("aria-label", action + ": " + preview.alt);
+    }
+  }
+  for (const button of [imageButton, textButton]) {
+    button.type = "button";
+    button.addEventListener("click", () => {
+      playing = !playing;
+      preview.src = playing ? animation : still;
+      updateControls();
+    });
+  }
+  updateControls();
 });

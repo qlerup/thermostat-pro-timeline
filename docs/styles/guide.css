@@ -3,3 +3,6 @@
 .md-typeset img[src*="images/"] { border: 1px solid #84969966; border-radius: .4rem; }
 .md-typeset .walkthrough-toggle { background: #165e59; border-radius: .3rem; color: white; cursor: pointer; font: inherit; padding: .35em .8em; }
 .md-typeset .walkthrough-toggle:focus-visible { outline: 3px solid #dc8726; outline-offset: 3px; }
+.md-typeset .walkthrough-preview { display: block; width: 100%; padding: 0; cursor: pointer; text-align: left; }
+.md-typeset .walkthrough-preview img { display: block; width: 100%; }
+.md-typeset .walkthrough-preview:focus-visible { outline: 3px solid #08786a; outline-offset: 3px; }

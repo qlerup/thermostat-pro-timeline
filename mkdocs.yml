@@ -7,10 +7,7 @@ repo_url: https://github.com/qlerup/thermostat-pro-timeline
 theme:
   name: material
   features:
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.expand
-    - navigation.sections
+    - navigation.indexes
     - navigation.top
     - search.suggest
     - search.highlight
@@ -23,22 +20,19 @@ markdown_extensions:
   - toc:
       permalink: true
   - tables
+  - attr_list
+  - md_in_html
 
 nav:
   - Home: index.md
-
-  - Walkthroughs: walkthroughs.md
 
   - Getting started:
       - Installation: getting-started/installation.md
       - Quick start: getting-started/quick-start.md
 
-  - Card:
-      - Configuration: card/configuration.md
-      - Examples: card/examples.md
-      - Internationalization: card/internationalization.md
-  - Features:
-      - Feature directory: card/features/index.md
+  - Feature guides:
+      - card/features/index.md
+      - Timeline and room controls: card/features/rooms.md
       - Weekdays: card/features/weekdays.md
       - Profiles: card/features/profiles.md
       - Presence & away: card/features/presence-away.md
@@ -50,6 +44,10 @@ nav:
       - Color ranges: card/features/colors.md
       - Storage & backup: card/features/storage.md
 
+  - Card:
+      - Configuration: card/configuration.md
+      - Examples: card/examples.md
+      - Internationalization: card/internationalization.md
   - Integration:
       - Services: integration/services.md
       - API endpoints: integration/api.md

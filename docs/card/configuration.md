@@ -1,6 +1,6 @@
 # Card configuration
 
-This page covers the core YAML options. Feature-specific pages (Weekdays, Presence, Boiler, etc.) live under **Card → Features**.
+For setup instructions and examples from the dashboard, browse the [feature guides](features/index.md).
 
 ## Rooms and basics
 

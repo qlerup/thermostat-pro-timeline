@@ -15,3 +15,9 @@ color_ranges:
 ## Use a shared or per-room palette
 
 Enable the global palette to give the same temperature the same color in every room. With the example above, a 20-degree block appears yellow and a 23-degree block appears orange. To give rooms their own palettes, disable the global option and use each room's entity ID in place of `"*"`. Colors change how blocks appear on the timeline.
+
+## Read a temperature by color
+
+Open **Settings > Colors**, choose a shared or room palette, enter the intervals and save. In this example 21 degrees falls in an amber range and 22 degrees in a coral range. Each block also shows its target as a number.
+
+[![Office blocks colored by their temperature intervals](../../images/colors-result.png)](../../images/colors-result.png)

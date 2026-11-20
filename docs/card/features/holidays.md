@@ -16,3 +16,9 @@ Open **Settings > Holidays** and enable holiday schedules. Use a calendar for re
 ## Schedule a range of dates
 
 For consecutive days, switch to the manual source and add a range using its first and last dates. Save the settings, then edit the holiday timetable to set the temperatures for those days. For an on/off holiday calendar, keep the calendar as the source and maintain the dates in Home Assistant.
+
+## Give a holiday its own timetable
+
+After selecting the date source, open **Edit holiday schedule**, choose Office, add a block and save. This example uses 21 degrees from 09:00 to 20:00 on matching dates. Adding a date and editing its temperature blocks are separate steps.
+
+[![Office holiday timetable with a daytime heating block](../../images/holiday-plan-result.png)](../../images/holiday-plan-result.png)

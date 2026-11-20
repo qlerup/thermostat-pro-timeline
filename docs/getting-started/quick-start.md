@@ -24,7 +24,7 @@ Use a test room for the first run. Add a short block that starts a few minutes a
 
 ## Edit a scheduled block
 
-The walkthrough changes the 06:00 to 09:00 Office block from 21 to 23 degrees, saves it and shows the new target on the timeline. Set the start time, end time and target in the same dialog. Select **Save** to apply an edit or **Cancel** to leave the block as it was.
+The walkthrough changes the 06:00 to 09:00 Office block from 21 to 23 degrees, saves it and shows the new target on the timeline. Set the start time, end time and target in the same dialog. Select **Save** in the editor, then select **Save** in the card header to write pending edits to shared storage. Choose **Cancel** in the editor to discard that edit.
 
 [![Edit a scheduled block in Home Assistant](../images/edit-block-view.png)](../images/edit-block.gif)
 

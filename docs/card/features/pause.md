@@ -27,3 +27,7 @@ Open the same room menu and choose the resume action. The room countdown disappe
 [![Resume a paused room in Home Assistant](../../images/room-resume-view.png)](../../images/room-resume.gif)
 
 [Play walkthrough](../../images/room-resume.gif) | [Full-size GIF](../../images/room-resume.gif)
+
+## Pause every room with one control
+
+Enable the header pause button, then select it to suspend schedule commands across rooms. For an external control, enable the pause sensor and choose a binary sensor that stays on throughout the pause. When the global pause clears, rooms without a separate hold can follow their schedules again. Pausing leaves each thermostat at its current setting.

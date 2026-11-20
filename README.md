@@ -4,7 +4,7 @@ Schedule heating and cooling for each room from a 24-hour timeline in Home Assis
 
 ## [Open the user guide](https://qlerup.github.io/thermostat-pro-timeline/)
 
-[Getting started](https://qlerup.github.io/thermostat-pro-timeline/getting-started/installation.html) | [Visual walkthroughs](https://qlerup.github.io/thermostat-pro-timeline/walkthroughs.html) | [Features](https://qlerup.github.io/thermostat-pro-timeline/card/features/index.html) | [Integration actions](https://qlerup.github.io/thermostat-pro-timeline/integration/services.html) | [Troubleshooting](https://qlerup.github.io/thermostat-pro-timeline/troubleshooting.html)
+[Getting started](https://qlerup.github.io/thermostat-pro-timeline/getting-started/installation.html) | [Feature guides](https://qlerup.github.io/thermostat-pro-timeline/card/features/index.html) | [Integration actions](https://qlerup.github.io/thermostat-pro-timeline/integration/services.html) | [Troubleshooting](https://qlerup.github.io/thermostat-pro-timeline/troubleshooting.html)
 
 New to the card? Follow [Add your first thermostat](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html) to connect a room, set a temperature block and check the result. The guide includes desktop demonstrations of editing a schedule, pausing a room and configuring sensors.
 

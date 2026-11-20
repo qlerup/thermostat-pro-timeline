@@ -4,6 +4,12 @@ Use shared storage when several dashboards should see the same schedule or the s
 
 Before changing several rooms, create a backup with the [backup action](../../integration/services.md). Distinct instance IDs keep separate sets of schedules and settings. Check the active instance if two dashboards disagree.
 
+## Check the restored schedule
+
+In the dashboard card editor, open the backup controls. Choose the slot, select the main schedule and restore it. The Office row was empty before this restore. Its 08:00 to 17:00 block now appears again at 23 degrees.
+
+[![Office timeline after restoring its saved daytime block](../../images/restored-result.png)](../../images/restored-result.png)
+
 ## Settings
 
 - storage_enabled: true/false. Default on. Uses file‑based storage via the integration; no helper sensor entity needed.
