@@ -30,6 +30,7 @@ from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION, SIGNAL_UPDATED, BACKUP_
 
 from .seasonal_sources import SeasonalSources
 from .thermal import ThermalControl
+from .room_air import RoomAir, adjustment
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -159,6 +160,7 @@ def build_state_payload(hass: HomeAssistant, versions_only: bool = False, instan
     if versions_only:
         return payload
     payload.update({
+        "air_status": data["room_air"].status.get(req_iid, {}) if data.get("room_air") else {},
         "thermal_status": data["thermal"].status.get(req_iid, {}) if data.get("thermal") else {},
         # Return data for the requested instance (or the active instance when not specified).
         "schedules": inst.get("schedules", {}) if isinstance(inst, dict) else data.get("schedules", {}),
@@ -197,6 +199,11 @@ class ThermostatTimelineStateView(HomeAssistantView):
                 iid = request.query.get("instance_id")
             except Exception:
                 iid = None
+            if "air_status" in request.query:
+                data = self.hass.data.get(DOMAIN, {})
+                air = data.get("room_air")
+                instance = _norm_instance_id(iid) if iid else data.get("active_instance_id") or "default"
+                return self.json(air.snapshot(instance, request.query.get("room")) if air else {})
             payload = build_state_payload(self.hass, versions_only=False, instance_id=iid)
             room = request.query.get("thermal_room")
             thermal = self.hass.data.get(DOMAIN, {}).get("thermal")
@@ -538,8 +545,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 except Exception:
                     pass
 
-        if "settings" in data:
-            settings = data.get("settings")
+        settings = data.get("settings")
+        profile_edit = data.get("room_air_profile")
+        if isinstance(profile_edit, dict):
+            room, profile = profile_edit.get("room"), profile_edit.get("profile")
+            rules = dict(cur_set.get("air_rooms") or {})
+            rule = rules.get(room) or {}
+            if rule.get("presence") and profile in ("automatic", "comfort", "eco", "night", "schedule"):
+                if profile != "automatic" or rule.get("sensor"):
+                    rules[room] = {**rule, "profile": profile}
+                    settings = {**(settings or {}), "air_rooms": rules}
+        if settings is not None:
             if isinstance(settings, dict):
                 merged_settings = dict(cur_set)
                 merged_settings.update(settings)
@@ -1366,6 +1382,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # ---- Background Auto-Apply Manager (multi-instance) ----
     mgr = MultiInstanceAutoApplyManager(hass)
     hass.data[DOMAIN]["manager"] = mgr
+    air = RoomAir(hass, entry, mgr)
+    await air.load()
+    hass.data[DOMAIN]["room_air"] = air
     await mgr.async_start()
     await SeasonalSources(hass, entry, mgr).start()
     # ---- Open Window Detection (background, multi-instance) ----
@@ -1384,6 +1403,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     thermal = ThermalControl(hass, entry, mgr)
     hass.data[DOMAIN]["thermal"] = thermal
     await thermal.start()
+    air.start()
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1946,12 +1966,24 @@ class AutoApplyManager:
 
     def _block_mode(self, eid, schedules, settings, minute):
         enabled = settings.get("block_mode_rooms") or {}
-        if not enabled or not eid.startswith("climate."):
+        if not eid.startswith("climate."):
             return None
         primary = eid if eid in schedules else next(
             (room for room, members in (settings.get("merges") or {}).items() if eid in members), eid)
+        rule = (settings.get("air_rooms") or {}).get(primary) or {}
+        fallback = None
+        if rule.get("season") and settings.get("seasonal_enabled"):
+            season_mode = "cool" if self._season_key(settings) == "summer" else "heat"
+            state = self.hass.states.get(eid)
+            if state and season_mode in state.attributes.get("hvac_modes", []):
+                fallback = season_mode
+        elif rule.get("enforce"):
+            state = self.hass.states.get(eid)
+            modes = state.attributes.get("hvac_modes", []) if state else []
+            preferred = rule.get("enforce_mode", "heat")
+            fallback = preferred if preferred in modes else None
         if not enabled.get(primary):
-            return None
+            return fallback
         person = self._room_person(settings, primary)
         state = self.hass.states.get(person) if person else None
         if state and state.state not in ("home", "unknown", "unavailable", ""):
@@ -1963,10 +1995,10 @@ class AutoApplyManager:
                 continue
             if active:
                 mode = block.get("hvac_mode")
-                return mode if isinstance(mode, str) and mode else None
-        return None
+                return mode if isinstance(mode, str) and mode else fallback
+        return fallback
 
-    def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int, use_early=True) -> Optional[float]:
+    def _desired_for(self, eid: str, schedules: dict, settings: dict, now_min: int, use_early=True, air_profile=True) -> Optional[float]:
         # Resolve primary (merged)
         merges = settings.get("merges") or {}
         primary = None
@@ -2067,10 +2099,11 @@ class AutoApplyManager:
                     want = min(want, away_limit)
         except Exception:
             pass
+        air_rule = (settings.get("air_rooms") or {}).get(primary) or {}
         # Per-room presence sensor override (simple presence entity)
         try:
             # Only when feature is enabled in settings
-            if not person_away and bool(settings.get("presence_sensor_enabled")):
+            if not person_away and not air_rule.get("presence") and bool(settings.get("presence_sensor_enabled")):
                 # Map of primary climate/input_number to binary_sensor entity id
                 pmap = settings.get("presence_sensors") or {}
                 if isinstance(pmap, dict):
@@ -2109,6 +2142,19 @@ class AutoApplyManager:
                                 pass
         except Exception:
             pass
+        if air_profile and air_rule.get("presence") and not person_away:
+            context = getattr(self, "_air_context", {}).get(primary)
+            if context:
+                base = self._stored_setpoint_c(want, settings)
+                profile, mode, indoor = context
+                if air_rule.get("alarm"):
+                    alarm = self.hass.states.get(air_rule["alarm"])
+                    if not alarm or alarm.state in ("armed_away", "unavailable", "unknown"):
+                        profile = "alarm_eco" if air_rule.get("alarm_eco") else "alarm"
+                delta, _ = adjustment(air_rule, profile, mode, base, indoor)
+                want += delta * storage_scale
+                if away_limit is not None:
+                    want = min(want, away_limit)
         # Clamp
         try:
             mn = settings.get("min_temp")
@@ -2767,6 +2813,8 @@ class AutoApplyManager:
                 if not (settings.get("apply_enabled") or {}).get(primary, True):
                     return
                 if self._room_control_paused(settings, primary):
+                    return
+                if ((settings.get("air_rooms") or {}).get(primary) or {}).get("enforce"):
                     return
                 state = self.hass.states.get(eid)
                 if state is None or state.state in ("off", "unknown", "unavailable"):
@@ -3519,6 +3567,11 @@ class AutoApplyManager:
             except Exception:
                 # Never let this optional gate block a legitimate apply on error.
                 pass
+
+            air = self.hass.data.get(DOMAIN, {}).get("room_air") if settings.get("air_rooms") else None
+            if air and self._instance_id + "/" + primary_for_apply in air.held:
+                self._last_apply_skipped_voluntarily = True
+                return False
 
             # Optional: for some thermostats we need to send a climate.turn_on command as well.
             # This is configured per primary room entity (merged entities inherit the primary room setting).

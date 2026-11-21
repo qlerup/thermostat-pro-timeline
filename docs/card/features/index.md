@@ -502,6 +502,60 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
 </div>
 
+## Fan, climate and presence profiles
+
+<div class="grid cards" markdown>
+
+-   **[Schedule a fan speed](room-air.md#schedule-fan-speed)**
+
+    Set a room default and override it for one timeline block.
+
+    [![Schedule a fan speed](../../images/room-fan-block-result.png)](../../images/room-fan-block.gif)
+
+    [Play walkthrough](../../images/room-fan-block.gif) | [Full-size GIF](../../images/room-fan-block.gif)
+
+-   **[Smart Fan and quiet hours](room-air.md#smart-fan-and-quiet-hours)**
+
+    Choose speeds for temperature targets, heating or cooling gaps and nighttime.
+
+    [![Smart Fan and quiet hours](../../images/smart-room-fan-result.png)](../../images/smart-room-fan.gif)
+
+    [Play walkthrough](../../images/smart-room-fan.gif) | [Full-size GIF](../../images/smart-room-fan.gif)
+
+-   **[Seasonal heat, cool and automatic off](room-air.md#seasonal-modes-and-off-at-target)**
+
+    Control the HVAC mode, target tolerance and restart gap.
+
+    [![Seasonal heat, cool and automatic off](../../images/room-climate-season-result.png)](../../images/room-climate-season.gif)
+
+    [Play walkthrough](../../images/room-climate-season.gif) | [Full-size GIF](../../images/room-climate-season.gif)
+
+-   **[Comfort and economy](room-air.md#comfort-and-economy)**
+
+    Adjust the current block based on occupancy, temperature limits and the alarm.
+
+    [![Comfort and economy](../../images/room-presence-comfort-result.png)](../../images/room-presence-comfort.gif)
+
+    [Play walkthrough](../../images/room-presence-comfort.gif) | [Full-size GIF](../../images/room-presence-comfort.gif)
+
+-   **[Occupied air treatment](room-air.md#purifiers-and-humidity)**
+
+    Choose purifier speeds and humidity targets for each room profile.
+
+    [![Occupied air treatment](../../images/room-air-treatment-result.png)](../../images/room-air-treatment.gif)
+
+    [Play walkthrough](../../images/room-air-treatment.gif) | [Full-size GIF](../../images/room-air-treatment.gif)
+
+-   **[Profiles and control history](room-air.md#profiles-and-control-history)**
+
+    See when the room changed profile and why.
+
+    [![Profiles and control history](../../images/room-air-history-result.png)](../../images/room-air-history.gif)
+
+    [Play walkthrough](../../images/room-air-history.gif) | [Full-size GIF](../../images/room-air-history.gif)
+
+</div>
+
 ## Automation and diagnostics
 
 - **[Integration actions](../../integration/services.md)** to manage schedules from an automation.

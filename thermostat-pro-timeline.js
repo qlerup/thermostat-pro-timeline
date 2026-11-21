@@ -5126,6 +5126,7 @@ class ThermostatTimelineCard extends HTMLElement {
         confirm_season_change: !!(config.confirm_season_change ?? this._config?.confirm_season_change),
         seasonal_sources: JSON.parse(JSON.stringify(config.seasonal_sources ?? this._config?.seasonal_sources ?? {})),
         thermal_rooms: JSON.parse(JSON.stringify(config.thermal_rooms ?? this._config?.thermal_rooms ?? {})),
+        air_rooms: JSON.parse(JSON.stringify(config.air_rooms ?? this._config?.air_rooms ?? {})),
         season_follow: { ...(config.season_follow ?? this._config?.season_follow) },
         seasonal_enabled: !!(config.seasonal_enabled ?? this._config?.seasonal_enabled ?? false),
         seasonal_mode: (String(config.seasonal_mode || this._config?.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
@@ -5431,6 +5432,7 @@ class ThermostatTimelineCard extends HTMLElement {
   }
 
   disconnectedCallback() {
+    clearTimeout(this._airTimer); this._airTimer = null;
     if (this._uiTimer) clearInterval(this._uiTimer);
     if (this._transitionTimer) clearTimeout(this._transitionTimer);
     if (this._saveTimer) clearTimeout(this._saveTimer);
@@ -6226,7 +6228,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6511,7 +6513,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -7310,6 +7312,7 @@ class ThermostatTimelineCard extends HTMLElement {
         confirm_season_change: !!this._config.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
         thermal_rooms: JSON.parse(JSON.stringify(this._config.thermal_rooms || {})),
+        air_rooms: JSON.parse(JSON.stringify(this._config.air_rooms || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         weekdays_mode: this._config.weekdays_mode || 'weekday_weekend',
@@ -7372,6 +7375,7 @@ class ThermostatTimelineCard extends HTMLElement {
         confirm_season_change: !!this._config.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(this._config.seasonal_sources || {})),
         thermal_rooms: JSON.parse(JSON.stringify(this._config.thermal_rooms || {})),
+        air_rooms: JSON.parse(JSON.stringify(this._config.air_rooms || {})),
         seasonal_enabled: !!this._config.seasonal_enabled,
         seasonal_mode: (this._config.seasonal_mode === 'summer') ? 'summer' : 'winter',
         presence_sensors: this._config.presence_sensors,
@@ -9468,6 +9472,7 @@ class ThermostatTimelineCard extends HTMLElement {
             <div class="grid">
               <div class="time-inline"><label class="ed-from-label"></label><input class="ed-from" type="time" step="60" /><select class="mer-select ed-from-mer" style="display:none;"><option>AM</option><option>PM</option></select></div>
               <div class="time-inline time-right"><label class="ed-to-label"></label><input class="ed-to" type="time" step="60" /><select class="mer-select ed-to-mer" style="display:none;"><option>AM</option><option>PM</option></select></div>
+              <label class="rowfull ed-fan-row" style="display:none"><span>Fan speed</span><select class="settings-input ed-fan"></select></label>
               <label class="rowfull ed-mode-row" style="display:none"><span>${this._t('block.mode')}</span><select class="settings-input ed-mode"></select></label>
               <div class="rowfull"><label class="ed-temp-label"></label><input class="ed-temp" type="number" step="0.5" min="0" max="120" /></div>
             </div>
@@ -11181,6 +11186,7 @@ class ThermostatTimelineCard extends HTMLElement {
             toolbar.append(toolsWrap);
             head.append(toolbar);
 
+            this._appendAirBadge(meta,roomEid);
             rowEl.append(head);
             const track = document.createElement('div'); track.className='track'; track.style.setProperty('--row-height', `${this._config.row_height}px`);
             const dkey = effKey(gk);
@@ -11204,7 +11210,7 @@ class ThermostatTimelineCard extends HTMLElement {
               UiHelper.genBlockPill(
                 this,
                 bl,
-                `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}`
+                `${this._toDisplayTemp(b.temp)} ${this._unitSymbol()}` + (this._config.air_rooms?.[roomEid]?.fans && !this._config.air_rooms[roomEid].hide && b.fan_speed ? " \u00b7 Fan: " + b.fan_speed : "")
               );
 
               // Add double-click to edit block
@@ -11541,6 +11547,7 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
       head.append(toolbar);
+      this._appendAirBadge(meta,eid);
       rowEl.append(head);
       const track = document.createElement('div');
       track.className = 'track';
@@ -11617,7 +11624,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const modeText = mode === 'temperature_only' ? this._t('block.temperature_only') : mode;
         const blockLabel = ['off', 'dry', 'fan_only'].includes(mode) ? modeText :
           modeText ? `${temperature} (${modeText})` : temperature;
-        UiHelper.genBlockPill(this, bl, blockLabel);
+        UiHelper.genBlockPill(this, bl, this._config.air_rooms?.[eid]?.fans && !this._config.air_rooms[eid].hide && b.fan_speed ? blockLabel + ' · Fan: ' + b.fan_speed : blockLabel);
         track.append(bl);
 
         // Ensure a tooltip element exists for main timeline (reuse weekly style)
@@ -12462,6 +12469,7 @@ class ThermostatTimelineCard extends HTMLElement {
         confirm_season_change: !!cfg.confirm_season_change,
         seasonal_sources: JSON.parse(JSON.stringify(cfg.seasonal_sources || {})),
         thermal_rooms: JSON.parse(JSON.stringify(cfg.thermal_rooms || {})),
+        air_rooms: JSON.parse(JSON.stringify(cfg.air_rooms || {})),
         seasonal_enabled: !!cfg.seasonal_enabled,
         seasonal_mode: (String(cfg.seasonal_mode || 'winter') === 'summer') ? 'summer' : 'winter',
         weekdays_view: String(cfg.weekdays_view || 'all_rooms_one_day'),
@@ -12687,6 +12695,7 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.holiday_trips = [...d.holiday_trips];
       cfg.season_follow = { ...d.season_follow };
       cfg.confirm_season_change = !!d.confirm_season_change;
+      cfg.air_rooms = Object.fromEntries(Object.entries(d.air_rooms || {}).filter(([room]) => d.entities.includes(room)));
       cfg.thermal_rooms = Object.fromEntries(Object.entries(d.thermal_rooms || {}).filter(([room]) => d.entities.includes(room)));
       cfg.seasonal_sources = JSON.parse(JSON.stringify(d.seasonal_sources));
       cfg.seasonal_enabled = !!d.seasonal_enabled;
@@ -12990,6 +12999,183 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
     } catch {}
+  }
+
+  _airSpeeds(entity){
+    const a = this._hass?.states?.[entity]?.attributes || {};
+    if (entity?.startsWith('climate.')) return a.fan_modes || [];
+    if (!entity?.startsWith('fan.')) return [];
+    const step = Number(a.percentage_step || 1);
+    const speeds = [...(a.preset_modes || [])];
+    if (a.supported_features & 1) {
+      for (let i=1; i<=Math.min(100, Math.round(100/step)); i++) speeds.push(Math.min(100,Math.round(i*step))+'%');
+    }
+    return speeds;
+  }
+
+  _appendAirBadge(meta,room){
+    const r=this._config.air_rooms?.[room];
+    if (!r || r.hide || !['fans','presence','season','stop','air','night','enforce'].some(k=>r[k])) return;
+    const badge=document.createElement('button');
+    badge.type='button'; badge.className='btn ghost room-air-status'; badge.dataset.room=room;
+    badge.textContent=this._airText(room);
+    badge.onclick=()=>this._showAirHistory(room);
+    meta.append(badge);
+    if (!this._airTimer) this._airTimer=setTimeout(()=>this._refreshAirBadges(),0);
+  }
+  _airText(room){
+    const s=this._airStatus?.[room];
+    const current = s?.current_speed ?? s?.speed;
+    return s ? s.reason + (current ? ' \u00b7 Fan: '+current : '') : 'Room status';
+  }
+  async _fetchRoomAir(room){
+    const query = new URLSearchParams({air_status: '1'});
+    if (this._config.instance_enabled) query.set('instance_id', this._instanceId());
+    if (room) query.set('room', room);
+    try { return await this._hass.callApi('GET', 'thermostat_timeline/state?' + query); }
+    catch { return {}; }
+  }
+  async _refreshAirBadges(){
+    try {
+      if (!this.isConnected || !this.shadowRoot.querySelector('.room-air-status')) return;
+      this._airStatus=await this._fetchRoomAir();
+      for (const el of this.shadowRoot.querySelectorAll('.room-air-status')) el.textContent=this._airText(el.dataset.room);
+    } finally {
+      this._airTimer=this.isConnected && this.shadowRoot.querySelector('.room-air-status') ? setTimeout(()=>this._refreshAirBadges(),10000) : null;
+    }
+  }
+  async _showAirHistory(room){
+    const data=await this._fetchRoomAir(room);
+    const dialog=document.createElement('dialog'); dialog.className='season-confirm-dialog air-history';
+    const heading=document.createElement('h3'); heading.textContent=this._prettyName(room)+' · Control history';
+    const list=document.createElement('ol');
+    list.style.cssText='max-height:55vh;overflow:auto;padding-inline-start:2em';
+    for (const item of [...(data?.history || [])].reverse()){
+      const li=document.createElement('li');
+      li.textContent=new Date(item.at).toLocaleString()+' — '+item.reason+(item.speed ? ' · Fan: '+item.speed : '');
+      list.append(li);
+    }
+    if (!list.childElementCount) list.textContent='No transitions recorded yet.';
+    const close=document.createElement('button'); close.type='button';close.textContent='Close';close.onclick=()=>dialog.close();
+    dialog.append(heading);
+    const rule = this._config.air_rooms?.[room];
+    if (rule?.presence) {
+      const label = document.createElement('label');
+      label.textContent = 'Active profile ';
+      const select = document.createElement('select');
+      for (const value of ['automatic','comfort','eco','night','schedule']) {
+        const option = new Option(value[0].toUpperCase() + value.slice(1), value);
+        option.disabled = value === 'automatic' && !rule.sensor;
+        select.add(option);
+      }
+      select.value = rule.profile || 'automatic';
+      select.onchange = async () => {
+        select.disabled = true;
+        try {
+          const payload = {room_air_profile:{room,profile:select.value},activate:false};
+          if (this._config.instance_enabled) payload.instance_id = this._instanceId();
+          await this._hass.callService('thermostat_timeline','set_store',payload);
+          rule.profile = select.value;
+          dialog.close();
+        } catch {
+          label.append(' Could not save the profile. Try again.');
+          select.disabled = false;
+        }
+      };
+      label.append(select); dialog.append(label);
+    }
+    dialog.append(list,close); this.shadowRoot.append(dialog);dialog.onclose=()=>dialog.remove();dialog.showModal();
+  }
+
+  _airRoomSettings(room,draft){
+    const panel=document.createElement('fieldset'); panel.className='room-air';
+    const states=this._hass?.states || {};
+    const r=draft.air_rooms[room] || {};
+    const save=(key,value)=>{r[key]=value;draft.air_rooms[room]=r;};
+    const entities=(domain,check=()=>true)=>Object.keys(states).filter(id=>id.startsWith(domain+'.') && check(states[id])).sort();
+    const draw=()=>{
+      panel.replaceChildren();
+      const legend=document.createElement('legend');legend.textContent='Fan, climate and presence profiles';panel.append(legend);
+      const add=(caption,control,key)=>{
+        const label=document.createElement('label');
+        label.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0';
+        control.classList.add('air-'+key);label.append(caption,control);panel.append(label);
+      };
+      const toggle=(key,caption)=>{
+        const input=document.createElement('input');input.type='checkbox';input.checked=!!r[key];
+        input.onchange=()=>{save(key,input.checked);draw();};add(caption,input,key);
+      };
+      const pick=(key,caption,items,fallback='',empty='Use schedule',redraw=false)=>{
+        const input=document.createElement('select');input.className='settings-input';
+        if (empty) input.add(new Option(empty,''));
+        for (const id of new Set([...items,...(r[key]?[r[key]]:[])])) input.add(new Option(states[id]?.attributes.friendly_name || id,id));
+        input.value=r[key] ?? fallback;input.onchange=()=>{save(key,input.value);if(redraw)draw();};add(caption,input,key);
+      };
+      const field=(key,caption,initial,type='number',min=0,max=null)=>{
+        const el=document.createElement('input');el.type=type;el.className='settings-input';el.value=r[key] ?? initial;
+        if(type==='number'){el.step='any';el.min=min;if(max!==null)el.max=max;}
+        el.oninput=()=>save(key,type==='time'?el.value:(el.value===''?null:el.valueAsNumber));add(caption,el,key);
+      };
+      const rules=(key,title,speeds)=>{
+        const group=document.createElement('fieldset'),name=document.createElement('legend');name.textContent=title;group.append(name);
+        for(const [i,rule] of (r[key] || []).entries()){
+          const row=document.createElement('div'),n=document.createElement('input'),sel=document.createElement('select'),del=document.createElement('button');
+          n.type='number';n.step='any';n.value=rule.at;n.setAttribute('aria-label',title+' threshold');n.className='air-'+key+'-at';
+          n.oninput=()=>{rule.at=n.valueAsNumber;save(key,r[key]);};
+          sel.setAttribute('aria-label',title+' speed');sel.className='air-'+key+'-speed';
+          for(const item of new Set([...speeds,rule.speed].filter(Boolean)))sel.add(new Option(item,item));
+          sel.value=rule.speed;sel.onchange=()=>{rule.speed=sel.value;save(key,r[key]);};
+          del.type='button';del.textContent='Remove';del.onclick=()=>{save(key,r[key].filter((_,index)=>index!==i));draw();};
+          row.append(n,sel,del);group.append(row);
+        }
+        const plus=document.createElement('button');plus.type='button';plus.className='air-add-'+key;plus.textContent='Add threshold';plus.disabled=!speeds.length;
+        plus.onclick=()=>{save(key,[...(r[key] || []),{at:key==='smart'?1:20,speed:speeds[0]}]);draw();};group.append(plus);panel.append(group);
+      };
+      toggle('fans','Schedule fan speed');
+      const speeds=this._airSpeeds(r.fan || room);
+      if(r.fans){
+        pick('fan','Fan device',[...entities('climate',s=>s.attributes.fan_modes?.length),...entities('fan')],'','Use room thermostat',true);
+        pick('default_speed','Room fan speed',speeds,'','Leave fan unchanged');
+        rules('targets','Fan by scheduled target (°C or higher)',speeds);
+        rules('smart','Smart Fan by heating or cooling gap (°C or higher)',speeds);
+      }
+      if(room.startsWith('climate.')){
+        toggle('season','Heat in Winter / cool in Summer');
+        toggle('stop','Switch off at target and resume on demand');
+        if(r.stop){field('band','Target tolerance (°C)',0.2);field('stop_minutes','Minutes at target',5);field('restart_gap','Additional restart gap (°C)',0.3);}
+        toggle('enforce','Restore scheduled settings after manual changes');
+        if(r.enforce)pick('enforce_mode','Scheduled mode outside blocks',states[room]?.attributes.hvac_modes || [],'heat',null);
+      }
+      toggle('night','Use quiet hours');
+      if(r.night){field('night_start','Quiet hours start','22:00','time');field('night_end','Quiet hours end','07:00','time');if(r.fans)pick('night_speed','Quiet fan speed',speeds);}
+      toggle('presence','Use room presence profiles');
+      if(r.presence){
+        pick('sensor','Presence sensor',entities('binary_sensor'),'','Choose sensor');
+        pick('profile','Active profile',['automatic','comfort','eco','night','schedule'],'automatic',null);
+        field('on_s','Presence delay (seconds)',30);field('off_s','Absence delay (seconds)',120);
+        field('boost','Comfort adjustment (°C)',1);field('eco_delta','Economy adjustment (°C)',0);field('night_delta','Night adjustment (°C)',0);
+        field('cap','Maximum boosted target (°C)','', 'number',-100);
+        pick('cap_action','At comfort limit',['clamp','skip','fan_only'],'clamp',null);
+        field('boost_minutes','Maximum boost minutes (0 = while occupied)',0);
+        if(r.fans){for (const k of ['comfort','eco','night','alarm_eco'])pick(k+'_speed',k.replace('_',' ')+' fan speed',speeds);}
+        pick('alarm','Ignore presence when armed away',entities('alarm_control_panel'),'','No alarm');
+        toggle('alarm_eco','Use economy settings while armed away');
+        toggle('air','Adjust air treatment by profile');
+        if(r.air){
+          pick('air_entity','Purifier fan',entities('fan'),'','No purifier',true);
+          pick('humidity_entity','Humidifier / dehumidifier',entities('humidifier'),'','No humidity device',true);
+          for(const k of ['comfort','eco','night','alarm_eco']){
+            if(r.air_entity) pick('air_'+k,k.replace('_',' ')+' purifier speed',this._airSpeeds(r.air_entity));
+            if(r.humidity_entity)field('humidity_'+k,k.replace('_',' ')+' humidity target (%)','','number',0,100);
+          }
+        }
+      }
+      if(Object.keys(r).length){
+        toggle('hide','Hide fan controls and status on the timeline');
+        const history=document.createElement('button');history.type='button';history.textContent='View control history';history.onclick=()=>this._showAirHistory(room);panel.append(history);
+      }
+    };
+    draw();return panel;
   }
 
   _thermalRoomSettings(room, draft){
@@ -13737,7 +13923,7 @@ class ThermostatTimelineCard extends HTMLElement {
           left.append(label);
         }
         left.append(modeRow, pick, nameLabel, nameInp, tempWrap, turnOnWrap, applyWrap, linkWrap, chips);
-        if (room) left.append(this._thermalRoomSettings(room, d));
+        if (room) left.append(this._thermalRoomSettings(room, d),this._airRoomSettings(room,d));
         try { linkWrap.append(linkLabel, linkPicker); } catch {}
         details.append(left);
 
@@ -17120,6 +17306,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
       if (JSON.stringify(d.summer_off_rooms) !== JSON.stringify(c.summer_off_rooms || [])) return true;
       if (JSON.stringify(d.holiday_trips) !== JSON.stringify(c.holiday_trips || [])) return true;
+      if (JSON.stringify(d.air_rooms) !== JSON.stringify(c.air_rooms || {})) return true;
       if (JSON.stringify(d.thermal_rooms) !== JSON.stringify(c.thermal_rooms || {})) return true;
       if (JSON.stringify(d.seasonal_sources) !== JSON.stringify(c.seasonal_sources || {})) return true;
       if (!!d.confirm_season_change !== !!c.confirm_season_change) return true;
@@ -17544,6 +17731,26 @@ class ThermostatTimelineCard extends HTMLElement {
         }
       } catch {}
       const sourceDraft = this._settingsDraft;
+      const assignedAir = new Set();
+      for(const [room,r] of Object.entries(sourceDraft?.air_rooms || {})){
+        if (!sourceDraft.entities.includes(room)) continue;
+        const badNumber = ['on_s','off_s','boost_minutes','boost','eco_delta','night_delta','stop_minutes','band','restart_gap'].some(k=>k in r && (!Number.isFinite(r[k]) || r[k]<0));
+        const badThreshold = ['targets','smart'].some(k=>(r[k] || []).some(v=>!Number.isFinite(v.at) || !v.speed || (k==='smart' && v.at<0)));
+        const badHumidity = Object.entries(r).some(([k,v])=>k.startsWith('humidity_') && k!=='humidity_entity' && v!==null && (!Number.isInteger(v)||v<0||v>100));
+        if (badNumber || badThreshold || badHumidity || (r.night && r.night_start && r.night_start===r.night_end)){
+          window.alert(room+': Check the thresholds, time window and profile values.');return;
+        }
+        if (r.presence && (!r.profile || r.profile==='automatic') && !r.sensor){
+          window.alert(room+': Choose a presence sensor for automatic profiles.');return;
+        }
+        const devices=[r.fans && (r.fan || room), r.presence && r.air && r.air_entity,r.presence && r.air && r.humidity_entity].filter(Boolean);
+        for(const id of devices){
+          if(assignedAir.has(id) || (id!==room && sourceDraft.entities.includes(id))){
+            window.alert(id+' is already assigned to another control.');return;
+          }
+          assignedAir.add(id);
+        }
+      }
       const valves = new Set();
       for (const [room, r] of Object.entries(sourceDraft?.thermal_rooms || {})) {
         if (!sourceDraft.entities.includes(room)) continue;
@@ -17763,6 +17970,12 @@ class ThermostatTimelineCard extends HTMLElement {
   }
 
   _setBlockModeEditor(entity, block){
+    const rule = this._config.air_rooms?.[entity];
+    const fan = this.shadowRoot.querySelector('.ed-fan');
+    fan.parentElement.style.display = rule?.fans && !rule.hide ? '' : 'none';
+    fan.replaceChildren(new Option('Use room rules',''));
+    for (const speed of new Set([...this._airSpeeds(rule?.fan || entity), ...(block?.fan_speed ? [block.fan_speed] : [])])) fan.add(new Option(speed,speed));
+    fan.value = block?.fan_speed || '';
     const select = this.shadowRoot.querySelector('.ed-mode');
     const enabled = !!this._config.block_mode_rooms?.[entity] && entity.startsWith('climate.');
     select.parentElement.style.display = enabled ? '' : 'none';
@@ -19657,7 +19870,15 @@ class ThermostatTimelineCard extends HTMLElement {
     const fromMerSel = this.shadowRoot.querySelector('.ed-from-mer'); const toMerSel = this.shadowRoot.querySelector('.ed-to-mer');
     const mode = this.shadowRoot.querySelector('.ed-mode').value;
     const modeFields = mode ? { hvac_mode: mode } : {};
+    const fanControl = this.shadowRoot.querySelector('.ed-fan');
+    const fanEditable = this._config.air_rooms?.[entity]?.fans && !this._config.air_rooms[entity].hide;
+    if (fanEditable && fanControl.value) modeFields.fan_speed = fanControl.value;
+    if (!fanEditable && b?.fan_speed) modeFields.fan_speed = b.fan_speed;
     const updateMode = block => {
+      if (fanEditable) {
+        if (fanControl.value) block.fan_speed = fanControl.value;
+        else delete block.fan_speed;
+      }
       if (mode) block.hvac_mode = mode;
       else delete block.hvac_mode;
     };

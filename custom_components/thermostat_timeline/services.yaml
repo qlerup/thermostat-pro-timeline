@@ -15,6 +15,12 @@ set_store:
       required: false
       selector:
         boolean: {}
+    room_air_profile:
+      name: Room presence profile
+      description: Select automatic, comfort, eco, night or schedule for one configured room.
+      example: '{"room":"climate.office","profile":"night"}'
+      selector:
+        object: {}
     schedules:
       name: Schedules
       description: Object mapping entity_id -> {defaultTemp, blocks:[...]}.

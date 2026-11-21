@@ -35,6 +35,7 @@ nav:
 
   - Feature guides:
       - card/features/index.md
+      - Fan, climate and presence profiles: card/features/room-air.md
       - Learned starts and underfloor valves: card/features/learned-starts.md
       - Timeline and room controls: card/features/rooms.md
       - Weekdays: card/features/weekdays.md
