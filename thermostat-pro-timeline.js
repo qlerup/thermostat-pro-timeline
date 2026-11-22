@@ -198,7 +198,9 @@ const TT_I18N = {
   'pause.no_control': 'No pause control',
   'editor.tabs.notifications': 'Notifications',
   'notifications.enable': 'Enable notifications',
-  'notifications.treatment': 'Notify when air treatment starts or stops',
+  'notifications.purify': 'Air purification',
+  'notifications.dry': 'Dehumidification',
+  'notifications.mist': 'Humidification',
   'notifications.season': 'Notify when the active season changes',
   'pause.notifications': 'Pause notifications',
   'pause.notify_require': 'Shared storage and automatic application must be enabled for notifications.',
@@ -485,7 +487,9 @@ const TT_I18N = {
   'pause.notify_require': 'Aktivér fælles lagring og automatisk anvendelse for at modtage beskeder.',
   'editor.tabs.notifications': 'Beskeder',
   'notifications.enable': 'Aktivér beskeder',
-  'notifications.treatment': 'Giv besked, når luftbehandling starter eller stopper',
+  'notifications.purify': 'Luftrensning',
+  'notifications.dry': 'Affugtning',
+  'notifications.mist': 'Befugtning',
   'notifications.season': 'Giv besked ved sæsonskift',
   'pause.notifications': 'Pausebeskeder',
   'pause.no_control': 'Ingen pausekontakt',
@@ -9899,7 +9903,9 @@ class ThermostatTimelineCard extends HTMLElement {
                     <label><input type="checkbox" class="notify-enabled"> ${this._t('notifications.enable')}</label>
                     <p class="notify-require">${this._t('pause.notify_require')}</p>
                     <label><input type="checkbox" class="notify-paused"> ${this._t('pause.notify_paused')}</label>
-                    <label><input type="checkbox" class="notify-treatment"> ${this._t('notifications.treatment')}</label>
+                    <label><input type="checkbox" class="notify-purify"> ${this._t('notifications.purify')}</label>
+                    <label><input type="checkbox" class="notify-dry"> ${this._t('notifications.dry')}</label>
+                    <label><input type="checkbox" class="notify-mist"> ${this._t('notifications.mist')}</label>
                     <label><input type="checkbox" class="notify-season"> ${this._t('notifications.season')}</label>
                     <label><input type="checkbox" class="notify-resumed"> ${this._t('pause.notify_resumed')}</label>
                     <label>${this._t('pause.destination')} <select class="settings-input pause-destination"></select></label>
@@ -17219,24 +17225,26 @@ class ThermostatTimelineCard extends HTMLElement {
       const q = selector => page.querySelector(selector);
       const rule = d.pause_notifications;
       const available = this._config.storage_enabled && d.auto_apply;
-      const events = ['paused', 'resumed', 'treatment', 'season'];
+      const airEvents = ['purify', 'dry', 'mist'];
+      const events = ['paused', 'resumed', 'season', ...airEvents];
+      const selected = event => rule[event] ?? (airEvents.includes(event) && !!rule.treatment);
       const master = q('.notify-enabled');
-      master.checked = rule.enabled ?? events.some(event=>rule[event]);
+      master.checked = rule.enabled ?? events.some(selected);
       master.disabled = !available;
       master.onchange = ()=>{rule.enabled=master.checked;this._renderNotificationsTab();};
       q('.notify-require').hidden = available;
       const active = available && master.checked;
-      const treatment = d.entities.some(room=>{
+      const hasTreatment = event => d.entities.some(room=>{
         const r=d.air_rooms?.[room];
         return r?.treatment && d.apply_enabled?.[room]!==false &&
-          ['purify','dry','mist'].some(k=>r[k+'_sensor'] && r[k+'_device']);
+          r[event+'_sensor'] && r[event+'_device'];
       });
       for (const event of events) {
         const input = q('.notify-' + event);
-        const visible = active && (event!=='season' || d.seasonal_enabled) && (event!=='treatment' || treatment);
+        const visible = active && (event!=='season' || d.seasonal_enabled) && (!airEvents.includes(event) || hasTreatment(event));
         input.closest('label').style.display=visible?'':'none';
         input.disabled=!visible;
-        input.checked = !!rule[event];
+        input.checked = !!selected(event);
         input.onchange = () => { rule[event] = input.checked; };
       }
       const dest = q('.pause-destination');

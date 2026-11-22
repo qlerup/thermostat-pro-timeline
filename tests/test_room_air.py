@@ -61,6 +61,26 @@ class RoomAirTests(unittest.IsolatedAsyncioTestCase):
         manager._send_pause_notification.assert_awaited_once()
         self.assertIn("stopped", self.air.log[room][-1]["reason"])
 
+    async def test_notifications_follow_each_treatment_choice(self):
+        rule = {}
+        settings = {"pause_notifications": {"enabled": True, "treatment": True,
+                                           "dry": True, "purify": False, "mist": False}}
+        manager = SimpleNamespace(_send_pause_notification=AsyncMock())
+        devices = []
+        for kind, domain, value in (("purify", "fan", "25"), ("dry", "humidifier", "70"),
+                                    ("mist", "humidifier", "30")):
+            entity, sensor = domain + "." + kind, "sensor." + kind
+            rule.update({kind + "_device": entity, kind + "_sensor": sensor})
+            self.states[sensor] = SimpleNamespace(state=value, attributes={}, name=kind)
+            self.states[entity] = SimpleNamespace(state="off")
+            devices.append(entity)
+        await self.air.treat_air(manager, settings, "room", "room", rule, self.now)
+        for entity in devices:
+            self.states[entity].state = "on"
+        await self.air.treat_air(manager, settings, "room", "room", rule, self.now)
+        manager._send_pause_notification.assert_awaited_once()
+        self.assertIn("Dehumidifier started", manager._send_pause_notification.await_args.args[1])
+
     async def test_humidifier_and_purifier_use_opposite_thresholds(self):
         manager = Mock()
         for kind, domain, value in (("purify", "fan", "21"), ("mist", "humidifier", "39")):

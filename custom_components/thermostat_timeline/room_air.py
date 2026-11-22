@@ -519,7 +519,7 @@ class RoomAir:
                 del self.log[key][:-50]
                 self.write = True
                 notifications = settings.get("pause_notifications") or {}
-                if notifications.get("enabled") is not False and notifications.get("treatment"):
+                if notifications.get("enabled") is not False and notifications.get(kind, notifications.get("treatment")):
                     await mgr._send_pause_notification(notifications, message)
             demand = value <= start if kind == "mist" else value >= start
             clear = value >= stop if kind == "mist" else value <= stop

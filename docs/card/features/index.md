@@ -548,7 +548,7 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
 -   **[Air treatment and seasonal notifications](notifications.md#air-treatment-and-seasonal-changes)**
 
-    Send a message when a device confirms a change or the active season switches.
+    Select separate alerts for purification, dehumidification, humidification and season changes.
 
     [![Choose notification events](../../images/air-season-notifications-result.png)](../../images/air-season-notifications.gif)
 
