@@ -334,9 +334,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         slots = []
     # Normalize: only dict entries or None
     norm_slots = []
-    for entry in slots:
-        if isinstance(entry, dict):
-            norm_slots.append(entry)
+    for slot in slots:
+        if isinstance(slot, dict):
+            norm_slots.append(slot)
         else:
             norm_slots.append(None)
     hass.data[DOMAIN]["backup_slots"] = norm_slots
