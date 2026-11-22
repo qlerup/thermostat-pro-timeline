@@ -538,6 +538,22 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/room-presence-comfort.gif) | [Full-size GIF](../../images/room-presence-comfort.gif)
 
+-   **[Sensor-controlled air treatment](room-air.md#start-air-treatment-from-sensor-readings)**
+
+    Start and stop room devices using separate thresholds for humidity or PM2.5.
+
+    [![Set basement humidity thresholds](../../images/sensor-air-treatment-result.png)](../../images/sensor-air-treatment.gif)
+
+    [Play walkthrough](../../images/sensor-air-treatment.gif) | [Full-size GIF](../../images/sensor-air-treatment.gif)
+
+-   **[Air treatment and seasonal notifications](pause.md#air-treatment-and-seasonal-notifications)**
+
+    Send a message when a device confirms a change or the active season switches.
+
+    [![Choose notification events](../../images/air-season-notifications-result.png)](../../images/air-season-notifications.gif)
+
+    [Play walkthrough](../../images/air-season-notifications.gif) | [Full-size GIF](../../images/air-season-notifications.gif)
+
 -   **[Occupied air treatment](room-air.md#purifiers-and-humidity)**
 
     Choose purifier speeds and humidity targets for each room profile.

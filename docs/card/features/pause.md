@@ -94,3 +94,13 @@ Turn on a room's guest switch to receive a pause message. When the last pause fo
 [![Room pause and resume messages in Home Assistant](../../images/pause-notifications-result.png)](../../images/pause-notifications.gif)
 
 [Play walkthrough](../../images/pause-notifications.gif) | [Full-size GIF](../../images/pause-notifications.gif)
+
+## Air treatment and seasonal notifications
+
+With the shared integration and automatic application enabled, open **Settings > Pause > Pause notifications**. Select **Notify when air treatment starts or stops**, **Notify when the active season changes**, or both. Choose your notification destination and save. Both options default to off.
+
+After Timeline requests a change and the air device reports the new state, the message identifies the room, device type, sensor and triggering reading. A reading that stays inside the start/stop band produces no new request. Seasonal notifications report a switch between Summer and Winter when seasonal schedules are enabled.
+
+[![Air treatment and season change options enabled in notification settings](../../images/air-season-notifications-result.png)](../../images/air-season-notifications.gif)
+
+[Play walkthrough](../../images/air-season-notifications.gif) | [Full-size GIF](../../images/air-season-notifications.gif)

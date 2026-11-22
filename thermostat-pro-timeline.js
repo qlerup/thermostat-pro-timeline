@@ -9879,6 +9879,8 @@ class ThermostatTimelineCard extends HTMLElement {
                   <fieldset class="pause-notifications"><legend>${this._t('pause.notifications')}</legend>
                     <p>${this._t('pause.notify_require')}</p>
                     <label><input type="checkbox" class="notify-paused"> ${this._t('pause.notify_paused')}</label>
+                    <label><input type="checkbox" class="notify-treatment"> Notify when air treatment starts or stops</label>
+                    <label><input type="checkbox" class="notify-season"> Notify when the active season changes</label>
                     <label><input type="checkbox" class="notify-resumed"> ${this._t('pause.notify_resumed')}</label>
                     <label>${this._t('pause.destination')} <select class="settings-input pause-destination"></select></label>
                   </fieldset>
@@ -13015,7 +13017,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
   _appendAirBadge(meta,room){
     const r=this._config.air_rooms?.[room];
-    if (!r || r.hide || !['fans','presence','season','stop','air','night','enforce'].some(k=>r[k])) return;
+    if (!r || r.hide || !['fans','presence','season','stop','air','night','enforce','treatment'].some(k=>r[k])) return;
     const badge=document.createElement('button');
     badge.type='button'; badge.className='btn ghost room-air-status'; badge.dataset.room=room;
     badge.textContent=this._airText(room);
@@ -13099,6 +13101,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const add=(caption,control,key)=>{
         const label=document.createElement('label');
         label.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0';
+        if(control.tagName==='SELECT') control.style.width='min(54%, 230px)';
         control.classList.add('air-'+key);label.append(caption,control);panel.append(label);
       };
       const toggle=(key,caption)=>{
@@ -13148,6 +13151,20 @@ class ThermostatTimelineCard extends HTMLElement {
       }
       toggle('night','Use quiet hours');
       if(r.night){field('night_start','Quiet hours start','22:00','time');field('night_end','Quiet hours end','07:00','time');if(r.fans)pick('night_speed','Quiet fan speed',speeds);}
+      toggle('treatment','Control air treatment from sensors');
+      if(r.treatment){
+        for(const [key,title,domain,start,stop] of [
+          ['purify','Air purifier','fan',20,15],
+          ['dry','Dehumidifier','humidifier',60,55],
+          ['mist','Humidifier','humidifier',40,45]
+        ]){
+          pick(key+'_device',title,entities(domain),'','Disabled',true);
+          if(!r[key+'_device'])continue;
+          pick(key+'_sensor',key==='purify'?'PM2.5 sensor':'Humidity sensor',entities('sensor'),'','Choose sensor');
+          field(key+'_start','Start '+(key==='mist'?'at or below':'at or above'),start);
+          field(key+'_stop','Stop '+(key==='mist'?'at or above':'at or below'),stop);
+        }
+      }
       toggle('presence','Use room presence profiles');
       if(r.presence){
         pick('sensor','Presence sensor',entities('binary_sensor'),'','Choose sensor');
@@ -17184,7 +17201,7 @@ class ThermostatTimelineCard extends HTMLElement {
       const setChk = (sel, v)=>{ const el=q(sel); if (el) el.checked = !!v; };
 
       const rule = d.pause_notifications;
-      for (const event of ['paused', 'resumed']) {
+      for (const event of ['paused', 'resumed', 'treatment', 'season']) {
         const input = q('.overlay-settings .notify-' + event);
         input.checked = !!rule[event];
         input.onchange = () => { rule[event] = input.checked; };
@@ -17744,6 +17761,21 @@ class ThermostatTimelineCard extends HTMLElement {
           window.alert(room+': Choose a presence sensor for automatic profiles.');return;
         }
         const devices=[r.fans && (r.fan || room), r.presence && r.air && r.air_entity,r.presence && r.air && r.humidity_entity].filter(Boolean);
+        if(r.treatment){
+          const treatmentDevices=new Set();
+          for(const [key,start,stop] of [['purify',20,15],['dry',60,55],['mist',40,45]]){
+            const device=r[key+'_device'];
+            if(!device)continue;
+            const on=r[key+'_start'] ?? start, off=r[key+'_stop'] ?? stop;
+            if(!r[key+'_sensor'] || !Number.isFinite(on) || !Number.isFinite(off) ||
+               Math.min(on,off)<0 || (key!=='purify' && Math.max(on,off)>100) ||
+               (key==='mist'?on>=off:on<=off) || treatmentDevices.has(device)){
+              window.alert(room+': Choose a sensor, distinct devices and a valid start/stop range.');return;
+            }
+            treatmentDevices.add(device);
+            if(!devices.includes(device))devices.push(device);
+          }
+        }
         for(const id of devices){
           if(assignedAir.has(id) || (id!==room && sourceDraft.entities.includes(id))){
             window.alert(id+' is already assigned to another control.');return;

@@ -75,3 +75,15 @@ Click the room status beside the thermostat, or **View control history** in room
 [![Select a quick room profile directly from the timeline](../../images/room-quick-profile-result.png)](../../images/room-quick-profile.gif)
 
 [Play walkthrough](../../images/room-quick-profile.gif) | [Full-size GIF](../../images/room-quick-profile.gif)
+
+## Start air treatment from sensor readings
+
+Open **Settings > Rooms**, select the room, and enable **Control air treatment from sensors**. Select the device first, then its sensor. For a purifier, use a fan and a PM2.5 sensor. For a humidifier or dehumidifier, choose the corresponding humidity device and a sensor reporting relative humidity in percent. Use separate devices for humidifying and dehumidifying.
+
+For example, choose the basement dehumidifier and its humidity sensor. Enter **60** for start and **55** for stop, then save. With automatic application active, 62% starts the device. At 58% it keeps running. At 55% it stops. A humidifier uses the reverse direction. Purifier thresholds use the sensor's displayed units. Unavailable readings suspend decisions. The room's existing pause controls also apply.
+
+[![Basement humidity sensor and dehumidifier thresholds](../../images/sensor-air-treatment-result.png)](../../images/sensor-air-treatment.gif)
+
+[Play walkthrough](../../images/sensor-air-treatment.gif) | [Full-size GIF](../../images/sensor-air-treatment.gif)
+
+Open **View control history** to see confirmed starts and stops. To receive these as notifications, see [air treatment and seasonal notifications](pause.md#air-treatment-and-seasonal-notifications).

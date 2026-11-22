@@ -2957,6 +2957,12 @@ class AutoApplyManager:
         released = self._paused_by_room_control - paused
         self._paused_by_room_control = paused
         rule = settings.get("pause_notifications") or {}
+        season = self._season_key(settings) if (rule.get("season") and settings.get("seasonal_enabled")
+            and settings.get("auto_apply_enabled") and self._is_active_instance()) else None
+        previous_season = getattr(self, "_notification_season", None)
+        self._notification_season = season
+        if season and previous_season and season != previous_season:
+            self.hass.async_create_task(self._send_pause_notification(rule, f"Switched to the {season} schedule."))
         if not (rule.get("paused") or rule.get("resumed")) or not self._is_active_instance() or not settings.get("auto_apply_enabled"):
             self._pause_snapshot = None
             return released

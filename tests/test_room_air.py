@@ -30,6 +30,45 @@ class RoomAirTests(unittest.IsolatedAsyncioTestCase):
         hass = SimpleNamespace(states=self.states, services=SimpleNamespace(async_call=AsyncMock()))
         self.air = self.scope["RoomAir"](hass, Mock(), {})
 
+    async def test_sensor_treatment_waits_for_feedback_and_uses_hysteresis(self):
+        room = "climate.basement"
+        settings = {"pause_notifications": {"treatment": True}}
+        manager = SimpleNamespace(_send_pause_notification=AsyncMock())
+        rule = {"dry_sensor": "sensor.humidity", "dry_device": "humidifier.basement"}
+        sensor = SimpleNamespace(state="62", name="Humidity", attributes={"unit_of_measurement": "%"})
+        device = SimpleNamespace(state="off")
+        self.states.update({"sensor.humidity": sensor, "humidifier.basement": device})
+
+        async def tick():
+            await self.air.treat_air(manager, settings, room, room, rule, self.now)
+
+        await tick()
+        await tick()
+        self.air.hass.services.async_call.assert_awaited_once_with(
+            "humidifier", "turn_on", {"entity_id": "humidifier.basement"}, blocking=True)
+        manager._send_pause_notification.assert_not_awaited()
+        device.state, sensor.state = "on", "58"
+        await tick()
+        await tick()
+        manager._send_pause_notification.assert_awaited_once()
+        self.assertIn("62", manager._send_pause_notification.await_args.args[1])
+        sensor.state = "55"
+        await tick()
+        self.assertEqual(self.air.hass.services.async_call.await_args.args[1], "turn_off")
+
+    async def test_humidifier_and_purifier_use_opposite_thresholds(self):
+        manager = Mock()
+        for kind, domain, value in (("purify", "fan", "21"), ("mist", "humidifier", "39")):
+            with self.subTest(kind=kind):
+                entity = domain + ".device"
+                sensor = SimpleNamespace(state=value, attributes={}, name="Reading")
+                self.states.update({"sensor.reading": sensor, entity: SimpleNamespace(state="off")})
+                rule = {kind + "_device": entity, kind + "_sensor": "sensor.reading"}
+                await self.air.treat_air(manager, {}, "room", "room", rule, self.now)
+                self.air.hass.services.async_call.assert_awaited_once_with(
+                    domain, "turn_on", {"entity_id": entity}, blocking=True)
+                self.air.hass.services.async_call.reset_mock()
+
     def test_cap_and_cooling(self):
         adjust = self.scope["adjustment"]
         r = {"boost": 3, "cap": 23, "eco_delta": 1}

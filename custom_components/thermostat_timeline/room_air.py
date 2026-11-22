@@ -78,6 +78,7 @@ class RoomAir:
         self.log, self.held, self.baselines = {}, {}, {}
         self.stable, self.dwell, self.sent, self.status = {}, {}, {}, {}
         self.intent = {}
+        self.treatment_commands = {}
         self.recovering = set()
         self.task = None
         self.dirty = self.write = False
@@ -291,7 +292,7 @@ class RoomAir:
             rule = rules.get(room) or {}
             if (
                 not any(
-                    rule.get(k) for k in ("fans", "presence", "season", "stop", "enforce", "night", "air")
+                    rule.get(k) for k in ("fans", "presence", "season", "stop", "enforce", "night", "air", "treatment")
                 )
                 and key not in self.held
                 and not any(key + s in self.baselines for s in ("/fan", "/air", "/humidity"))
@@ -342,6 +343,10 @@ class RoomAir:
                 now,
             )
             return
+        if (r.get("treatment") and not settings.get("pause_indef")
+                and (settings.get("pause_until_ms") or 0) <= now.timestamp() * 1000
+                and not mgr._pause_sensor_on(settings) and not mgr._alarm_paused(self.hass, settings)):
+            await self.treat_air(mgr, settings, room, key, r, now)
         block = next(
             (
                 b
@@ -453,7 +458,9 @@ class RoomAir:
         air = r.get("air_entity") or ""
         if r.get("presence") and r.get("air") and air and air != fan:
             device = self.hass.states.get(air)
-            if air.startswith("fan.") and device:
+            if air.startswith("fan.") and device and not (
+                r.get("treatment") and r.get("purify_device") == air and device.state == "off"
+            ):
                 air_speed = r.get("air_" + profile) if profile != "alarm" else ""
                 await self.speed(key + "/air", air, air_speed or "", r.get("enforce", False))
         else:
@@ -465,7 +472,7 @@ class RoomAir:
         if reason == "Normal schedule" and night_time(r, minute):
             reason = "Quiet hours"
         if key in self.held:
-            reason += " · Off at target"
+            reason += " Â· Off at target"
         self.publish(key, room, status, profile, reason, speed, now)
         device = self.hass.states.get(fan) if r.get("fans") else None
         if device:
@@ -478,9 +485,55 @@ class RoomAir:
                 else attrs.get("preset_mode")
                 or (str(attrs["percentage"]) + "%" if attrs.get("percentage") is not None else None)
             )
-        if not any(r.get(k) for k in ("fans", "presence", "season", "stop", "enforce", "night", "air")):
+        if not any(r.get(k) for k in ("fans", "presence", "season", "stop", "enforce", "night", "air", "treatment")):
             self.sent.pop(key, None)
             mgr._air_context.pop(room, None)
+
+    async def treat_air(self, mgr, settings, room, key, rule, now):
+        """Apply each device's hysteresis and confirm transitions from HA feedback."""
+        for kind, label, domain, default_on, default_off in (
+            ("purify", "Air purifier", "fan", 20, 15),
+            ("dry", "Dehumidifier", "humidifier", 60, 55),
+            ("mist", "Humidifier", "humidifier", 40, 45),
+        ):
+            entity = rule.get(kind + "_device") or ""
+            sensor = self.hass.states.get(rule.get(kind + "_sensor")) if rule.get(kind + "_sensor") else None
+            if not entity.startswith(domain + ".") or not sensor:
+                continue
+            device = self.hass.states.get(entity)
+            if not device or device.state not in ("on", "off"):
+                continue
+            if kind in ("dry", "mist") and rule.get("dry_device") == rule.get("mist_device"):
+                continue
+            value = numeric(sensor.state)
+            start = numeric(rule.get(kind + "_start", default_on))
+            stop = numeric(rule.get(kind + "_stop", default_off))
+            if None in (value, start, stop) or (start >= stop if kind == "mist" else start <= stop):
+                continue
+            command_key = (key, kind)
+            pending = self.treatment_commands.get(command_key)
+            if pending and pending[0] == entity and device.state == pending[1]:
+                self.treatment_commands.pop(command_key)
+                message = pending[3]
+                self.log.setdefault(key, []).append({"at": now.isoformat(), "reason": message})
+                del self.log[key][:-50]
+                self.write = True
+                notifications = settings.get("pause_notifications") or {}
+                if notifications.get("treatment"):
+                    await mgr._send_pause_notification(notifications, message)
+            demand = value <= start if kind == "mist" else value >= start
+            clear = value >= stop if kind == "mist" else value <= stop
+            desired = "on" if demand else "off" if clear else None
+            if desired is None or desired == device.state:
+                continue
+            if pending and pending[:2] == (entity, desired) and now.timestamp() - pending[2] < 60:
+                continue
+            name = (settings.get("labels") or {}).get(room) or room
+            unit = sensor.attributes.get("unit_of_measurement", "")
+            change = "started" if demand else "stopped"
+            message = f"{name}: {label} {change} ({sensor.name}: {value:g} {unit})."
+            await self.call(domain, "turn_" + desired, entity)
+            self.treatment_commands[command_key] = (entity, desired, now.timestamp(), message)
 
     def publish(self, key, room, status, profile, reason, speed, now):
         fact = {"profile": profile, "reason": reason, "speed": speed or None}
