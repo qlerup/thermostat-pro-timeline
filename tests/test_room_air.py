@@ -55,6 +55,11 @@ class RoomAirTests(unittest.IsolatedAsyncioTestCase):
         sensor.state = "55"
         await tick()
         self.assertEqual(self.air.hass.services.async_call.await_args.args[1], "turn_off")
+        settings["pause_notifications"]["enabled"] = False
+        device.state = "off"
+        await tick()
+        manager._send_pause_notification.assert_awaited_once()
+        self.assertIn("stopped", self.air.log[room][-1]["reason"])
 
     async def test_humidifier_and_purifier_use_opposite_thresholds(self):
         manager = Mock()

@@ -196,7 +196,7 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/room-pause-control.gif) | [Full-size GIF](../../images/room-pause-control.gif)
 
--   **[Receive pause and resume notifications](pause.md#receive-pause-and-resume-notifications)**
+-   **[Receive pause and resume notifications](notifications.md#pause-and-resume)**
 
     Choose which schedule changes send a message and where it goes.
 
@@ -546,7 +546,7 @@ Choose what you want your heating to do. Open a guide for the setup steps and th
 
     [Play walkthrough](../../images/sensor-air-treatment.gif) | [Full-size GIF](../../images/sensor-air-treatment.gif)
 
--   **[Air treatment and seasonal notifications](pause.md#air-treatment-and-seasonal-notifications)**
+-   **[Air treatment and seasonal notifications](notifications.md#air-treatment-and-seasonal-changes)**
 
     Send a message when a device confirms a change or the active season switches.
 

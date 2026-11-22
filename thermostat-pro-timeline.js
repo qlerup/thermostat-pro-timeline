@@ -196,6 +196,10 @@ const TT_I18N = {
   'pause.control_status': 'Paused by {control}',
   'pause.room_control': 'Pause this room while the selected control is on',
   'pause.no_control': 'No pause control',
+  'editor.tabs.notifications': 'Notifications',
+  'notifications.enable': 'Enable notifications',
+  'notifications.treatment': 'Notify when air treatment starts or stops',
+  'notifications.season': 'Notify when the active season changes',
   'pause.notifications': 'Pause notifications',
   'pause.notify_require': 'Shared storage and automatic application must be enabled for notifications.',
   'pause.notify_paused': 'Notify when paused',
@@ -479,6 +483,10 @@ const TT_I18N = {
   'pause.notify_resumed': 'Giv besked ved genoptagelse',
   'pause.notify_paused': 'Giv besked ved pause',
   'pause.notify_require': 'Aktivér fælles lagring og automatisk anvendelse for at modtage beskeder.',
+  'editor.tabs.notifications': 'Beskeder',
+  'notifications.enable': 'Aktivér beskeder',
+  'notifications.treatment': 'Giv besked, når luftbehandling starter eller stopper',
+  'notifications.season': 'Giv besked ved sæsonskift',
   'pause.notifications': 'Pausebeskeder',
   'pause.no_control': 'Ingen pausekontakt',
   'pause.room_control': 'Sæt rummet på pause, mens den valgte kontakt er aktiv',
@@ -9395,6 +9403,13 @@ class ThermostatTimelineCard extends HTMLElement {
   .settings-card .grid4{ display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom: 6px; }
   .settings-card .sfield{ display:grid; gap:2px; align-items:start; }
   .settings-card .slabel{ font-size:.8rem; color: var(--secondary-text-color); line-height:1; padding-left:4px; }
+  .settings-page[data-page="notifications"] .pause-notifications {
+    display:grid; gap:10px; padding:14px; min-width:0;
+  }
+  .settings-page[data-page="notifications"] .pause-notifications label {
+    display:flex; align-items:center; gap:8px;
+  }
+  .settings-page[data-page="notifications"] .pause-destination { width:min(65%, 260px); }
   .settings-card .settings-input{ width:88px; height:28px; padding:4px 6px; border:1px solid var(--divider-color); border-radius:8px; background: var(--card-background-color); color: var(--primary-text-color); box-sizing:border-box; }
   .settings-card .settings-input:disabled{ opacity:.55; cursor:not-allowed; filter: grayscale(60%); color: var(--disabled-text-color, var(--secondary-text-color)); background: var(--secondary-background-color, var(--card-background-color)); }
   .settings-card .setting{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:10px; padding:10px 4px; }
@@ -9689,6 +9704,7 @@ class ThermostatTimelineCard extends HTMLElement {
             <div class="settings-tabs" role="tablist">
               <button type="button" class="settings-tab-btn" data-tab="settings" role="tab" aria-selected="true"></button>
               <button type="button" class="settings-tab-btn" data-tab="pause" role="tab" aria-selected="false"></button>
+              <button type="button" class="settings-tab-btn" data-tab="notifications" role="tab" aria-selected="false"></button>
               <button type="button" class="settings-tab-btn" data-tab="weekdays" role="tab" aria-selected="false"></button>
               <button type="button" class="settings-tab-btn" data-tab="rooms" role="tab" aria-selected="false"></button>
               <button type="button" class="settings-tab-btn" data-tab="boiler" role="tab" aria-selected="false"></button>
@@ -9876,16 +9892,18 @@ class ThermostatTimelineCard extends HTMLElement {
                     <tt-entity-picker class="alarm-source" label="Alarm entity" include-domains='["alarm_control_panel"]'></tt-entity-picker>
                     <fieldset><legend>Pause in these alarm states</legend><div class="alarm-states"></div></fieldset>
                   </div>
-                  <fieldset class="pause-notifications"><legend>${this._t('pause.notifications')}</legend>
-                    <p>${this._t('pause.notify_require')}</p>
-                    <label><input type="checkbox" class="notify-paused"> ${this._t('pause.notify_paused')}</label>
-                    <label><input type="checkbox" class="notify-treatment"> Notify when air treatment starts or stops</label>
-                    <label><input type="checkbox" class="notify-season"> Notify when the active season changes</label>
-                    <label><input type="checkbox" class="notify-resumed"> ${this._t('pause.notify_resumed')}</label>
-                    <label>${this._t('pause.destination')} <select class="settings-input pause-destination"></select></label>
-                  </fieldset>
+
                 </div>
               </div>
+              <div class="settings-page" data-page="notifications">                  <fieldset class="pause-notifications"><legend>${this._t('editor.tabs.notifications')}</legend>
+                    <label><input type="checkbox" class="notify-enabled"> ${this._t('notifications.enable')}</label>
+                    <p class="notify-require">${this._t('pause.notify_require')}</p>
+                    <label><input type="checkbox" class="notify-paused"> ${this._t('pause.notify_paused')}</label>
+                    <label><input type="checkbox" class="notify-treatment"> ${this._t('notifications.treatment')}</label>
+                    <label><input type="checkbox" class="notify-season"> ${this._t('notifications.season')}</label>
+                    <label><input type="checkbox" class="notify-resumed"> ${this._t('pause.notify_resumed')}</label>
+                    <label>${this._t('pause.destination')} <select class="settings-input pause-destination"></select></label>
+                  </fieldset></div>
               <div class="settings-page" data-page="weekdays"></div>
               <div class="settings-page" data-page="rooms"></div>
               <div class="settings-page" data-page="boiler"></div>
@@ -12158,7 +12176,7 @@ class ThermostatTimelineCard extends HTMLElement {
 
   _setSettingsPopupTab(tab){
     try {
-      const allowed = new Set(['settings','pause','weekdays','rooms','boiler','colors','presence_sensor','owd','holidays','away','reset']);
+      const allowed = new Set(['settings','pause','notifications','weekdays','rooms','boiler','colors','presence_sensor','owd','holidays','away','reset']);
       const next = allowed.has(String(tab)) ? String(tab) : 'settings';
       this._settingsPopupTab = next;
       this._renderSettingsPopupTabs();
@@ -12303,6 +12321,8 @@ class ThermostatTimelineCard extends HTMLElement {
       }
       if (active === 'settings') {
         this._renderSettingsPopupSettingsTab();
+      } else if (active === 'notifications') {
+        this._renderNotificationsTab();
       } else if (active === 'pause') {
         this._renderSettingsPopupPauseTab();
       } else if (active === 'weekdays') {
@@ -17193,20 +17213,35 @@ class ThermostatTimelineCard extends HTMLElement {
     }
   }
 
-  _renderSettingsPopupPauseTab(){
-    try {
-      const d = this._settingsDraft;
-      if (!d || !this.shadowRoot) return;
-      const q = (sel)=> this.shadowRoot.querySelector(sel);
-      const setChk = (sel, v)=>{ const el=q(sel); if (el) el.checked = !!v; };
-
+  _renderNotificationsTab(){
+      const d=this._settingsDraft;
+      const page = this.shadowRoot.querySelector('.settings-page[data-page="notifications"]');
+      const q = selector => page.querySelector(selector);
       const rule = d.pause_notifications;
-      for (const event of ['paused', 'resumed', 'treatment', 'season']) {
-        const input = q('.overlay-settings .notify-' + event);
+      const available = this._config.storage_enabled && d.auto_apply;
+      const events = ['paused', 'resumed', 'treatment', 'season'];
+      const master = q('.notify-enabled');
+      master.checked = rule.enabled ?? events.some(event=>rule[event]);
+      master.disabled = !available;
+      master.onchange = ()=>{rule.enabled=master.checked;this._renderNotificationsTab();};
+      q('.notify-require').hidden = available;
+      const active = available && master.checked;
+      const treatment = d.entities.some(room=>{
+        const r=d.air_rooms?.[room];
+        return r?.treatment && d.apply_enabled?.[room]!==false &&
+          ['purify','dry','mist'].some(k=>r[k+'_sensor'] && r[k+'_device']);
+      });
+      for (const event of events) {
+        const input = q('.notify-' + event);
+        const visible = active && (event!=='season' || d.seasonal_enabled) && (event!=='treatment' || treatment);
+        input.closest('label').style.display=visible?'':'none';
+        input.disabled=!visible;
         input.checked = !!rule[event];
         input.onchange = () => { rule[event] = input.checked; };
       }
-      const dest = q('.overlay-settings .pause-destination');
+      const dest = q('.pause-destination');
+      dest.disabled=!active;
+      dest.closest('label').style.display=active?'':'none';
       dest.replaceChildren(new Option(this._t('pause.panel'), 'persistent_notification.create'));
       for (const id of Object.keys(this._hass?.states || {}).filter(id => id.startsWith('notify.')).sort()) {
         dest.add(new Option(this._prettyName(id), 'entity:' + id));
@@ -17219,6 +17254,15 @@ class ThermostatTimelineCard extends HTMLElement {
       }
       dest.value = rule.destination || 'persistent_notification.create';
       dest.onchange = () => { rule.destination = dest.value; };
+
+  }
+
+  _renderSettingsPopupPauseTab(){
+    try {
+      const d = this._settingsDraft;
+      if (!d || !this.shadowRoot) return;
+      const q = (sel)=> this.shadowRoot.querySelector(sel);
+      const setChk = (sel, v)=>{ const el=q(sel); if (el) el.checked = !!v; };
 
       this._bindAutomationRule('alarm');
       setChk('.overlay-settings .sp-pausebtn', d.show_pause_button);
@@ -20554,6 +20598,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const tabMap = {
           settings: 'editor.tabs.settings',
           pause: 'editor.tabs.pause',
+          notifications: 'editor.tabs.notifications',
           weekdays: 'editor.tabs.weekdays',
           rooms: 'editor.tabs.rooms',
           boiler: 'editor.tabs.boiler',

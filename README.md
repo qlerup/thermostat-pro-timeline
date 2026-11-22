@@ -8,6 +8,14 @@ Schedule heating and cooling for each room from a 24-hour timeline in Home Assis
 
 [Getting started](https://qlerup.github.io/thermostat-pro-timeline/getting-started/installation.html) | [Feature guides](https://qlerup.github.io/thermostat-pro-timeline/card/features/index.html) | [Integration actions](https://qlerup.github.io/thermostat-pro-timeline/integration/services.html) | [Troubleshooting](https://qlerup.github.io/thermostat-pro-timeline/troubleshooting.html)
 
+### Where do I find it?
+
+| Task | Start here |
+| --- | --- |
+| Pause and resume from my heating automation | [Actions and visual walkthrough](https://qlerup.github.io/thermostat-pro-timeline/#pause-timeline-when-the-heating-is-switched-off) |
+| Set a different Away temperature in each room | [Room-specific Away settings](https://qlerup.github.io/thermostat-pro-timeline/#give-one-room-a-different-away-temperature) |
+| Show the Summer and Winter selector on the card | [Enable seasonal schedules](https://qlerup.github.io/thermostat-pro-timeline/#find-the-summer-and-winter-selector) |
+
 New to the card? Follow [Add your first thermostat](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html) to connect a room, set a temperature block and check the result. The guide includes desktop demonstrations of editing a schedule, pausing a room and configuring sensors.
 
 [![Office heating schedule in Home Assistant](docs/images/office-dashboard.png)](https://qlerup.github.io/thermostat-pro-timeline/getting-started/quick-start.html#edit-a-scheduled-block)

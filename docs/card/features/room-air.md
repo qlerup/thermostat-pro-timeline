@@ -86,4 +86,4 @@ For example, choose the basement dehumidifier and its humidity sensor. Enter **6
 
 [Play walkthrough](../../images/sensor-air-treatment.gif) | [Full-size GIF](../../images/sensor-air-treatment.gif)
 
-Open **View control history** to see confirmed starts and stops. To receive these as notifications, see [air treatment and seasonal notifications](pause.md#air-treatment-and-seasonal-notifications).
+Open **View control history** to see confirmed starts and stops. To receive these as notifications, see [air treatment and seasonal notifications](notifications.md#air-treatment-and-seasonal-changes).

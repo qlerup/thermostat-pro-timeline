@@ -42,6 +42,7 @@ nav:
       - Profiles: card/features/profiles.md
       - Presence & away: card/features/presence-away.md
       - Holidays: card/features/holidays.md
+      - Notifications: card/features/notifications.md
       - Pause and manual targets: card/features/pause.md
       - Seasonal: card/features/seasonal.md
       - Open Window Detection: card/features/open-window.md

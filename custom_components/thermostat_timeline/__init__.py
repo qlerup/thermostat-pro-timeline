@@ -2957,6 +2957,8 @@ class AutoApplyManager:
         released = self._paused_by_room_control - paused
         self._paused_by_room_control = paused
         rule = settings.get("pause_notifications") or {}
+        if rule.get("enabled") is False:
+            rule = {}
         season = self._season_key(settings) if (rule.get("season") and settings.get("seasonal_enabled")
             and settings.get("auto_apply_enabled") and self._is_active_instance()) else None
         previous_season = getattr(self, "_notification_season", None)
