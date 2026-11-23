@@ -313,6 +313,35 @@ class ManualTargetTests(unittest.IsolatedAsyncioTestCase):
         self.states[eid].attributes["temperature"] = value
         await self.mgr._remember_manual_target(eid, value)
 
+    async def test_automatic_holds_can_be_disabled_without_affecting_explicit_pauses(self):
+        self.settings["manual_target_hold"] = {"enabled": False, "minutes": 30}
+        explicit_pause = {"indef": True}
+        self.settings["room_pause"][self.b] = explicit_pause
+
+        await self.manual(self.a, 20)
+        await self.manual(self.b, 21)
+
+        self.assertEqual(self.settings["room_pause"], {self.b: explicit_pause})
+        self.assertEqual(self.calls, [])
+
+    async def test_fixed_hold_crosses_midnight_and_reconciles_at_expiry(self):
+        self.now = self.now.replace(hour=23, minute=55)
+        self.settings["manual_target_hold"] = {"minutes": 30}
+        expires_at = self.now + timedelta(minutes=30)
+
+        await self.manual(self.a, 20)
+        self.assertEqual(self.mgr._next_room_pause_dt(), (expires_at, self.a))
+        self.now += timedelta(minutes=5)
+        await self.mgr._maybe_apply_now(force=True, reconcile=True)
+        self.assertEqual(self.states[self.a].attributes["temperature"], 20)
+
+        self.now = expires_at
+        self.mgr._next_room_resume = self.a
+        self.mgr._next_room_resume_at = expires_at
+        self.globals["async_track_point_in_utc_time"] = lambda *args: None
+        await self.mgr._timer_fire()
+        self.assertEqual(self.states[self.a].attributes["temperature"], 15)
+
     async def test_manual_hold_survives_both_startup_apply_paths(self):
         await self.manual(self.a, 20)
         hold = self.settings["room_pause"][self.a]

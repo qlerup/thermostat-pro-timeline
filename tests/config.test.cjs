@@ -44,6 +44,40 @@ test('sensor pause suppresses frontend scheduled writes and resumes when off',as
   assert.equal(c._isPaused(),false);
 });
 
+test('automatic hold controls save independently of manual pause settings', async () => {
+  const c = card();
+  const enabled = {};
+  const duration = {};
+  const controls = { '#manual-hold-enabled': enabled, '#manual-hold-duration': duration };
+  c.shadowRoot = { querySelector: selector => controls[selector] };
+  c._bindAutomationRule = () => {};
+  c._initSettingsPopupDraft();
+  c._renderSettingsPopupPauseTab();
+  assert.equal(enabled.checked, true);
+  assert.equal(duration.value, '0');
+
+  duration.value = '60';
+  duration.onchange();
+  enabled.checked = false;
+  enabled.onchange();
+  assert.equal(duration.disabled, true);
+  assert.equal(c._settingsPopupHasUnsaved(), true);
+  c._applySettingsPopupDraftToConfig();
+  assert.equal(c._config.show_pause_button, true);
+  const rule = c._makeStoragePayload().settings.manual_target_hold;
+  assert.equal(rule.enabled, false);
+  assert.equal(rule.minutes, 60);
+
+  const writes = [];
+  c._config.storage_enabled = true;
+  c._apiFetchState = async () => ({ settings: { manual_target_hold: { minutes: 30 } } });
+  c._hass = { callService: async (domain, service, payload) => writes.push(payload.settings) };
+  await c._saveStore(true, rule);
+  await c._saveStore(true);
+  assert.equal(writes[0].manual_target_hold.minutes, 60);
+  assert.equal(Object.hasOwn(writes[1], 'manual_target_hold'), false);
+});
+
 for (const enabled of [false,true]) {
   for (const order of ['before','after']) {
     test(`frontend turn_on enabled=${enabled}, order=${order}`,async()=>{

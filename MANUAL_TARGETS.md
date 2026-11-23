@@ -4,7 +4,9 @@ Manual temperature holds use Thermostat Pro Timeline's saved room pauses, so
 they survive Home Assistant restarts without changing schedule blocks.
 
 Changing a scheduled climate entity's target creates a saved, timed pause for
-that room until its next schedule block starts or ends, or midnight rollover.
+that room. By default it lasts until its next schedule block starts or ends,
+or midnight rollover. Settings → Pause can turn off automatic holds or use
+15, 30, 60 or 120 minutes for new holds.
 This also covers physical dial changes forwarded to the scheduled climate by an
 existing thermostat integration or automation. Other rooms keep their schedules.
 

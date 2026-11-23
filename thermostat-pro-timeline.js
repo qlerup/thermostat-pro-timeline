@@ -390,6 +390,10 @@ const TT_I18N = {
   'editor.pause_sensor.desc': 'Automatically pause while the selected binary sensor is on.',
   'editor.pause_sensor.entity_title': 'Pause sensor',
   'editor.pause_sensor.entity_desc': 'Binary sensor that controls pause (on = pause, off = resume).',
+  'pause.manual_target_enabled': 'Automatic temperature hold',
+  'pause.manual_target_desc': 'Pause a room when its thermostat target is changed manually. Requires background auto-apply.',
+  'pause.manual_target_duration': 'Automatic hold duration',
+  'pause.manual_target_boundary': 'Until the next scheduled change',
   'editor.integration.connected': 'Connected to integration',
   'editor.integration.disconnected': 'Not connected to integration',
 
@@ -832,6 +836,10 @@ const TT_I18N = {
     'editor.pause_sensor.desc': 'Sæt automatisk pause mens den valgte binary sensor er on.',
     'editor.pause_sensor.entity_title': 'Pause sensor',
     'editor.pause_sensor.entity_desc': 'Binary sensor som styrer pause (on = pause, off = genoptag).',
+    'pause.manual_target_enabled': 'Automatisk temperaturpause',
+    'pause.manual_target_desc': 'Sæt rummet på pause, når termostatens måltemperatur ændres manuelt. Kræver automatisk styring i baggrunden.',
+    'pause.manual_target_duration': 'Varighed af automatisk pause',
+    'pause.manual_target_boundary': 'Indtil næste planlagte ændring',
     'editor.integration.connected': 'Integration klar',
     'editor.integration.disconnected': 'Integration ikke tilgængelig',
     'profiles.enable': 'Aktivér skema overrule',
@@ -5130,6 +5138,7 @@ class ThermostatTimelineCard extends HTMLElement {
       per_room_defaults: !!(config.per_room_defaults ?? this._config?.per_room_defaults ?? false),
       presence_live_header: !!(config.presence_live_header ?? this._config?.presence_live_header ?? true),
       weekdays_enabled: !!(config.weekdays_enabled ?? false),
+        manual_target_hold: { ...(config.manual_target_hold ?? this._config?.manual_target_hold) },
         alarm_pause: { ...(config.alarm_pause ?? this._config?.alarm_pause) },
         workday_plans: { ...(config.workday_plans ?? this._config?.workday_plans) },
         boiler_manual_targets: !!(config.boiler_manual_targets ?? this._config?.boiler_manual_targets),
@@ -6240,7 +6249,7 @@ class ThermostatTimelineCard extends HTMLElement {
               if (Array.isArray(s.holidays_dates) && !this._yamlProvided?.holidays_dates) this._config.holidays_dates = [...s.holidays_dates];
               if (Array.isArray(s.holidays_groups)) this._config.holidays_groups = [...s.holidays_groups];
             } catch {}
-            for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+            for (const key of ['manual_target_hold', 'alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
               if (key in s) this._config[key] = s[key];
             }
             // Weekdays settings (shared)
@@ -6525,7 +6534,7 @@ class ThermostatTimelineCard extends HTMLElement {
   try { this._awayBypass = !!s.away_bypass; } catch {}
   // Open Window Detection from local storage copy
   try { if (s.open_window && typeof s.open_window==='object') this._config.open_window = { ...s.open_window }; } catch {}
-  for (const key of ['alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
+  for (const key of ['manual_target_hold', 'alarm_pause', 'season_follow', 'seasonal_sources', 'air_rooms', 'thermal_rooms', 'confirm_season_change', 'sensor_season_last', 'summer_off_rooms', 'holiday_trips', 'workday_plans', 'boiler_manual_targets']) {
     if (key in s) this._config[key] = s[key];
   }
   // Weekdays flags and view (persist across refresh) — skip if editor preview forbids overrides
@@ -6615,7 +6624,7 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
-  async _saveStore(force = false) {
+  async _saveStore(force = false, manualTargetHold) {
     if (!force && this._editSessionActive()) {
       this._markPendingSave();
       return;
@@ -6822,7 +6831,7 @@ class ThermostatTimelineCard extends HTMLElement {
       try { this._startSyncTimer(); this._render(); } catch {}
     } else {
       // Instant (existing behavior with short debounce handled by callers)
-      await this._writeStoreNow();
+      await this._writeStoreNow(manualTargetHold);
     }
   }
 
@@ -7378,6 +7387,7 @@ class ThermostatTimelineCard extends HTMLElement {
         weekdays_view: this._config.weekdays_view || base.weekdays_view || 'all_rooms_one_day',
         weekdays_view_switch_in_timeline: !!(this._config.weekdays_view_switch_in_timeline ?? base.weekdays_view_switch_in_timeline ?? false),
         weekdays_selected_room: this._config.weekdays_selected_room || base.weekdays_selected_room || '',
+        manual_target_hold: { ...this._config.manual_target_hold },
         alarm_pause: { ...this._config.alarm_pause },
         workday_plans: { ...this._config.workday_plans },
         boiler_manual_targets: !!this._config.boiler_manual_targets,
@@ -8921,6 +8931,7 @@ class ThermostatTimelineCard extends HTMLElement {
         const base = (state && typeof state === 'object' && state.settings && typeof state.settings === 'object') ? state.settings : {};
         mergedSettings = { ...base, ...mergedSettings };
       } catch {}
+      delete mergedSettings.manual_target_hold;
       payload.settings = mergedSettings;
       const p = { settings: payload.settings, force: true };
       if (this._config?.instance_enabled) { p.instance_id = this._instanceId(); p.activate = true; }
@@ -9416,6 +9427,7 @@ class ThermostatTimelineCard extends HTMLElement {
   .settings-page[data-page="notifications"] .pause-destination { width:min(65%, 260px); }
   .settings-card .settings-input{ width:88px; height:28px; padding:4px 6px; border:1px solid var(--divider-color); border-radius:8px; background: var(--card-background-color); color: var(--primary-text-color); box-sizing:border-box; }
   .settings-card .settings-input:disabled{ opacity:.55; cursor:not-allowed; filter: grayscale(60%); color: var(--disabled-text-color, var(--secondary-text-color)); background: var(--secondary-background-color, var(--card-background-color)); }
+  .settings-card .manual-hold-duration{ width:100%; max-width:320px; }
   .settings-card .setting{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:10px; padding:10px 4px; }
   .settings-card .setting + .setting{ border-top: 1px solid var(--divider-color); }
   /* Group Configuration ID (instance) rows: remove divider between toggle and ID row */
@@ -9878,6 +9890,21 @@ class ThermostatTimelineCard extends HTMLElement {
 
                   <div class="setting">
                     <div class="text">
+                      <label class="title" for="manual-hold-enabled">${this._t('pause.manual_target_enabled')}</label>
+                      <div class="desc" id="manual-hold-description">${this._t('pause.manual_target_desc')}</div>
+                    </div>
+                    <input id="manual-hold-enabled" type="checkbox" aria-describedby="manual-hold-description">
+                  </div>
+                  <div class="setting" style="grid-template-columns: 1fr;">
+                    <label class="title" for="manual-hold-duration">${this._t('pause.manual_target_duration')}</label>
+                    <select id="manual-hold-duration" class="settings-input manual-hold-duration">
+                      <option value="0">${this._t('pause.manual_target_boundary')}</option>
+                      ${[15, 30, 60, 120].map(minutes => `<option value="${minutes}">${minutes} ${this._t('away.delay_unit.minutes').toLowerCase()}</option>`).join('')}
+                    </select>
+                  </div>
+
+                  <div class="setting">
+                    <div class="text">
                       <div class="title sp-pausesensor-title"></div>
                       <div class="desc sp-pausesensor-desc"></div>
                     </div>
@@ -10306,7 +10333,7 @@ class ThermostatTimelineCard extends HTMLElement {
     } catch {}
   }
 
-  async _writeStoreNow(){
+  async _writeStoreNow(manualTargetHold){
     if (!this._config?.storage_enabled) return;
     this._saving = true;
     const key = this._syncDueKey();
@@ -10337,6 +10364,9 @@ class ThermostatTimelineCard extends HTMLElement {
         keepIfEmpty('temp_sensors');
         payload = { ...payload, settings: merged };
       } catch {}
+      // Only an edit in the Pause settings should write this shared setting.
+      if (manualTargetHold === undefined) delete payload.settings.manual_target_hold;
+      else payload.settings.manual_target_hold = manualTargetHold;
       // Push all data to the integration via set_store service (writes to file)
       if (this._config?.instance_enabled) {
         payload = { ...payload, instance_id: this._instanceId(), activate: true };
@@ -12488,6 +12518,7 @@ class ThermostatTimelineCard extends HTMLElement {
         weekdays_enabled: !!cfg.weekdays_enabled,
         weekdays_copy_from_main_mode: '',
         weekdays_copy_from_main_target: '',
+        manual_target_hold: { ...cfg.manual_target_hold },
         alarm_pause: { ...cfg.alarm_pause, states: [...(cfg.alarm_pause?.states || ['armed_away'])] },
         workday_plans: { ...cfg.workday_plans },
         boiler_manual_targets: !!cfg.boiler_manual_targets,
@@ -12716,6 +12747,7 @@ class ThermostatTimelineCard extends HTMLElement {
       cfg.time_source = (d.time_source === 'ha') ? 'ha' : 'browser';
       cfg.temp_unit = (String(d.temp_unit || 'C').toUpperCase() === 'F') ? 'F' : 'C';
       cfg.profiles_enabled = !!d.profiles_enabled;
+      cfg.manual_target_hold = { ...d.manual_target_hold };
       cfg.alarm_pause = { ...d.alarm_pause };
       cfg.workday_plans = { ...d.workday_plans };
       cfg.boiler_manual_targets = !!d.boiler_manual_targets;
@@ -17276,6 +17308,22 @@ class ThermostatTimelineCard extends HTMLElement {
       setChk('.overlay-settings .sp-pausebtn', d.show_pause_button);
       setChk('.overlay-settings .sp-pausesensor', d.pause_sensor_enabled);
 
+      const holdEnabled = q('#manual-hold-enabled');
+      const holdDuration = q('#manual-hold-duration');
+      if (holdEnabled && holdDuration) {
+        holdEnabled.checked = d.manual_target_hold.enabled !== false;
+        holdDuration.disabled = !holdEnabled.checked;
+        holdDuration.value = String(d.manual_target_hold.minutes ?? 0);
+        if (holdDuration.selectedIndex === -1) holdDuration.value = '0';
+        holdEnabled.onchange = () => {
+          d.manual_target_hold.enabled = holdEnabled.checked;
+          holdDuration.disabled = !holdEnabled.checked;
+        };
+        holdDuration.onchange = () => {
+          d.manual_target_hold.minutes = Number(holdDuration.value);
+        };
+      }
+
       // Pause sensor entity row visibility + picker value
       try {
         const row = q('.overlay-settings .sp-pausesensor-entity-setting');
@@ -17371,6 +17419,7 @@ class ThermostatTimelineCard extends HTMLElement {
       if (String(d.temp_unit||'C').toUpperCase() !== String(c.temp_unit||'C').toUpperCase()) return true;
       if (!!d.profiles_enabled !== !!c.profiles_enabled) return true;
       if (JSON.stringify(d.alarm_pause) !== JSON.stringify({ ...c.alarm_pause, states: c.alarm_pause?.states || ['armed_away'] })) return true;
+      if (JSON.stringify(d.manual_target_hold) !== JSON.stringify(c.manual_target_hold || {})) return true;
       if (JSON.stringify(d.workday_plans) !== JSON.stringify(c.workday_plans || {})) return true;
       if (!!d.boiler_manual_targets !== !!c.boiler_manual_targets) return true;
       if (JSON.stringify(d.summer_off_rooms) !== JSON.stringify(c.summer_off_rooms || [])) return true;
@@ -17858,17 +17907,20 @@ class ThermostatTimelineCard extends HTMLElement {
       }
       // IMPORTANT: do not persist on toggle/input; only commit+save here.
       const previousSummer = JSON.stringify([this._config.seasonal_enabled, this._config.summer_off_rooms]);
+      const manualTargetHold = JSON.stringify(sourceDraft?.manual_target_hold) !== JSON.stringify(this._config.manual_target_hold || {})
+        ? sourceDraft?.manual_target_hold : undefined;
       this._applySettingsPopupDraftToConfig();
       if (!this._config.storage_enabled && previousSummer !== JSON.stringify([this._config.seasonal_enabled, this._config.summer_off_rooms])) {
         await this._applyCurrentSetpoints(false);
       }
       if (this._config?.storage_enabled && typeof this._saveStore === 'function') {
-        await this._saveStore(true);
+        await this._saveStore(true, manualTargetHold);
         // Pull fresh settings back from the integration to avoid any race where UI shows defaults after a hard refresh
         try {
           const api = await this._apiFetchState();
           const s = api?.settings || null;
           if (s && typeof s === 'object') {
+            if ('manual_target_hold' in s) this._config.manual_target_hold = { ...s.manual_target_hold };
             if (typeof s.holidays_enabled === 'boolean') this._config.holidays_enabled = !!s.holidays_enabled;
             if (typeof s.holidays_source === 'string') this._config.holidays_source = (s.holidays_source === 'manual') ? 'manual' : 'calendar';
             if (typeof s.holidays_entity === 'string') this._config.holidays_entity = String(s.holidays_entity || '');

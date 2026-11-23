@@ -2768,8 +2768,11 @@ class AutoApplyManager:
         return value
 
     def _manual_target_expiry(self, row, settings, primary=None):
-        """Expire a manual target at this room's next boundary or midnight."""
+        """Use a fixed duration or the room's next boundary or midnight."""
         now = dt_util.now()
+        hold = settings.get("manual_target_hold")
+        if isinstance(hold, dict) and hold.get("minutes") in (15, 30, 60, 120):
+            return (now.timestamp() + hold["minutes"] * 60) * 1000.0
         minute = now.hour * 60 + now.minute
         boundaries = [1440]
         for block in self._effective_blocks_today(row, settings, primary):
@@ -2793,7 +2796,7 @@ class AutoApplyManager:
         """Persist manual target holds using Timeline's native timed room pause.
 
         VTherm restores the target itself. The saved pause prevents startup and
-        availability reconciliation from replacing it before the next boundary.
+        availability reconciliation from replacing it before the hold expires.
         Normal schedule writes equal the desired value and cannot create holds.
         """
         async with self._manual_target_lock:
@@ -2801,6 +2804,9 @@ class AutoApplyManager:
                 if not self._auto_apply_enabled():
                     return
                 schedules, settings = self._get_data()
+                hold = settings.get("manual_target_hold")
+                if isinstance(hold, dict) and hold.get("enabled") is False:
+                    return
                 primary = eid
                 if primary not in schedules:
                     for candidate, members in (settings.get("merges") or {}).items():

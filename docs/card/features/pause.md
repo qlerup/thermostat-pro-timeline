@@ -12,7 +12,7 @@
 
 **Resume a room.** Open the same room's pause menu and select resume. A global pause still applies. To pause the entire schedule, use the pause button in the header beside the settings gear.
 
-**Adjust a thermostat manually.** With background auto-apply enabled, a detected manual change to a climate target creates a timed room pause. For example, a change from 21 to 22.5 degrees during a block lasts until the room’s next effective block start or end, or until midnight. Returning to the scheduled target cancels the generated hold. An explicit room pause takes precedence.
+**Adjust a thermostat manually.** With background auto-apply and automatic holds enabled, a detected manual change to a climate target creates a timed room pause. By default the pause lasts until the room’s next effective block start or end, or until midnight. Returning to the scheduled target cancels the generated hold. An explicit room pause takes precedence.
 
 **After a restart.** Timeline saves the hold. The thermostat integration restores its own temperature. Opening an existing shared dashboard in v3.3.3 reads the shared schedule without saving the browser’s copy over it.
 
@@ -50,7 +50,11 @@ Enable the external pause sensor in **Settings > Pause**. Select a binary sensor
 
 ## Hold a manual thermostat target
 
-With background control enabled, open the climate entity and raise its target. Close the thermostat dialog. Reloading the dashboard shows the saved room hold. Its countdown runs to the next effective schedule boundary.
+With background control enabled, open the climate entity and raise its target. Close the thermostat dialog. Reloading the dashboard shows the saved room hold.
+
+In **Settings → Pause**, use **Automatic temperature hold** to control whether manual thermostat changes start room holds. You can still pause a room or the whole timeline using the pause buttons.
+
+Under **Automatic hold duration**, choose 15, 30, 60 or 120 minutes from the temperature change, or keep the default **Until the next scheduled change**. The default ends at the next effective block start or end, or at midnight. Changes to these settings apply to new holds. Use **Resume** in the room's pause menu to end an active hold.
 
 [![Hold a manual thermostat target](../../images/manual-hold-result.png)](../../images/manual-hold.gif)
 
