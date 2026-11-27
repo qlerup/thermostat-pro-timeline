@@ -4578,7 +4578,7 @@ function ttLocalize(key, langOrHass) {
 // Simple runtime version to help with cache-busting diagnostics in HA.
 // Update this when shipping changes so the version appears in the
 // "Custom cards" panel and in logs.
-const TT_CARD_VERSION = "3.5.1";
+const TT_CARD_VERSION = "3.5.2";
 
 class ThermostatTimelineCard extends HTMLElement {
   static get version() { return TT_CARD_VERSION; }
@@ -20134,11 +20134,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const ov1 = hasOverlap(arr, start, 1440, b?.id);
         const ov2 = hasOverlap(arr, 0, end, null);
         if (ov1 || ov2) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const overlap = ov1 || ov2; const msg = this._t('ui.overlap_msg').replace('{start}', this._label(ov1?Math.max(start, ov1.startMin):0)).replace('{end}', this._label(ov1?Math.min(1440, ov1.endMin):end)); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
+        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); }
       } else {
         const overlap = hasOverlap(arr, start, end, b?.id);
         if (overlap) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const msg = this._t('ui.overlap_msg').replace('{start}', this._label(Math.max(start, overlap.startMin))).replace('{end}', this._label(Math.min(end, overlap.endMin))); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
+        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=end; }
       }
   (this._profilesDraft.rooms||{})[curRoom] = arr.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       this._profilesDirty = true;
@@ -20283,11 +20283,11 @@ class ThermostatTimelineCard extends HTMLElement {
         const ov1 = hasOverlap(arr, start, 1440, b?.id);
         const ov2 = hasOverlap(arr, 0, end, null);
         if (ov1 || ov2) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const overlap = ov1 || ov2; const msg = this._t('ui.overlap_msg').replace('{start}', this._label(ov1?Math.max(start, ov1.startMin):0)).replace('{end}', this._label(ov1?Math.min(1440, ov1.endMin):end)); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp: this._fromDisplayTemp(temp) }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp: this._fromDisplayTemp(temp) }); }
+        if (!b) { const id1=Math.random().toString(36).slice(2,9); const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id1, startMin:start, endMin:1440, temp }); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=1440; const id2=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id:id2, startMin:0, endMin:end, temp }); }
       } else {
         const overlap = hasOverlap(arr, start, end, b?.id);
         if (overlap) { const errEl = this.shadowRoot.querySelector('.ed-error'); if (errEl) { const msg = this._t('ui.overlap_msg').replace('{start}', this._label(Math.max(start, overlap.startMin))).replace('{end}', this._label(Math.min(end, overlap.endMin))); errEl.innerHTML = `<div>${msg}</div>`; errEl.style.display='block'; } return; }
-        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp:this._fromDisplayTemp(temp) }); } else { updateMode(b); b.temp=this._fromDisplayTemp(temp); b.startMin=start; b.endMin=end; }
+        if (!b) { const id=Math.random().toString(36).slice(2,9); arr.push({ ...modeFields, id, startMin:start, endMin:end, temp }); } else { updateMode(b); b.temp=temp; b.startMin=start; b.endMin=end; }
       }
       (this._holidayDraft.rooms||{})[eid] = arr.sort((a,bx)=>a.startMin-bx.startMin||a.endMin-bx.endMin);
       this._render(); this._closeEditor(); this._renderHolidayModal();

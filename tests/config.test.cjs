@@ -267,3 +267,40 @@ test('trip start and end use Home Assistant time, including DST changes', () => 
   c._config.holidays_source = 'calendar';
   assert.equal(c._tripIntervals().length, 0);
 });
+
+for (const plan of ['holiday', 'profile']) {
+  for (const [unit, input] of [['F', 63], ['C', 19]]) {
+    test(`${plan} editor preserves ${input} ${unit} on create, edit and midnight split`, async () => {
+      const c = card();
+      const entity = 'climate.room';
+      c._config.temp_unit = unit;
+      c._schedules[entity] = { defaultTemp: 20, blocks: [] };
+      const draft = { name: 'Home', rooms: { [entity]: [] } };
+      if (plan === 'holiday') c._holidayDraft = draft;
+      else c._profilesDraft = draft;
+      const fields = {
+        '.ed-temp': { value: String(input) }, '.ed-from': { value: '08:00' },
+        '.ed-to': { value: '09:30' }, '.ed-mode': { value: '' }
+      };
+      c.shadowRoot = { querySelector: selector => fields[selector] };
+      c._desiredNowSnapshot = () => ({});
+      c._render = c._closeEditor = c._renderHolidayModal = c._renderProfilesModal = () => {};
+      c._editing = { entity, ...(plan === 'holiday' ? { holiday: true } : { profileName: 'Home' }) };
+      await c._saveEditor();
+      const blocks = draft.rooms[entity];
+      const expectedC = value => unit === 'F' ? (value - 32) * 5 / 9 : value;
+      assert.equal(blocks.length, 1);
+      assert.equal(blocks[0].temp, expectedC(input));
+      c._editing.blockId = blocks[0].id;
+      fields['.ed-temp'].value = String(input + 1);
+      await c._saveEditor();
+      assert.equal(blocks[0].temp, expectedC(input + 1));
+      fields['.ed-from'].value = '22:00';
+      fields['.ed-to'].value = '07:00';
+      await c._saveEditor();
+      assert.deepEqual(Array.from(blocks, b => [b.startMin, b.endMin, b.temp]), [
+        [0, 420, expectedC(input + 1)], [1320, 1440, expectedC(input + 1)]
+      ]);
+    });
+  }
+}
